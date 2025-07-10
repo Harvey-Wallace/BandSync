@@ -66,6 +66,17 @@ def debug_static():
     except Exception as e:
         return {"error": str(e)}
 
+# Test route to check if frontend HTML is loading
+@app.route('/test')
+def test_frontend():
+    """Test endpoint to see the raw HTML content"""
+    try:
+        with open('static/index.html', 'r') as f:
+            content = f.read()
+        return f"<h1>HTML Content Found</h1><pre>{content[:500]}...</pre>"
+    except Exception as e:
+        return f"<h1>Error reading HTML</h1><p>{e}</p>"
+
 # Import blueprints
 @jwt.unauthorized_loader
 def unauthorized_callback(callback):
@@ -88,7 +99,8 @@ def health_check():
     """Health check endpoint for load balancers and monitoring"""
     try:
         # Check database connection
-        db.session.execute('SELECT 1')
+        from sqlalchemy import text
+        db.session.execute(text('SELECT 1'))
         return {"status": "healthy", "database": "connected"}, 200
     except Exception as e:
         return {"status": "unhealthy", "error": str(e)}, 500
@@ -129,8 +141,17 @@ app.register_blueprint(quick_polls_bp, url_prefix='/api/quick-polls')
 
 # Initialize database tables
 with app.app_context():
-    db.create_all()
-    print("Database tables created successfully!")
+    try:
+        db.create_all()
+        print("Database tables created successfully!")
+    except Exception as e:
+        print(f"Error creating database tables: {e}")
+
+# Add some startup logging
+print("BandSync Flask app is starting...")
+print(f"Current working directory: {os.getcwd()}")
+print(f"Static directory exists: {os.path.exists('static')}")
+print(f"Index.html exists: {os.path.exists('static/index.html')}")
 
 if __name__ == '__main__':
     app.run(debug=True, port=5001)
