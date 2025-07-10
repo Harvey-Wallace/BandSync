@@ -36,7 +36,17 @@ def serve_static_files(path):
         # Don't serve static files for API routes
         return {"error": "API endpoint not found"}, 404
     
-    # Try to serve the requested file
+    # Handle the double-nested static directory issue
+    # React is looking for /static/css/main.css but files are at /static/static/css/main.css
+    if path.startswith('static/'):
+        # Try to serve from the nested static directory
+        nested_path = 'static/' + path
+        try:
+            return send_from_directory('static', nested_path)
+        except Exception as e:
+            print(f"Error serving nested static file {nested_path}: {e}")
+    
+    # Try to serve the requested file normally
     try:
         return send_from_directory('static', path)
     except Exception as e:
