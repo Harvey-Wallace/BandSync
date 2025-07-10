@@ -86,6 +86,26 @@ def debug_static():
     except Exception as e:
         return {"error": str(e)}
 
+# Test CSS file access directly
+@app.route('/test-css')
+def test_css():
+    """Test if we can access the CSS file"""
+    try:
+        # Test both possible paths
+        paths_to_try = [
+            'static/css/main.e3bc04ff.css',
+            'static/static/css/main.e3bc04ff.css'
+        ]
+        results = {}
+        for path in paths_to_try:
+            try:
+                return send_from_directory('static', path.replace('static/', ''))
+            except Exception as e:
+                results[path] = str(e)
+        return {"tested_paths": results, "message": "None of the CSS paths worked"}
+    except Exception as e:
+        return {"error": str(e)}
+
 # Test route to check if frontend HTML is loading
 @app.route('/test')
 def test_frontend():
@@ -93,7 +113,9 @@ def test_frontend():
     try:
         with open('static/index.html', 'r') as f:
             content = f.read()
-        return f"<h1>HTML Content Found</h1><pre>{content}</pre>"
+        # Return as plain text to see the full content
+        from flask import Response
+        return Response(content, mimetype='text/plain')
     except Exception as e:
         return f"<h1>Error reading HTML</h1><p>{e}</p>"
 
