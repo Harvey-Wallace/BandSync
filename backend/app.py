@@ -1,8 +1,9 @@
-from flask import Flask
+from flask import Flask, send_from_directory
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from config import Config
 from dotenv import load_dotenv
+import os
 load_dotenv()
 
 # Import models and db
@@ -17,6 +18,26 @@ jwt = JWTManager(app)
 # Initialize scheduled tasks
 from services.scheduled_tasks import task_service
 task_service.init_app(app)
+
+# Serve React frontend
+@app.route('/')
+def serve_frontend():
+    """Serve the React frontend"""
+    return send_from_directory('static', 'index.html')
+
+@app.route('/<path:path>')
+def serve_static_files(path):
+    """Serve static files for React frontend"""
+    if path.startswith('api/'):
+        # Don't serve static files for API routes
+        return {"error": "API endpoint not found"}, 404
+    
+    # Try to serve the requested file
+    try:
+        return send_from_directory('static', path)
+    except:
+        # If file doesn't exist, serve index.html (for React Router)
+        return send_from_directory('static', 'index.html')
 
 # Import blueprints
 @jwt.unauthorized_loader
