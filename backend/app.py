@@ -19,7 +19,7 @@ jwt = JWTManager(app)
 from services.scheduled_tasks import task_service
 task_service.init_app(app)
 
-# Serve React frontend
+# Serve React frontend - Updated to fix static file serving
 @app.route('/')
 def serve_frontend():
     """Serve the React frontend"""
