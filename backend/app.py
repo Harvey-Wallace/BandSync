@@ -48,6 +48,16 @@ def serve_static_files(path):
             print(f"Error serving index.html fallback: {e2}")
             return f"<h1>BandSync Backend is Running</h1><p>Static file not found: {path}</p><p>Try <a href='/health'>/health</a> endpoint</p>", 200
 
+# Debug route to test specific static file access
+@app.route('/debug/css')
+def debug_css():
+    """Test direct CSS file access"""
+    try:
+        # Try to serve the CSS file directly
+        return send_from_directory('static/static/css', 'main.e3bc04ff.css')
+    except Exception as e:
+        return f"<h1>Error serving CSS</h1><p>{e}</p>"
+
 # Debug route to check static files
 @app.route('/debug/static')
 def debug_static():
@@ -73,7 +83,7 @@ def test_frontend():
     try:
         with open('static/index.html', 'r') as f:
             content = f.read()
-        return f"<h1>HTML Content Found</h1><pre>{content[:500]}...</pre>"
+        return f"<h1>HTML Content Found</h1><pre>{content}</pre>"
     except Exception as e:
         return f"<h1>Error reading HTML</h1><p>{e}</p>"
 
