@@ -23,7 +23,11 @@ task_service.init_app(app)
 @app.route('/')
 def serve_frontend():
     """Serve the React frontend"""
-    return send_from_directory('static', 'index.html')
+    try:
+        return send_from_directory('static', 'index.html')
+    except Exception as e:
+        print(f"Error serving index.html: {e}")
+        return f"<h1>BandSync Backend is Running</h1><p>Error serving frontend: {e}</p><p>Try <a href='/health'>/health</a> endpoint</p>", 200
 
 @app.route('/<path:path>')
 def serve_static_files(path):
@@ -35,9 +39,32 @@ def serve_static_files(path):
     # Try to serve the requested file
     try:
         return send_from_directory('static', path)
-    except:
+    except Exception as e:
+        print(f"Error serving static file {path}: {e}")
         # If file doesn't exist, serve index.html (for React Router)
-        return send_from_directory('static', 'index.html')
+        try:
+            return send_from_directory('static', 'index.html')
+        except Exception as e2:
+            print(f"Error serving index.html fallback: {e2}")
+            return f"<h1>BandSync Backend is Running</h1><p>Static file not found: {path}</p><p>Try <a href='/health'>/health</a> endpoint</p>", 200
+
+# Debug route to check static files
+@app.route('/debug/static')
+def debug_static():
+    """Debug endpoint to check static files"""
+    try:
+        static_files = []
+        for root, dirs, files in os.walk('static'):
+            for file in files:
+                static_files.append(os.path.join(root, file))
+        return {
+            "static_files": static_files,
+            "current_dir": os.getcwd(),
+            "static_dir_exists": os.path.exists('static'),
+            "index_html_exists": os.path.exists('static/index.html')
+        }
+    except Exception as e:
+        return {"error": str(e)}
 
 # Import blueprints
 @jwt.unauthorized_loader
