@@ -36,30 +36,20 @@ def serve_static_files(path):
         # Don't serve static files for API routes
         return {"error": "API endpoint not found"}, 404
     
-    # Handle static file requests - React is looking for files like:
-    # /static/js/main.be6581e9.js but they're at /static/static/js/main.be6581e9.js
     print(f"Requested path: {path}")
     
-    # If path starts with 'static/', map to nested directory
+    # Handle static file requests - React is looking for files like:
+    # /static/js/main.be6581e9.js but they're at /static/static/js/main.be6581e9.js
     if path.startswith('static/'):
-        nested_path = 'static/' + path  # This becomes static/static/js/main.js
+        # Map /static/css/file.css to static/static/css/file.css
+        nested_path = 'static/' + path
         print(f"Trying nested path: {nested_path}")
         try:
-            return send_from_directory('static', nested_path.replace('static/', '', 1))
+            return send_from_directory('.', nested_path)
         except Exception as e:
             print(f"Error serving nested static file {nested_path}: {e}")
     
-    # For direct file requests (like main.be6581e9.js), try in the nested static directory
-    for subdir in ['js', 'css', 'media']:
-        try:
-            nested_file_path = f'static/{subdir}/{path}'
-            print(f"Trying {nested_file_path}")
-            return send_from_directory('static', nested_file_path)
-        except Exception as e:
-            print(f"Failed to serve from static/{subdir}/{path}: {e}")
-            continue
-    
-    # Try to serve the requested file normally
+    # Try to serve the requested file normally from static directory
     try:
         return send_from_directory('static', path)
     except Exception as e:
