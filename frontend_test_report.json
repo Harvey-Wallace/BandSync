@@ -1,0 +1,121 @@
+[
+  {
+    "test": "Authentication",
+    "status": "PASS",
+    "message": "Successfully authenticated",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.224575"
+  },
+  {
+    "test": "Frontend Access",
+    "status": "PASS",
+    "message": "Frontend is accessible",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.226322"
+  },
+  {
+    "test": "React App",
+    "status": "WARN",
+    "message": "React app not clearly detected",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.226339"
+  },
+  {
+    "test": "API: Email Aliases",
+    "status": "PASS",
+    "message": "Endpoint accessible",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.233423"
+  },
+  {
+    "test": "API: Message Threads",
+    "status": "PASS",
+    "message": "Endpoint accessible",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.240490"
+  },
+  {
+    "test": "API: Substitute Requests",
+    "status": "PASS",
+    "message": "Endpoint accessible",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.246992"
+  },
+  {
+    "test": "API: Bulk Operations",
+    "status": "PASS",
+    "message": "Endpoint accessible",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.250142"
+  },
+  {
+    "test": "API: Quick Polls",
+    "status": "PASS",
+    "message": "Endpoint accessible",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.252489"
+  },
+  {
+    "test": "API: Events",
+    "status": "PASS",
+    "message": "Endpoint accessible",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.258386"
+  },
+  {
+    "test": "Route: /messaging",
+    "status": "PASS",
+    "message": "Route accessible",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.260120"
+  },
+  {
+    "test": "Route: /substitution",
+    "status": "PASS",
+    "message": "Route accessible",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.261753"
+  },
+  {
+    "test": "Route: /bulk-operations",
+    "status": "PASS",
+    "message": "Route accessible",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.263214"
+  },
+  {
+    "test": "Route: /polls",
+    "status": "PASS",
+    "message": "Route accessible",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.264531"
+  },
+  {
+    "test": "Route: /admin",
+    "status": "PASS",
+    "message": "Route accessible",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.265577"
+  },
+  {
+    "test": "Viewport Meta",
+    "status": "PASS",
+    "message": "Mobile viewport meta tag found",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.266496"
+  },
+  {
+    "test": "Responsive Framework",
+    "status": "WARN",
+    "message": "No obvious responsive framework",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.266505"
+  },
+  {
+    "test": "Console Errors",
+    "status": "WARN",
+    "message": "Manual browser check required",
+    "details": null,
+    "timestamp": "2025-07-10T17:45:02.266536"
+  }
+]

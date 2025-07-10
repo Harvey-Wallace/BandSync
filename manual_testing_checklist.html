@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BandSync Phase 2 Frontend Manual Testing Guide</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { border: 1px solid #ddd; margin: 20px 0; padding: 20px; }
+        .pass { color: green; }
+        .fail { color: red; }
+        .warn { color: orange; }
+        .checkbox { margin: 5px 0; }
+        input[type="checkbox"] { margin-right: 10px; }
+    </style>
+</head>
+<body>
+    <h1>🎯 BandSync Phase 2 Frontend Manual Testing Checklist</h1>
+    
+    <div class="test-section">
+        <h2>🔐 Authentication & Navigation</h2>
+        <div class="checkbox"><input type="checkbox"> Login page loads without errors</div>
+        <div class="checkbox"><input type="checkbox"> Can log in as admin user</div>
+        <div class="checkbox"><input type="checkbox"> Navigation menu shows all Phase 2 options</div>
+        <div class="checkbox"><input type="checkbox"> Organization switcher works (if multi-org)</div>
+        <div class="checkbox"><input type="checkbox"> Session timeout works properly</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📧 Group Email Manager</h2>
+        <p><strong>Location:</strong> Admin Dashboard > Email Management</p>
+        <div class="checkbox"><input type="checkbox"> Email aliases list loads</div>
+        <div class="checkbox"><input type="checkbox"> Can create new email alias</div>
+        <div class="checkbox"><input type="checkbox"> Form validation works (invalid names, duplicates)</div>
+        <div class="checkbox"><input type="checkbox"> Can edit existing aliases</div>
+        <div class="checkbox"><input type="checkbox"> Can delete aliases</div>
+        <div class="checkbox"><input type="checkbox"> Forwarding rules configuration works</div>
+        <div class="checkbox"><input type="checkbox"> Loading states show properly</div>
+        <div class="checkbox"><input type="checkbox"> Error messages are clear</div>
+        <div class="checkbox"><input type="checkbox"> Success notifications appear</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>💬 Internal Messaging</h2>
+        <p><strong>Location:</strong> /messaging</p>
+        <div class="checkbox"><input type="checkbox"> Message threads list loads</div>
+        <div class="checkbox"><input type="checkbox"> Can view individual message threads</div>
+        <div class="checkbox"><input type="checkbox"> Can send new messages</div>
+        <div class="checkbox"><input type="checkbox"> Can create new message threads</div>
+        <div class="checkbox"><input type="checkbox"> Message timestamps display correctly</div>
+        <div class="checkbox"><input type="checkbox"> Sender information shows properly</div>
+        <div class="checkbox"><input type="checkbox"> Message text formatting works</div>
+        <div class="checkbox"><input type="checkbox"> Auto-scroll to latest messages</div>
+        <div class="checkbox"><input type="checkbox"> Mobile responsive layout</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔄 Substitution Manager</h2>
+        <p><strong>Location:</strong> /substitution</p>
+        <div class="checkbox"><input type="checkbox"> Substitute requests list loads</div>
+        <div class="checkbox"><input type="checkbox"> Can view request details</div>
+        <div class="checkbox"><input type="checkbox"> Request status displays correctly</div>
+        <div class="checkbox"><input type="checkbox"> Can create substitute request from events</div>
+        <div class="checkbox"><input type="checkbox"> RSVP integration works</div>
+        <div class="checkbox"><input type="checkbox"> Event information displays properly</div>
+        <div class="checkbox"><input type="checkbox"> Requester information shows</div>
+        <div class="checkbox"><input type="checkbox"> Date/time formatting is correct</div>
+        <div class="checkbox"><input type="checkbox"> Mobile touch-friendly interface</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📤 Bulk Operations</h2>
+        <p><strong>Location:</strong> /bulk-operations</p>
+        <div class="checkbox"><input type="checkbox"> Page loads without errors</div>
+        <div class="checkbox"><input type="checkbox"> Import template download works</div>
+        <div class="checkbox"><input type="checkbox"> File upload interface works</div>
+        <div class="checkbox"><input type="checkbox"> Import preview displays data</div>
+        <div class="checkbox"><input type="checkbox"> Validation errors show clearly</div>
+        <div class="checkbox"><input type="checkbox"> Data export works</div>
+        <div class="checkbox"><input type="checkbox"> Progress indicators show</div>
+        <div class="checkbox"><input type="checkbox"> Success/error messages clear</div>
+        <div class="checkbox"><input type="checkbox"> Large file handling</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Quick Polls</h2>
+        <p><strong>Location:</strong> /polls</p>
+        <div class="checkbox"><input type="checkbox"> Polls list loads</div>
+        <div class="checkbox"><input type="checkbox"> Can create new polls</div>
+        <div class="checkbox"><input type="checkbox"> Poll form validation works</div>
+        <div class="checkbox"><input type="checkbox"> Can vote on polls</div>
+        <div class="checkbox"><input type="checkbox"> Results display correctly</div>
+        <div class="checkbox"><input type="checkbox"> Poll status (open/closed) clear</div>
+        <div class="checkbox"><input type="checkbox"> Anonymous voting works</div>
+        <div class="checkbox"><input type="checkbox"> Poll analytics/charts show</div>
+        <div class="checkbox"><input type="checkbox"> Mobile voting interface</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎭 Enhanced Events</h2>
+        <p><strong>Location:</strong> /events</p>
+        <div class="checkbox"><input type="checkbox"> Events list loads with new features</div>
+        <div class="checkbox"><input type="checkbox"> Enhanced event creation form</div>
+        <div class="checkbox"><input type="checkbox"> Event categories work</div>
+        <div class="checkbox"><input type="checkbox"> Custom fields functionality</div>
+        <div class="checkbox"><input type="checkbox"> RSVP system enhanced features</div>
+        <div class="checkbox"><input type="checkbox"> Substitute request from RSVP</div>
+        <div class="checkbox"><input type="checkbox"> Event templates work</div>
+        <div class="checkbox"><input type="checkbox"> Recurring events functionality</div>
+        <div class="checkbox"><input type="checkbox"> Calendar integration</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📱 Mobile & Responsive</h2>
+        <div class="checkbox"><input type="checkbox"> Mobile navigation works</div>
+        <div class="checkbox"><input type="checkbox"> Touch targets are adequate (44px+)</div>
+        <div class="checkbox"><input type="checkbox"> Text is readable on mobile</div>
+        <div class="checkbox"><input type="checkbox"> Forms work on mobile keyboards</div>
+        <div class="checkbox"><input type="checkbox"> Tables scroll horizontally</div>
+        <div class="checkbox"><input type="checkbox"> Modals work on mobile</div>
+        <div class="checkbox"><input type="checkbox"> PWA "Add to Home Screen" works</div>
+        <div class="checkbox"><input type="checkbox"> Offline functionality (basic)</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎨 UI/UX Polish</h2>
+        <div class="checkbox"><input type="checkbox"> Loading spinners show during API calls</div>
+        <div class="checkbox"><input type="checkbox"> Error messages are user-friendly</div>
+        <div class="checkbox"><input type="checkbox"> Success notifications are clear</div>
+        <div class="checkbox"><input type="checkbox"> Form validation is real-time</div>
+        <div class="checkbox"><input type="checkbox"> Icons and visual elements consistent</div>
+        <div class="checkbox"><input type="checkbox"> Color scheme is consistent</div>
+        <div class="checkbox"><input type="checkbox"> Typography is readable</div>
+        <div class="checkbox"><input type="checkbox"> Hover states work on interactive elements</div>
+        <div class="checkbox"><input type="checkbox"> Focus states for keyboard navigation</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>⚡ Performance</h2>
+        <div class="checkbox"><input type="checkbox"> Initial page load < 3 seconds</div>
+        <div class="checkbox"><input type="checkbox"> Navigation between pages is fast</div>
+        <div class="checkbox"><input type="checkbox"> API calls complete quickly</div>
+        <div class="checkbox"><input type="checkbox"> Large data sets render well</div>
+        <div class="checkbox"><input type="checkbox"> No memory leaks in long sessions</div>
+        <div class="checkbox"><input type="checkbox"> Images load efficiently</div>
+        <div class="checkbox"><input type="checkbox"> JavaScript bundle size reasonable</div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔒 Security & Error Handling</h2>
+        <div class="checkbox"><input type="checkbox"> Unauthorized access properly blocked</div>
+        <div class="checkbox"><input type="checkbox"> Session expiry handled gracefully</div>
+        <div class="checkbox"><input type="checkbox"> Network errors show friendly messages</div>
+        <div class="checkbox"><input type="checkbox"> 404 errors handled properly</div>
+        <div class="checkbox"><input type="checkbox"> API errors don't crash the app</div>
+        <div class="checkbox"><input type="checkbox"> Input sanitization works</div>
+        <div class="checkbox"><input type="checkbox"> No sensitive data in console/network</div>
+    </div>
+    
+    <script>
+        // Add interactivity to track progress
+        const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+        const totalCount = checkboxes.length;
+        
+        function updateProgress() {
+            const checkedCount = document.querySelectorAll('input[type="checkbox"]:checked').length;
+            const progress = Math.round((checkedCount / totalCount) * 100);
+            document.title = `BandSync Testing (${progress}% Complete)`;
+        }
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateProgress);
+        });
+        
+        updateProgress();
+    </script>
+</body>
+</html>

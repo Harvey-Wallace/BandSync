@@ -1,0 +1,446 @@
+import React, { useEffect, useState } from 'react';
+import Navbar from '../compone  const handleRsvp = async (eventId, rsvpStatus) => {
+    try {
+      await apiClient.post(`/api/events/${eventId}/rsvp`, { status: rsvpStatus });
+      setStatus({ ...status, [eventId]: rsvpStatus });
+      setToast({ show: true, message: `RSVP set to ${rsvpStatus}`, type: 'success' });
+      if (role === 'Admin') fetchRsvpSummary();
+    } catch {
+      setToast({ show: true, message: 'Failed to RSVP', type: 'danger' });
+    }
+  };
+
+  const handleCreate = async (data) => {
+    try {
+      await apiClient.post('/api/events/', data);t EventForm from '../components/EventForm';
+import Spinner from '../components/Spinner';
+import Toast from '../components/Toast';
+import { useTheme } from '../contexts/ThemeContext';
+import apiClient from '../utils/api';
+
+function EventsPage() {
+  const [events, setEvents] = useState([]);
+  const [status, setStatus] = useState({});
+  const [showForm, setShowForm] = useState(false);
+  const [editEvent, setEditEvent] = useState(null);
+  const [role, setRole] = useState(localStorage.getItem('role'));
+  const [rsvpSummary, setRsvpSummary] = useState({});
+  const [rsvpLoading, setRsvpLoading] = useState(false);
+  const [rsvpError, setRsvpError] = useState(null);
+  const [openSummary, setOpenSummary] = useState({});
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [loading, setLoading] = useState(true);
+  const { orgThemeColor } = useTheme();
+
+  useEffect(() => {
+    fetchEvents();
+    // eslint-disable-next-line
+  }, []);
+
+  useEffect(() => {
+    if (role === 'Admin' && events.length) fetchRsvpSummary();
+    // eslint-disable-next-line
+  }, [events]);
+
+  const fetchEvents = async () => {
+    setLoading(true);
+    try {
+      const res = await apiClient.get('/api/events/');
+      
+      // Sort events by date
+      const sortedEvents = res.data.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setEvents(sortedEvents);
+      
+      // Load current user's RSVP status for each event
+      const username = localStorage.getItem('username');
+      const statusMap = {};
+      for (const event of sortedEvents) {
+        try {
+          const rsvpRes = await apiClient.get(`/api/events/${event.id}/rsvps`);
+          // Find user's RSVP status
+          for (const [rsvpStatus, users] of Object.entries(rsvpRes.data)) {
+            if (users.includes(username)) {
+              statusMap[event.id] = rsvpStatus;
+              break;
+            }
+          }
+        } catch (error) {
+          console.error('Error loading RSVP status:', error);
+        }
+      }
+      setStatus(statusMap);
+    } catch (error) {
+      setToast({ show: true, message: 'Failed to load events', type: 'danger' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRsvpSummary = async () => {
+    setRsvpLoading(true);
+    setRsvpError(null);
+    const summary = {};
+    try {
+      for (const event of events) {
+        const res = await apiClient.get(`/api/events/${event.id}/rsvps`);
+        summary[event.id] = res.data;
+      }
+      setRsvpSummary(summary);
+    } catch (err) {
+      setRsvpError('Failed to load RSVP summary.');
+    }
+    setRsvpLoading(false);
+  };
+
+  const handleRSVP = async (eventId, rsvpStatus) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/events/${eventId}/rsvp`, { status: rsvpStatus }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setStatus({ ...status, [eventId]: rsvpStatus });
+      setToast({ show: true, message: `RSVP set to ${rsvpStatus}`, type: 'success' });
+      if (role === 'Admin') fetchRsvpSummary();
+    } catch {
+      setToast({ show: true, message: 'Failed to RSVP', type: 'danger' });
+    }
+  };
+
+  const handleCreate = async (data) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL}/api/events/`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setShowForm(false);
+      setToast({ show: true, message: 'Event created!', type: 'success' });
+      fetchEvents();
+    } catch {
+      setToast({ show: true, message: 'Failed to create event', type: 'danger' });
+    }
+  };
+
+  const handleEdit = (event) => {
+    setEditEvent(event);
+    setShowForm(true);
+  };
+
+  const handleUpdate = async (data) => {
+    const token = localStorage.getItem('token');
+    try {
+      await axios.put(`${process.env.REACT_APP_API_URL}/api/events/${editEvent.id}`, data, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEditEvent(null);
+      setShowForm(false);
+      setToast({ show: true, message: 'Event updated!', type: 'success' });
+      fetchEvents();
+    } catch {
+      setToast({ show: true, message: 'Failed to update event', type: 'danger' });
+    }
+  };
+
+  const handleDelete = async (eventId) => {
+    if (!window.confirm('Are you sure you want to delete this event?')) return;
+    const token = localStorage.getItem('token');
+    try {
+      await axios.delete(`${process.env.REACT_APP_API_URL}/api/events/${eventId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setToast({ show: true, message: 'Event deleted!', type: 'success' });
+      fetchEvents();
+    } catch {
+      setToast({ show: true, message: 'Failed to delete event', type: 'danger' });
+    }
+  };
+
+  const toggleSummary = (eventId) => {
+    setOpenSummary(prev => ({ ...prev, [eventId]: !prev[eventId] }));
+  };
+
+  const getRSVPButtonClass = (eventRsvp, option) => {
+    if (eventRsvp === option) {
+      switch (option) {
+        case 'Yes': return 'btn-success';
+        case 'No': return 'btn-danger';
+        case 'Maybe': return 'btn-warning';
+        default: return 'btn-primary';
+      }
+    }
+    return 'btn-outline-secondary';
+  };
+
+  const isEventUpcoming = (eventDate) => {
+    return new Date(eventDate) >= new Date().setHours(0, 0, 0, 0);
+  };
+
+  if (loading) {
+    return (
+      <>
+        <Navbar />
+        <div className="container mt-4 text-center">
+          <Spinner size={40} />
+          <div className="mt-3 text-muted">Loading events...</div>
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <Navbar />
+      <div className="container mt-4">
+        <Toast show={toast.show} message={toast.message} type={toast.type} onClose={() => setToast(t => ({ ...t, show: false }))} />
+        
+        {/* Header */}
+        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
+          <div>
+            <h2 className="mb-1">
+              <i className="bi bi-calendar-event me-2" style={{ color: orgThemeColor }}></i>
+              Events
+            </h2>
+            <p className="text-muted mb-0">
+              {role === 'Admin' ? 'Manage and track all organization events' : 'Browse and RSVP to events'}
+            </p>
+          </div>
+          
+          {role === 'Admin' && !showForm && (
+            <button 
+              className="btn btn-primary mt-3 mt-md-0"
+              onClick={() => { setShowForm(true); setEditEvent(null); }}
+            >
+              <i className="bi bi-plus-circle me-2"></i>
+              Create Event
+            </button>
+          )}
+        </div>
+
+        {/* Event Form */}
+        {showForm && (
+          <div className="card mb-4">
+            <div className="card-header">
+              <h5 className="mb-0">
+                <i className="bi bi-calendar-plus me-2"></i>
+                {editEvent ? 'Edit Event' : 'Create New Event'}
+              </h5>
+            </div>
+            <div className="card-body">
+              <EventForm
+                onSubmit={editEvent ? handleUpdate : handleCreate}
+                initialData={editEvent}
+                onCancel={() => { setShowForm(false); setEditEvent(null); }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Events Grid */}
+        {events.length === 0 ? (
+          <div className="text-center py-5">
+            <i className="bi bi-calendar-x" style={{ fontSize: '3rem', color: orgThemeColor }}></i>
+            <h4 className="mt-3 text-muted">No events found</h4>
+            <p className="text-muted">
+              {role === 'Admin' ? 'Create your first event to get started!' : 'No events are currently scheduled.'}
+            </p>
+          </div>
+        ) : (
+          <div className="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+            {events.map(event => {
+              const isUpcoming = isEventUpcoming(event.date);
+              const userRsvp = status[event.id];
+              
+              return (
+                <div key={event.id} className="col">
+                  <div className={`card h-100 shadow-sm ${!isUpcoming ? 'border-muted' : ''}`}>
+                    <div className="card-body">
+                      <div className="d-flex justify-content-between align-items-start mb-3">
+                        <h5 className="card-title mb-0 fw-bold">{event.title}</h5>
+                        <div className="d-flex flex-column align-items-end gap-1">
+                          {!isUpcoming && (
+                            <span className="badge bg-secondary">Past</span>
+                          )}
+                          <span className={`badge ${
+                            event.type === 'Concert' ? 'bg-primary' :
+                            event.type === 'Rehearsal' ? 'bg-success' :
+                            event.type === 'Committee Meeting' ? 'bg-info' :
+                            event.type === 'AGM' ? 'bg-warning text-dark' :
+                            'bg-secondary'
+                          }`}>
+                            {event.type}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div className="mb-3">
+                        <div className="d-flex align-items-center text-muted mb-2">
+                          <i className="bi bi-calendar3 me-2"></i>
+                          <span className="small">{new Date(event.date).toLocaleDateString('en-US', {
+                            weekday: 'long',
+                            year: 'numeric',
+                            month: 'long',
+                            day: 'numeric'
+                          })}</span>
+                        </div>
+                        <div className="d-flex align-items-center text-muted mb-1">
+                          <i className="bi bi-clock me-2"></i>
+                          <span className="small">{new Date(event.date).toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}</span>
+                        </div>
+                        {event.location && (
+                          <div className="d-flex align-items-start text-muted">
+                            <i className="bi bi-geo-alt me-2 mt-1"></i>
+                            <div className="small">
+                              <div>{event.location}</div>
+                              {event.location_address && event.location_address !== event.location && (
+                                <div className="text-muted small">{event.location_address}</div>
+                              )}
+                              {event.location_lat && event.location_lng && (
+                                <a 
+                                  href={`https://www.google.com/maps?q=${event.location_lat},${event.location_lng}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-decoration-none small"
+                                >
+                                  <i className="bi bi-map me-1"></i>
+                                  View on Map
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {event.description && (
+                        <p className="card-text text-muted">{event.description}</p>
+                      )}
+                      
+                      <div className="mt-auto">
+                        {/* RSVP Status */}
+                        {userRsvp && (
+                          <div className="mb-3">
+                            <span className="small text-muted">Your RSVP: </span>
+                            <span className={`badge ${
+                              userRsvp === 'Yes' ? 'bg-success' :
+                              userRsvp === 'No' ? 'bg-danger' :
+                              userRsvp === 'Maybe' ? 'bg-warning text-dark' :
+                              'bg-secondary'
+                            }`}>
+                              {userRsvp}
+                            </span>
+                          </div>
+                        )}
+                        
+                        {/* RSVP Buttons */}
+                        {isUpcoming && (
+                          <div className="mb-3">
+                            <div className="small text-muted mb-2">RSVP:</div>
+                            <div className="btn-group w-100" role="group">
+                              {["Yes", "No", "Maybe"].map(option => (
+                                <button
+                                  key={option}
+                                  type="button"
+                                  className={`btn btn-sm ${getRSVPButtonClass(userRsvp, option)}`}
+                                  onClick={() => handleRSVP(event.id, option)}
+                                >
+                                  <i className={`bi bi-${
+                                    option === 'Yes' ? 'check' :
+                                    option === 'No' ? 'x' : 'question'
+                                  }-circle me-1`}></i>
+                                  {option}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Admin Actions */}
+                        {role === 'Admin' && (
+                          <div className="d-flex flex-wrap gap-2">
+                            <button 
+                              className="btn btn-outline-primary btn-sm"
+                              onClick={() => handleEdit(event)}
+                            >
+                              <i className="bi bi-pencil me-1"></i>
+                              Edit
+                            </button>
+                            <button 
+                              className="btn btn-outline-danger btn-sm"
+                              onClick={() => handleDelete(event.id)}
+                            >
+                              <i className="bi bi-trash me-1"></i>
+                              Delete
+                            </button>
+                            <button 
+                              className="btn btn-outline-info btn-sm"
+                              onClick={() => toggleSummary(event.id)}
+                            >
+                              <i className="bi bi-people me-1"></i>
+                              {openSummary[event.id] ? 'Hide' : 'Show'} RSVPs
+                            </button>
+                          </div>
+                        )}
+                        
+                        {/* RSVP Summary */}
+                        {role === 'Admin' && openSummary[event.id] && (
+                          <div className="mt-3 p-3 border rounded bg-light">
+                            {rsvpLoading ? (
+                              <div className="text-center">
+                                <Spinner size={24} />
+                              </div>
+                            ) : rsvpError ? (
+                              <div className="alert alert-danger p-2 mb-0">{rsvpError}</div>
+                            ) : rsvpSummary[event.id] ? (
+                              <>
+                                <strong className="small">RSVP Summary:</strong>
+                                <div className="row g-2 mt-2">
+                                  <div className="col-4">
+                                    <div className="text-center">
+                                      <div className="text-success fw-bold">{rsvpSummary[event.id].Yes?.length || 0}</div>
+                                      <div className="small text-muted">Yes</div>
+                                    </div>
+                                  </div>
+                                  <div className="col-4">
+                                    <div className="text-center">
+                                      <div className="text-danger fw-bold">{rsvpSummary[event.id].No?.length || 0}</div>
+                                      <div className="small text-muted">No</div>
+                                    </div>
+                                  </div>
+                                  <div className="col-4">
+                                    <div className="text-center">
+                                      <div className="text-warning fw-bold">{rsvpSummary[event.id].Maybe?.length || 0}</div>
+                                      <div className="small text-muted">Maybe</div>
+                                    </div>
+                                  </div>
+                                </div>
+                                <details className="mt-2">
+                                  <summary className="small text-muted" style={{ cursor: 'pointer' }}>
+                                    View attendee details
+                                  </summary>
+                                  <div className="mt-2 small">
+                                    <div><strong>Yes:</strong> {rsvpSummary[event.id].Yes?.join(', ') || 'None'}</div>
+                                    <div><strong>No:</strong> {rsvpSummary[event.id].No?.join(', ') || 'None'}</div>
+                                    <div><strong>Maybe:</strong> {rsvpSummary[event.id].Maybe?.join(', ') || 'None'}</div>
+                                  </div>
+                                </details>
+                              </>
+                            ) : (
+                              <div className="text-muted small">No RSVPs yet.</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
+export default EventsPage;

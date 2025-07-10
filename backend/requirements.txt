@@ -1,0 +1,15 @@
+Flask==2.3.3
+Flask-SQLAlchemy==3.0.5
+Flask-JWT-Extended==4.5.3
+Flask-CORS==4.0.0
+python-dotenv==1.0.0
+cloudinary==1.36.0
+Pillow==10.0.1
+python-dateutil==2.8.2
+reportlab==4.0.4
+psycopg2-binary==2.9.7
+sendgrid==6.10.0
+Jinja2==3.1.2
+APScheduler==3.10.4
+icalendar==5.0.11
+gunicorn==21.2.0

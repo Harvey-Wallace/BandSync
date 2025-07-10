@@ -1,0 +1,686 @@
+/* BandSync Custom Styles */
+
+/* Mobile-first responsive utilities */
+@media (max-width: 767.98px) {
+  /* Improve button spacing on mobile */
+  .btn-group-mobile {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .btn-group-mobile .btn {
+    width: 100%;
+  }
+  
+  /* Better card spacing on mobile */
+  .card {
+    margin-bottom: 1rem;
+  }
+  
+  /* Responsive table improvements */
+  .table-responsive-mobile {
+    font-size: 0.875rem;
+  }
+  
+  /* Compact form controls on mobile */
+  .form-control-mobile {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Hide some text on small screens */
+  .d-mobile-none {
+    display: none !important;
+  }
+}
+
+/* Theme color CSS variables */
+:root {
+  --theme-primary: #007bff;
+  --theme-primary-dark: #0056b3;
+  --theme-primary-light: #cce7ff;
+}
+
+/* Custom button styles */
+.btn-theme {
+  background-color: var(--theme-primary);
+  border-color: var(--theme-primary);
+  color: white;
+}
+
+.btn-theme:hover {
+  background-color: var(--theme-primary-dark);
+  border-color: var(--theme-primary-dark);
+  color: white;
+}
+
+.btn-outline-theme {
+  color: var(--theme-primary);
+  border-color: var(--theme-primary);
+}
+
+.btn-outline-theme:hover {
+  background-color: var(--theme-primary);
+  border-color: var(--theme-primary);
+  color: white;
+}
+
+/* Card enhancements */
+.card-hover {
+  transition: all 0.2s ease-in-out;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Avatar improvements */
+.avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: white;
+  background: linear-gradient(135deg, var(--theme-primary), var(--theme-primary-dark));
+}
+
+/* RSVP status indicators */
+.rsvp-yes {
+  background-color: #28a745;
+  color: white;
+}
+
+.rsvp-no {
+  background-color: #dc3545;
+  color: white;
+}
+
+.rsvp-maybe {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+/* Organization logo styles */
+.org-logo {
+  max-height: 32px;
+  max-width: 120px;
+  object-fit: contain;
+}
+
+/* Navbar enhancements */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  background-color: #f8f9fa;
+}
+
+.navbar-brand {
+  transition: all 0.2s ease-in-out;
+}
+
+.navbar-brand:hover {
+  transform: scale(1.05);
+}
+
+/* Navbar improvements */
+.navbar-nav {
+  flex-wrap: nowrap !important;
+  overflow-x: auto;
+}
+
+.navbar-nav .nav-link {
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+/* Ensure navbar doesn't wrap */
+.navbar-collapse {
+  overflow-x: auto;
+}
+
+@media (max-width: 1200px) {
+  .navbar-nav .nav-link {
+    font-size: 0.8rem;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
+
+/* Toast improvements */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 1055;
+}
+
+/* Form enhancements */
+.form-floating-custom .form-control {
+  padding-top: 1.625rem;
+  padding-bottom: 0.625rem;
+}
+
+.form-floating-custom .form-control:focus,
+.form-floating-custom .form-control:not(:placeholder-shown) {
+  padding-top: 1.625rem;
+  padding-bottom: 0.625rem;
+}
+
+.form-floating-custom label {
+  padding: 1rem 0.75rem;
+}
+
+/* Dashboard widget animations */
+.widget-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.widget-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.widget-card.active {
+  border-width: 3px !important;
+  transform: scale(1.02);
+}
+
+/* Loading spinner improvements */
+.spinner-custom {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spinner-border 0.75s linear infinite;
+}
+
+/* Event card status indicators */
+.event-upcoming {
+  border-left: 4px solid var(--theme-primary);
+}
+
+.event-past {
+  border-left: 4px solid #6c757d;
+  opacity: 0.8;
+}
+
+/* Color picker improvements */
+.form-control-color {
+  border-radius: 0.375rem;
+  border: 1px solid #ced4da;
+  padding: 0.25rem;
+}
+
+/* Dark theme improvements */
+[data-bs-theme="dark"] {
+  --bs-body-bg: #1a1a1a;
+  --bs-body-color: #e9ecef;
+  --bs-card-bg: #2d2d2d;
+  --bs-border-color: #404040;
+}
+
+[data-bs-theme="dark"] .card {
+  background-color: var(--bs-card-bg);
+  border-color: var(--bs-border-color);
+}
+
+[data-bs-theme="dark"] .navbar {
+  background-color: #2d2d2d !important;
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary {
+  color: #adb5bd;
+  border-color: #6c757d;
+}
+
+[data-bs-theme="dark"] .btn-outline-secondary:hover {
+  background-color: #6c757d;
+  border-color: #6c757d;
+  color: #fff;
+}
+
+/* Admin dashboard specific styles */
+.admin-widget {
+  min-height: 120px;
+}
+
+.admin-section {
+  margin-bottom: 2rem;
+}
+
+/* Profile page improvements */
+.profile-avatar-large {
+  width: 120px;
+  height: 120px;
+  border: 4px solid var(--theme-primary);
+}
+
+/* Responsive improvements for small screens */
+@media (max-width: 575.98px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .btn-group {
+    flex-direction: column;
+  }
+  
+  .btn-group .btn {
+    border-radius: 0.375rem !important;
+    margin-bottom: 0.25rem;
+  }
+  
+  .btn-group .btn:last-child {
+    margin-bottom: 0;
+  }
+}
+
+/* Print styles */
+@media print {
+  .navbar,
+  .btn,
+  .dropdown,
+  .toast {
+    display: none !important;
+  }
+  
+  .card {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Focus improvements */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+  box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.25);
+}
+
+/* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-primary-dark);
+}
+
+/* Profile bubble and toggle styles */
+.profile-toggle {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.profile-toggle:hover {
+  background-color: #0056b3;
+}
+
+/* Profile bubble styling */
+.profile-bubble {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 20px;
+  min-width: 280px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  animation: profileBubbleSlideIn 0.2s ease-out;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes profileBubbleSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.profile-bubble-header {
+  border-bottom: 1px solid #f1f3f4;
+  padding-bottom: 15px;
+  margin-bottom: 15px !important;
+}
+
+.profile-bubble .info-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.profile-bubble .info-item i {
+  width: 16px;
+  flex-shrink: 0;
+}
+
+.profile-bubble .form-switch .form-check-input {
+  width: 40px;
+  height: 20px;
+  border-radius: 15px;
+  background-color: #dee2e6;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.profile-bubble .form-switch .form-check-input:checked {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
+.profile-bubble .form-switch .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.profile-bubble .btn {
+  font-size: 0.875rem;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.profile-bubble .btn:hover {
+  transform: translateY(-1px);
+}
+
+/* Dark mode styles for profile bubble */
+[data-bs-theme="dark"] .profile-bubble {
+  background: #2d3748;
+  border-color: #4a5568;
+  color: white;
+}
+
+[data-bs-theme="dark"] .profile-bubble .text-dark {
+  color: white !important;
+}
+
+[data-bs-theme="dark"] .profile-bubble .text-muted {
+  color: #a0aec0 !important;
+}
+
+[data-bs-theme="dark"] .profile-bubble-header {
+  border-bottom-color: #4a5568;
+}
+
+[data-bs-theme="dark"] .profile-bubble hr {
+  border-color: #4a5568;
+}
+
+/* Responsive styling for profile bubble */
+@media (max-width: 767.98px) {
+  .profile-bubble {
+    position: fixed !important;
+    top: 60px !important;
+    left: 10px !important;
+    right: 10px !important;
+    width: auto !important;
+    min-width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .profile-bubble {
+    padding: 16px;
+    font-size: 0.875rem;
+  }
+  
+  .profile-bubble .btn {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+  
+  .profile-bubble-header h6 {
+    font-size: 1rem;
+  }
+}
+
+/* Session Timeout Modal Styles */
+.session-timeout-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.session-timeout-modal {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  max-width: 450px;
+  width: 90%;
+  animation: slideIn 0.3s ease-out;
+}
+
+.session-timeout-modal .modal-content {
+  padding: 2rem;
+  text-align: center;
+}
+
+.session-timeout-modal h4 {
+  margin-bottom: 1rem;
+  font-weight: 600;
+}
+
+.session-timeout-modal .text-danger {
+  font-size: 1.2em;
+  font-weight: bold;
+}
+
+.session-timeout-modal .btn {
+  min-width: 120px;
+  font-weight: 500;
+}
+
+/* Dark theme support */
+[data-bs-theme="dark"] .session-timeout-modal {
+  background: #2d3748;
+  color: white;
+}
+
+[data-bs-theme="dark"] .session-timeout-modal .text-muted {
+  color: #a0aec0 !important;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+  .session-timeout-modal .modal-content {
+    padding: 1.5rem;
+  }
+  
+  .session-timeout-modal .d-flex {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .session-timeout-modal .btn {
+    width: 100%;
+  }
+}
+
+/* Organization Switcher Styles */
+.organization-switcher {
+  position: relative;
+}
+
+.organization-switcher .dropdown-menu {
+  min-width: 250px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0;
+  margin-top: 0.5rem;
+}
+
+.organization-switcher .dropdown-header {
+  padding: 0.5rem 1rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  margin-bottom: 0.5rem;
+}
+
+.organization-switcher .dropdown-item {
+  padding: 0.75rem 1rem;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.organization-switcher .dropdown-item:hover {
+  background-color: rgba(0, 123, 255, 0.1);
+}
+
+.organization-switcher .dropdown-item.active {
+  background-color: rgba(0, 123, 255, 0.15);
+  color: #0d6efd;
+  font-weight: 500;
+}
+
+.organization-switcher .dropdown-item:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.organization-switcher .dropdown-item i {
+  width: 1.25rem;
+  text-align: center;
+}
+
+.organization-switcher .dropdown-item-text {
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.organization-switcher .spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Badge styles in navbar */
+.organization-badge {
+  background-color: rgba(255, 255, 255, 0.9) !important;
+  color: #212529 !important;
+  font-weight: 500;
+  padding: 0.35rem 0.65rem;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+}
+
+/* Dark theme adjustments */
+[data-bs-theme="dark"] .organization-switcher .dropdown-menu {
+  background-color: #2d3748;
+  border-color: #4a5568;
+}
+
+[data-bs-theme="dark"] .organization-switcher .dropdown-header {
+  color: #a0aec0;
+  border-bottom-color: #4a5568;
+}
+
+[data-bs-theme="dark"] .organization-switcher .dropdown-item {
+  color: #e2e8f0;
+}
+
+[data-bs-theme="dark"] .organization-switcher .dropdown-item:hover {
+  background-color: rgba(66, 153, 225, 0.2);
+}
+
+[data-bs-theme="dark"] .organization-switcher .dropdown-item.active {
+  background-color: rgba(66, 153, 225, 0.3);
+  color: #90cdf4;
+}
+
+/* Responsive adjustments */
+@media (max-width: 767.98px) {
+  .organization-switcher .dropdown-menu {
+    min-width: 200px;
+    font-size: 0.875rem;
+  }
+  
+  .organization-switcher .dropdown-item {
+    padding: 0.5rem 0.75rem;
+  }
+  
+  .organization-badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+  }
+}

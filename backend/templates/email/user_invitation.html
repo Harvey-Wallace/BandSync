@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to {{ organization.name }} on BandSync!</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        .header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .welcome-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 8px 16px;
+            display: inline-block;
+            margin-top: 10px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .content {
+            padding: 30px 20px;
+        }
+        .greeting {
+            font-size: 20px;
+            margin-bottom: 25px;
+            color: #333;
+            text-align: center;
+        }
+        .welcome-message {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 25px 0;
+            color: #155724;
+            text-align: center;
+        }
+        .credentials-card {
+            background-color: #f8f9fa;
+            border: 2px solid #007bff;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+        }
+        .credentials-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #007bff;
+            margin: 0 0 15px 0;
+            text-align: center;
+        }
+        .credential-item {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: white;
+            border-radius: 4px;
+            border: 1px solid #e9ecef;
+        }
+        .credential-label {
+            font-weight: 600;
+            color: #495057;
+            display: block;
+            margin-bottom: 5px;
+        }
+        .credential-value {
+            font-family: 'Courier New', Monaco, monospace;
+            background-color: #f8f9fa;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            font-size: 16px;
+            color: #495057;
+        }
+        .security-notice {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 6px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #856404;
+        }
+        .cta-section {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background-color: #28a745;
+            color: white;
+            padding: 15px 30px;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        .cta-button:hover {
+            background-color: #218838;
+        }
+        .features-section {
+            margin: 30px 0;
+        }
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-radius: 6px;
+        }
+        .feature-icon {
+            font-size: 24px;
+            margin-right: 15px;
+        }
+        .feature-text {
+            color: #495057;
+        }
+        .footer {
+            background-color: #f8f9fa;
+            padding: 25px 20px;
+            text-align: center;
+            border-top: 1px solid #e9ecef;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .organization-name {
+            font-weight: 600;
+            color: #007bff;
+            font-size: 16px;
+        }
+        .admin-signature {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+            font-style: italic;
+        }
+        @media only screen and (max-width: 600px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+            .content {
+                padding: 20px 15px;
+            }
+            .credentials-card {
+                padding: 20px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎵 Welcome to BandSync!</h1>
+            <div class="welcome-badge">
+                You're now part of {{ organization.name }}
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Hi {{ user.name or user.username }}! 👋
+            </div>
+            
+            <div class="welcome-message">
+                <strong>🎉 Welcome to {{ organization.name }}!</strong><br>
+                You've been invited to join our group on BandSync, where we manage 
+                all our events, schedules, and member communications.
+            </div>
+            
+            <!-- Login Credentials -->
+            <div class="credentials-card">
+                <h3 class="credentials-title">🔑 Your Login Details</h3>
+                
+                <div class="credential-item">
+                    <span class="credential-label">Username:</span>
+                    <div class="credential-value">{{ user.username }}</div>
+                </div>
+                
+                <div class="credential-item">
+                    <span class="credential-label">Temporary Password:</span>
+                    <div class="credential-value">{{ temporary_password }}</div>
+                </div>
+            </div>
+            
+            <div class="security-notice">
+                <strong>🔒 Important Security Note:</strong><br>
+                Please log in and change your password immediately for security. 
+                This temporary password will expire in 7 days.
+            </div>
+            
+            <!-- Login Button -->
+            <div class="cta-section">
+                <a href="{{ login_url }}" class="cta-button">
+                    🚀 Log In to BandSync
+                </a>
+            </div>
+            
+            <!-- Features Overview -->
+            <div class="features-section">
+                <h3 style="color: #495057; margin-bottom: 20px;">What you can do with BandSync:</h3>
+                
+                <div class="feature-item">
+                    <span class="feature-icon">📅</span>
+                    <span class="feature-text">View upcoming events and rehearsals</span>
+                </div>
+                
+                <div class="feature-item">
+                    <span class="feature-icon">✅</span>
+                    <span class="feature-text">RSVP to events with one click</span>
+                </div>
+                
+                <div class="feature-item">
+                    <span class="feature-icon">📍</span>
+                    <span class="feature-text">Get directions to event locations</span>
+                </div>
+                
+                <div class="feature-item">
+                    <span class="feature-icon">📧</span>
+                    <span class="feature-text">Receive automatic event reminders</span>
+                </div>
+                
+                <div class="feature-item">
+                    <span class="feature-icon">👥</span>
+                    <span class="feature-text">See who else is attending events</span>
+                </div>
+                
+                <div class="feature-item">
+                    <span class="feature-icon">📱</span>
+                    <span class="feature-text">Access from any device - phone, tablet, or computer</span>
+                </div>
+            </div>
+            
+            <p style="color: #6c757d; font-size: 14px; margin-top: 30px; text-align: center;">
+                If you have any questions or need help getting started, 
+                please don't hesitate to reach out to {{ inviting_admin.name or inviting_admin.username }}.
+            </p>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>
+                Welcome to the team!<br>
+                <span class="organization-name">{{ organization.name }}</span>
+            </p>
+            
+            <div class="admin-signature">
+                Invitation sent by {{ inviting_admin.name or inviting_admin.username }}
+            </div>
+            
+            <p style="margin-top: 20px; font-size: 12px;">
+                This email was sent by BandSync on behalf of {{ organization.name }}.<br>
+                If you received this email in error, please contact us at <a href="mailto:support@bandsync.com">support@bandsync.com</a>
+            </p>
+        </div>
+    </div>
+</body>
+</html>
