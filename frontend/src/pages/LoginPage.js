@@ -46,7 +46,7 @@ function LoginPage() {
       console.error('Login error:', err);
       console.error('Error response:', err.response?.data);
       console.error('Error status:', err.response?.status);
-      setError(err.response?.data?.message || 'Invalid credentials');
+      setError(err.response?.data?.msg || 'Invalid credentials');
       setLoading(false);
       setMultipleOrgs(null);
       setSelectedOrgId('');

@@ -23,7 +23,9 @@ function RegisterPage() {
       setError('');
       setLoading(false);
     } catch (err) {
-      setError('Registration failed.');
+      // Get the actual error message from backend
+      const errorMessage = err.response?.data?.msg || 'Registration failed.';
+      setError(errorMessage);
       setSuccess('');
       setLoading(false);
     }
