@@ -41,13 +41,12 @@ def serve_static_files(path):
     # Handle static file requests - React is looking for files like:
     # /static/js/main.be6581e9.js but they're at /static/static/js/main.be6581e9.js
     if path.startswith('static/'):
-        # Map /static/css/file.css to static/static/css/file.css
-        nested_path = 'static/' + path
-        print(f"Trying nested path: {nested_path}")
+        # The built React app creates a nested static structure
+        # So /static/css/file.css should be served from static/static/css/file.css
         try:
-            return send_from_directory('.', nested_path)
+            return send_from_directory('static', path)
         except Exception as e:
-            print(f"Error serving nested static file {nested_path}: {e}")
+            print(f"Error serving static file {path}: {e}")
     
     # Try to serve the requested file normally from static directory
     try:
