@@ -9,7 +9,8 @@ load_dotenv()
 # Import models and db
 from models import db, User, Event, RSVP, Organization
 
-app = Flask(__name__)
+# Disable Flask's default static file serving to use our custom route
+app = Flask(__name__, static_folder=None)
 app.config.from_object(Config)
 CORS(app)
 db.init_app(app)
