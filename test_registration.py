@@ -5,10 +5,10 @@ import json
 
 # Test data
 test_data = {
-    "username": "testuser",
-    "email": "test@example.com",
+    "username": "testuser2",
+    "email": "test2@example.com",
     "password": "testpassword123",
-    "organization": "Test Band"
+    "organization": "Test Band 2"
 }
 
 def test_registration():

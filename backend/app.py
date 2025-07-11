@@ -241,4 +241,6 @@ print(f"Static directory exists: {os.path.exists('static')}")
 print(f"Index.html exists: {os.path.exists('static/index.html')}")
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    # Railway sets the PORT environment variable
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
