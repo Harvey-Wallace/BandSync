@@ -59,35 +59,65 @@ def update_password():
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    data = request.get_json()
-    if User.query.filter_by(username=data['username']).first():
-        return jsonify({'msg': 'Username already exists'}), 400
-    org_name = data.get('organization')
-    if not org_name:
-        return jsonify({'msg': 'Organization is required'}), 400
-    org = Organization.query.filter_by(name=org_name).first()
-    org_created = False
-    if not org:
-        # Create new org if not exists
-        org = Organization(name=org_name)
-        db.session.add(org)
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data:
+            return jsonify({'msg': 'No data provided'}), 400
+            
+        required_fields = ['username', 'email', 'password', 'organization']
+        for field in required_fields:
+            if not data.get(field):
+                return jsonify({'msg': f'{field} is required'}), 400
+        
+        # Check if username already exists
+        if User.query.filter_by(username=data['username']).first():
+            return jsonify({'msg': 'Username already exists'}), 400
+            
+        # Check if email already exists
+        if User.query.filter_by(email=data['email']).first():
+            return jsonify({'msg': 'Email already exists'}), 400
+        
+        org_name = data.get('organization')
+        
+        # Find or create organization
+        org = Organization.query.filter_by(name=org_name).first()
+        org_created = False
+        if not org:
+            # Create new org if not exists
+            org = Organization(name=org_name)
+            db.session.add(org)
+            db.session.flush()  # Flush to get the ID
+            org_created = True
+        
+        # If org was just created, first user is Admin
+        if org_created:
+            user_role = 'Admin'
+        else:
+            user_role = data.get('role', 'Member')
+        
+        # Create user
+        user = User(
+            username=data['username'],
+            email=data['email'],
+            role=user_role,
+            organization_id=org.id
+        )
+        user.set_password(data['password'])
+        db.session.add(user)
         db.session.commit()
-        org_created = True
-    # If org was just created, first user is Admin
-    if org_created:
-        user_role = 'Admin'
-    else:
-        user_role = data.get('role', 'Member')
-    user = User(
-        username=data['username'],
-        email=data['email'],
-        role=user_role,
-        organization_id=org.id
-    )
-    user.set_password(data['password'])
-    db.session.add(user)
-    db.session.commit()
-    return jsonify({'msg': 'User registered successfully', 'organization_id': org.id, 'organization': org.name})
+        
+        return jsonify({
+            'msg': 'User registered successfully', 
+            'organization_id': org.id, 
+            'organization': org.name
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Registration error: {e}")
+        return jsonify({'msg': f'Registration failed: {str(e)}'}), 500
 
 @auth_bp.route('/login', methods=['POST'])
 def login():
