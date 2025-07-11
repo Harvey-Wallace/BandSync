@@ -93,41 +93,6 @@ def serve_frontend():
         print(f"Error serving index.html: {e}")
         return f"<h1>BandSync Backend is Running</h1><p>Error serving frontend: {e}</p><p>Try <a href='/health'>/health</a> endpoint</p>", 200
 
-@app.route('/<path:path>')
-def serve_static_files(path):
-    """Serve static files for React frontend"""
-    # Don't serve static files for API routes - be more specific
-    if path.startswith('api/'):
-        # Let Flask handle API routes normally
-        from flask import abort
-        abort(404)
-    
-    print(f"Requested path: {path}")
-    
-    # Handle static file requests - React is looking for files like:
-    # /static/js/main.be6581e9.js but they're at /static/static/js/main.be6581e9.js
-    if path.startswith('static/'):
-        # The built React app creates a nested static structure
-        # So /static/css/file.css should be served from static/static/css/file.css
-        nested_path = 'static/' + path
-        print(f"Trying nested path: {nested_path}")
-        try:
-            return send_from_directory('.', nested_path)
-        except Exception as e:
-            print(f"Error serving nested static file {nested_path}: {e}")
-    
-    # Try to serve the requested file normally from static directory
-    try:
-        return send_from_directory('static', path)
-    except Exception as e:
-        print(f"Error serving static file {path}: {e}")
-        # If file doesn't exist, serve index.html (for React Router)
-        try:
-            return send_from_directory('static', 'index.html')
-        except Exception as e2:
-            print(f"Error serving index.html fallback: {e2}")
-            return f"<h1>BandSync Backend is Running</h1><p>Static file not found: {path}</p><p>Try <a href='/health'>/health</a> endpoint</p>", 200
-
 # Debug route to test specific static file access
 @app.route('/debug/css')
 def debug_css():
@@ -201,6 +166,65 @@ def debug_routes():
             'rule': str(rule)
         })
     return {"routes": routes}
+
+# Catch-all route for React frontend - MUST be at the end
+@app.route('/<path:path>')
+def serve_static_files(path):
+    """Serve static files for React frontend"""
+    # Don't serve static files for API routes - be more specific
+    if path.startswith('api/'):
+        # Return 404 for API routes - they should be handled by blueprints
+        from flask import abort
+        abort(404)
+    
+    # Only handle specific static file types and React routing
+    if not (path.startswith('static/') or 
+            path.endswith('.js') or 
+            path.endswith('.css') or 
+            path.endswith('.html') or 
+            path.endswith('.ico') or 
+            path.endswith('.png') or 
+            path.endswith('.jpg') or 
+            path.endswith('.svg') or 
+            path.endswith('.woff') or 
+            path.endswith('.woff2') or 
+            path.endswith('.ttf') or 
+            path.endswith('.json') or 
+            path.endswith('.txt') or 
+            path.endswith('.map') or
+            path in ['manifest.json', 'sw.js', 'favicon.ico', 'robots.txt']):
+        # For React Router paths, serve index.html
+        try:
+            return send_from_directory('static', 'index.html')
+        except Exception as e:
+            print(f"Error serving index.html for React Router: {e}")
+            return f"<h1>Page not found</h1>", 404
+    
+    print(f"Requested path: {path}")
+    
+    # Handle static file requests - React is looking for files like:
+    # /static/js/main.be6581e9.js but they're at /static/static/js/main.be6581e9.js
+    if path.startswith('static/'):
+        # The built React app creates a nested static structure
+        # So /static/css/file.css should be served from static/static/css/file.css
+        nested_path = 'static/' + path
+        print(f"Trying nested path: {nested_path}")
+        try:
+            return send_from_directory('.', nested_path)
+        except Exception as e:
+            print(f"Error serving nested static file {nested_path}: {e}")
+    
+    # Try to serve the requested file normally from static directory
+    try:
+        return send_from_directory('static', path)
+    except Exception as e:
+        print(f"Error serving static file {path}: {e}")
+        # If file doesn't exist, serve index.html (for React Router)
+        try:
+            return send_from_directory('static', 'index.html')
+        except Exception as e2:
+            print(f"Error serving index.html fallback: {e2}")
+            return f"<h1>BandSync Backend is Running</h1><p>Static file not found: {path}</p><p>Try <a href='/health'>/health</a> endpoint</p>", 200
 
 # Initialize database tables
 with app.app_context():
