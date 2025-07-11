@@ -20,6 +20,69 @@ jwt = JWTManager(app)
 from services.scheduled_tasks import task_service
 task_service.init_app(app)
 
+# Import and register blueprints BEFORE the catch-all route
+from auth.routes import auth_bp
+from routes.events import events_bp
+from routes.admin import admin_bp
+from routes.rsvps import rsvps_bp
+from routes.admin_tools import admin_tools_bp
+from routes.organizations import org_bp
+from routes.email_preferences import email_prefs_bp
+from routes.calendar import calendar_bp
+from routes.custom_fields import custom_fields_bp
+from routes.attachments import attachments_bp
+from routes.surveys import surveys_bp
+from routes.email_management import email_management_bp
+from routes.messages import messages_bp
+from routes.substitutes import substitutes_bp
+from routes.bulk_ops import bulk_ops_bp
+from routes.quick_polls import quick_polls_bp
+
+app.register_blueprint(auth_bp, url_prefix='/api/auth')
+app.register_blueprint(events_bp, url_prefix='/api/events')
+app.register_blueprint(admin_bp, url_prefix='/api/admin')
+app.register_blueprint(rsvps_bp, url_prefix='/api/events')
+app.register_blueprint(admin_tools_bp, url_prefix='/api/admin-tools')
+app.register_blueprint(org_bp, url_prefix='/api/organizations')
+app.register_blueprint(email_prefs_bp, url_prefix='/api/email')
+app.register_blueprint(calendar_bp, url_prefix='/api/calendar')
+app.register_blueprint(custom_fields_bp)
+app.register_blueprint(attachments_bp)
+app.register_blueprint(surveys_bp)
+app.register_blueprint(email_management_bp, url_prefix='/api/email-management')
+app.register_blueprint(messages_bp, url_prefix='/api/messages')
+app.register_blueprint(substitutes_bp, url_prefix='/api/substitutes')
+app.register_blueprint(bulk_ops_bp, url_prefix='/api/bulk-ops')
+app.register_blueprint(quick_polls_bp, url_prefix='/api/quick-polls')
+
+# JWT error handlers
+@jwt.unauthorized_loader
+def unauthorized_callback(callback):
+    print("JWT unauthorized error:", callback)
+    return {"msg": callback}, 401
+
+@jwt.invalid_token_loader
+def invalid_token_callback(callback):
+    print("JWT invalid token error:", callback)
+    return {"msg": callback}, 422
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    print("JWT expired token error")
+    return {"msg": "Token has expired"}, 401
+
+# Health check endpoint for deployment
+@app.route('/health')
+def health_check():
+    """Health check endpoint for load balancers and monitoring"""
+    try:
+        # Check database connection
+        from sqlalchemy import text
+        db.session.execute(text('SELECT 1'))
+        return {"status": "healthy", "database": "connected"}, 200
+    except Exception as e:
+        return {"status": "unhealthy", "error": str(e)}, 500
+
 # Serve React frontend - Updated to fix static file serving
 @app.route('/')
 def serve_frontend():
@@ -33,9 +96,11 @@ def serve_frontend():
 @app.route('/<path:path>')
 def serve_static_files(path):
     """Serve static files for React frontend"""
+    # Don't serve static files for API routes - be more specific
     if path.startswith('api/'):
-        # Don't serve static files for API routes
-        return {"error": "API endpoint not found"}, 404
+        # Let Flask handle API routes normally
+        from flask import abort
+        abort(404)
     
     print(f"Requested path: {path}")
     
@@ -124,67 +189,18 @@ def test_frontend():
     except Exception as e:
         return f"<h1>Error reading HTML</h1><p>{e}</p>"
 
-# Import blueprints
-@jwt.unauthorized_loader
-def unauthorized_callback(callback):
-    print("JWT unauthorized error:", callback)
-    return {"msg": callback}, 401
-
-@jwt.invalid_token_loader
-def invalid_token_callback(callback):
-    print("JWT invalid token error:", callback)
-    return {"msg": callback}, 422
-
-@jwt.expired_token_loader
-def expired_token_callback(jwt_header, jwt_payload):
-    print("JWT expired token error")
-    return {"msg": "Token has expired"}, 401
-
-# Health check endpoint for deployment
-@app.route('/health')
-def health_check():
-    """Health check endpoint for load balancers and monitoring"""
-    try:
-        # Check database connection
-        from sqlalchemy import text
-        db.session.execute(text('SELECT 1'))
-        return {"status": "healthy", "database": "connected"}, 200
-    except Exception as e:
-        return {"status": "unhealthy", "error": str(e)}, 500
-
-from auth.routes import auth_bp
-from routes.events import events_bp
-from routes.admin import admin_bp
-from routes.rsvps import rsvps_bp
-from routes.admin_tools import admin_tools_bp
-from routes.organizations import org_bp
-from routes.email_preferences import email_prefs_bp
-from routes.calendar import calendar_bp
-from routes.custom_fields import custom_fields_bp
-from routes.attachments import attachments_bp
-from routes.surveys import surveys_bp
-from routes.email_management import email_management_bp
-from routes.messages import messages_bp
-from routes.substitutes import substitutes_bp
-from routes.bulk_ops import bulk_ops_bp
-from routes.quick_polls import quick_polls_bp
-
-app.register_blueprint(auth_bp, url_prefix='/api/auth')
-app.register_blueprint(events_bp, url_prefix='/api/events')
-app.register_blueprint(admin_bp, url_prefix='/api/admin')
-app.register_blueprint(rsvps_bp, url_prefix='/api/events')
-app.register_blueprint(admin_tools_bp, url_prefix='/api/admin-tools')
-app.register_blueprint(org_bp, url_prefix='/api/organizations')
-app.register_blueprint(email_prefs_bp, url_prefix='/api/email')
-app.register_blueprint(calendar_bp, url_prefix='/api/calendar')
-app.register_blueprint(custom_fields_bp)
-app.register_blueprint(attachments_bp)
-app.register_blueprint(surveys_bp)
-app.register_blueprint(email_management_bp, url_prefix='/api/email-management')
-app.register_blueprint(messages_bp, url_prefix='/api/messages')
-app.register_blueprint(substitutes_bp, url_prefix='/api/substitutes')
-app.register_blueprint(bulk_ops_bp, url_prefix='/api/bulk-ops')
-app.register_blueprint(quick_polls_bp, url_prefix='/api/quick-polls')
+# Debug endpoint to test API routes
+@app.route('/debug/routes')
+def debug_routes():
+    """Debug endpoint to show registered routes"""
+    routes = []
+    for rule in app.url_map.iter_rules():
+        routes.append({
+            'endpoint': rule.endpoint,
+            'methods': list(rule.methods),
+            'rule': str(rule)
+        })
+    return {"routes": routes}
 
 # Initialize database tables
 with app.app_context():
