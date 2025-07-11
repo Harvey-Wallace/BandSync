@@ -13,7 +13,7 @@ function UserAvatar({
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5001';
+  const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
   // Generate initials from name or username
   const getInitials = (user) => {

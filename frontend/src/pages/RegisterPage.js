@@ -18,7 +18,7 @@ function RegisterPage() {
     setError('');
     setSuccess('');
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/register`, { username, email, password, organization });
+      await axios.post(`${process.env.REACT_APP_API_URL || ''}/api/auth/register`, { username, email, password, organization });
       setSuccess('Registration successful! You can now log in.');
       setError('');
       setLoading(false);

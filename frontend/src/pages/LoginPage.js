@@ -21,7 +21,7 @@ function LoginPage() {
         loginData.organization_id = parseInt(selectedOrgId);
       }
       
-      const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/auth/login`, loginData);
+      const res = await axios.post(`${process.env.REACT_APP_API_URL || ''}/api/auth/login`, loginData);
       
       // Check if user belongs to multiple organizations
       if (res.data.multiple_organizations && !selectedOrgId) {

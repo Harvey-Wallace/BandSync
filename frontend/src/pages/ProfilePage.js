@@ -108,7 +108,7 @@ function ProfilePage() {
         avatar_url: avatarUrl
       };
 
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/auth/profile`, 
+      await axios.put(`${process.env.REACT_APP_API_URL || ''}/api/auth/profile`, 
         profileData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -171,7 +171,7 @@ function ProfilePage() {
     const token = localStorage.getItem('token');
     
     try {
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/auth/update_password`, 
+      await axios.put(`${process.env.REACT_APP_API_URL || ''}/api/auth/update_password`, 
         { 
           current_password: formData.currentPassword,
           new_password: formData.newPassword 
@@ -205,7 +205,7 @@ function ProfilePage() {
     
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL}/api/auth/upload-avatar`,
+        `${process.env.REACT_APP_API_URL || ''}/api/auth/upload-avatar`,
         uploadFormData,
         {
           headers: {

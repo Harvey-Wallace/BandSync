@@ -59,7 +59,7 @@ function EventsPage() {
   const fetchCategories = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/events/categories`, {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || ''}/api/events/categories`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setCategories(res.data);
@@ -71,7 +71,7 @@ function EventsPage() {
   const fetchTemplates = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/events/templates`, {
+      const res = await axios.get(`${process.env.REACT_APP_API_URL || ''}/api/events/templates`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setTemplates(res.data);
@@ -84,7 +84,7 @@ function EventsPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      let url = `${process.env.REACT_APP_API_URL}/api/events/`;
+      let url = `${process.env.REACT_APP_API_URL || ''}/api/events/`;
       
       // Add category filter if selected
       const params = new URLSearchParams();
@@ -108,7 +108,7 @@ function EventsPage() {
       const statusMap = {};
       for (const event of sortedEvents) {
         try {
-          const rsvpRes = await axios.get(`${process.env.REACT_APP_API_URL}/api/events/${event.id}/rsvps`, {
+          const rsvpRes = await axios.get(`${process.env.REACT_APP_API_URL || ''}/api/events/${event.id}/rsvps`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           // Find user's RSVP status
@@ -137,7 +137,7 @@ function EventsPage() {
     const summary = {};
     try {
       for (const event of events) {
-        const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/events/${event.id}/rsvps`, {
+        const res = await axios.get(`${process.env.REACT_APP_API_URL || ''}/api/events/${event.id}/rsvps`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         summary[event.id] = res.data;
@@ -156,7 +156,7 @@ function EventsPage() {
     try {
       if (navigator.onLine) {
         // Online: send RSVP immediately
-        await axios.post(`${process.env.REACT_APP_API_URL}/api/events/${eventId}/rsvp`, { status: rsvpStatus }, {
+        await axios.post(`${process.env.REACT_APP_API_URL || ''}/api/events/${eventId}/rsvp`, { status: rsvpStatus }, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStatus({ ...status, [eventId]: rsvpStatus });
@@ -189,7 +189,7 @@ function EventsPage() {
   const handleCreate = async (data) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL}/api/events/`, data, {
+      await axios.post(`${process.env.REACT_APP_API_URL || ''}/api/events/`, data, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setToast({ show: true, message: 'Event created successfully', type: 'success' });
@@ -204,7 +204,7 @@ function EventsPage() {
   const handleEdit = async (data) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.put(`${process.env.REACT_APP_API_URL}/api/events/${editEvent.id}`, data, {
+      await axios.put(`${process.env.REACT_APP_API_URL || ''}/api/events/${editEvent.id}`, data, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setToast({ show: true, message: 'Event updated successfully', type: 'success' });
@@ -221,7 +221,7 @@ function EventsPage() {
     if (window.confirm('Are you sure you want to delete this event?')) {
       const token = localStorage.getItem('token');
       try {
-        await axios.delete(`${process.env.REACT_APP_API_URL}/api/events/${eventId}`, {
+        await axios.delete(`${process.env.REACT_APP_API_URL || ''}/api/events/${eventId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setToast({ show: true, message: 'Event deleted successfully', type: 'success' });
@@ -259,7 +259,7 @@ function EventsPage() {
   const exportRsvps = async (eventId, format = 'csv') => {
     const token = localStorage.getItem('token');
     try {
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/events/${eventId}/export-rsvps?format=${format}`, {
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || ''}/api/events/${eventId}/export-rsvps?format=${format}`, {
         headers: { Authorization: `Bearer ${token}` },
         responseType: 'blob'
       });
