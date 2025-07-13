@@ -1,5 +1,6 @@
 [phases.build]
 cmds = [
+  "chmod +x frontend/pre-build-check.sh && frontend/pre-build-check.sh",
   "cd frontend && npm install && npm run build",
   "rm -rf backend/static",
   "cp -r frontend/build backend/static"
