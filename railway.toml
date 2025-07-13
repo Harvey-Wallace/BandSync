@@ -8,3 +8,4 @@ restartPolicyType = "ON_FAILURE"
 
 [env]
 FLASK_ENV = "production"
+# Note: REACT_APP_GOOGLE_MAPS_API_KEY should be set in Railway dashboard
