@@ -78,6 +78,7 @@ def get_available_organizations():
             'id': org.id,
             'name': org.name,
             'logo_url': org.logo_url,
+            'theme_color': org.theme_color,
             'role': user_org.role,
             'joined_at': user_org.joined_at.isoformat() if user_org.joined_at else None
         })
@@ -107,7 +108,8 @@ def get_current_organization():
         'organization': {
             'id': org.id,
             'name': org.name,
-            'logo_url': org.logo_url
+            'logo_url': org.logo_url,
+            'theme_color': org.theme_color
         },
         'role': user_org.role if user_org else user.role
     })

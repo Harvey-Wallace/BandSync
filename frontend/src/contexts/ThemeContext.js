@@ -55,19 +55,28 @@ export const ThemeProvider = ({ children }) => {
         return;
       }
 
-      // If we have a token, try to load from API
+      // If we have a token, try to load from API (all users can see the theme)
       const token = localStorage.getItem('token');
-      const role = localStorage.getItem('role');
-      if (token && role === 'Admin') {
+      if (token) {
         try {
-          const response = await fetch(`${process.env.REACT_APP_API_URL}/api/admin/organization`, {
+          // Try user organization endpoint first
+          let response = await fetch(`${process.env.REACT_APP_API_URL}/api/organizations/current`, {
             headers: { Authorization: `Bearer ${token}` }
           });
+          
+          // If user endpoint fails, try admin endpoint (for backwards compatibility)
+          if (!response.ok) {
+            response = await fetch(`${process.env.REACT_APP_API_URL}/api/admin/organization`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+          }
+          
           if (response.ok) {
             const orgData = await response.json();
-            if (orgData.theme_color && orgData.theme_color !== orgThemeColor) {
-              setOrgThemeColor(orgData.theme_color);
-              localStorage.setItem('bandsync-org-color', orgData.theme_color);
+            const themeColor = orgData.theme_color || (orgData.organization && orgData.organization.theme_color);
+            if (themeColor && themeColor !== orgThemeColor) {
+              setOrgThemeColor(themeColor);
+              localStorage.setItem('bandsync-org-color', themeColor);
             }
           }
         } catch (error) {
