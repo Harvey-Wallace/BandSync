@@ -93,23 +93,71 @@ def get_available_organizations():
 def get_current_organization():
     """Get the user's current organization context"""
     user_id = get_jwt_identity()
-    user = User.query.get(user_id)
+    claims = get_jwt()
     
-    if not user or not user.current_organization_id:
-        return jsonify({'error': 'No current organization set'}), 404
+    # Get organization from JWT claims first (current context)
+    org_id = claims.get('organization_id')
     
-    org = Organization.query.get(user.current_organization_id)
+    if not org_id:
+        # Fallback to user's default organization
+        user = User.query.get(user_id)
+        if user and user.current_organization_id:
+            org_id = user.current_organization_id
+        else:
+            return jsonify({'error': 'No current organization set'}), 404
+    
+    org = Organization.query.get(org_id)
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+    
+    # Get user's role in this organization
     user_org = UserOrganization.query.filter_by(
         user_id=user_id, 
-        organization_id=user.current_organization_id
+        organization_id=org_id
     ).first()
+    
+    role = user_org.role if user_org else claims.get('role', 'Member')
+    
+    current_app.logger.info(f"Fetching org data for user {user_id}, org {org_id}")
+    current_app.logger.info(f"Logo URL: {org.logo_url}, Theme: {org.theme_color}")
     
     return jsonify({
         'organization': {
             'id': org.id,
             'name': org.name,
             'logo_url': org.logo_url,
-            'theme_color': org.theme_color
+            'theme_color': org.theme_color or '#007bff'
         },
-        'role': user_org.role if user_org else user.role
+        'role': role,
+        'user_id': user_id  # Debug info
     })
+
+@org_bp.route('/debug', methods=['GET'])
+@jwt_required()
+def debug_organization():
+    """Debug endpoint to troubleshoot organization data issues"""
+    user_id = get_jwt_identity()
+    claims = get_jwt()
+    
+    user = User.query.get(user_id)
+    org_id = claims.get('organization_id') or (user.current_organization_id if user else None)
+    
+    debug_info = {
+        'user_id': user_id,
+        'jwt_claims': claims,
+        'user_current_org_id': user.current_organization_id if user else None,
+        'resolved_org_id': org_id,
+        'organization_data': None
+    }
+    
+    if org_id:
+        org = Organization.query.get(org_id)
+        if org:
+            debug_info['organization_data'] = {
+                'id': org.id,
+                'name': org.name,
+                'logo_url': org.logo_url,
+                'theme_color': org.theme_color
+            }
+    
+    return jsonify(debug_info)

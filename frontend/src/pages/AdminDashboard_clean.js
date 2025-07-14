@@ -311,6 +311,11 @@ function AdminDashboard() {
         if (data.name) {
           localStorage.setItem('organization', data.name);
         }
+        
+        // Refresh navbar theme immediately
+        window.dispatchEvent(new CustomEvent('organizationUpdated', {
+          detail: { theme_color: data.theme_color, name: data.name }
+        }));
       } else {
         showToast('Failed to update organization settings', 'danger');
       }
@@ -356,6 +361,11 @@ function AdminDashboard() {
         const data = await response.json();
         setOrg(prev => ({ ...prev, logo_url: data.logo_url }));
         showToast('Logo uploaded successfully');
+        
+        // Refresh navbar logo immediately
+        window.dispatchEvent(new CustomEvent('organizationUpdated', {
+          detail: { logo_url: data.logo_url }
+        }));
       } else {
         const errorData = await response.json();
         showToast(errorData.error || 'Failed to upload logo', 'danger');

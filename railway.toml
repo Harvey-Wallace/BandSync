@@ -9,3 +9,7 @@ restartPolicyType = "ON_FAILURE"
 [env]
 FLASK_ENV = "production"
 # Note: REACT_APP_GOOGLE_MAPS_API_KEY should be set in Railway dashboard
+# Cloudinary credentials - these should be set in Railway dashboard for security
+# CLOUDINARY_CLOUD_NAME = "your_cloud_name"
+# CLOUDINARY_API_KEY = "your_api_key"
+# CLOUDINARY_API_SECRET = "your_api_secret"

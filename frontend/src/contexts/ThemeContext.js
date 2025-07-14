@@ -43,41 +43,48 @@ export const ThemeProvider = ({ children }) => {
     root.style.setProperty('--theme-primary-light', lighterColor);
     
     localStorage.setItem('bandsync-theme', isDark ? 'dark' : 'light');
-  }, [isDark, orgThemeColor]);
-
-  useEffect(() => {
+  }, [isDark, orgThemeColor]);  useEffect(() => {
     // Load organization theme color from localStorage or API
     const loadOrgTheme = async () => {
       // First try localStorage
       const savedColor = localStorage.getItem('bandsync-org-color');
       if (savedColor && savedColor !== orgThemeColor) {
+        console.log('Loading saved theme color:', savedColor);
         setOrgThemeColor(savedColor);
         return;
       }
-
+      
       // If we have a token, try to load from API (all users can see the theme)
       const token = localStorage.getItem('token');
       if (token) {
         try {
-          // Try user organization endpoint first
-          let response = await fetch(`${process.env.REACT_APP_API_URL}/api/organizations/current`, {
+          console.log('Loading theme from API...');
+          
+          // Try organization current endpoint first
+          let response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/organizations/current`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           
-          // If user endpoint fails, try admin endpoint (for backwards compatibility)
+          // If organization endpoint fails, try admin endpoint (for backwards compatibility)
           if (!response.ok) {
-            response = await fetch(`${process.env.REACT_APP_API_URL}/api/admin/organization`, {
+            console.log('Public org endpoint failed for theme, trying admin endpoint...');
+            response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/admin/organization`, {
               headers: { Authorization: `Bearer ${token}` }
             });
           }
           
           if (response.ok) {
             const orgData = await response.json();
-            const themeColor = orgData.theme_color || (orgData.organization && orgData.organization.theme_color);
+            const organization = orgData.organization || orgData;
+            const themeColor = organization.theme_color || 
+                             (orgData.organization && orgData.organization.theme_color);
             if (themeColor && themeColor !== orgThemeColor) {
+              console.log('Setting theme color from API:', themeColor);
               setOrgThemeColor(themeColor);
               localStorage.setItem('bandsync-org-color', themeColor);
             }
+          } else {
+            console.error('Failed to load theme from API:', response.status);
           }
         } catch (error) {
           console.error('Error loading organization theme:', error);

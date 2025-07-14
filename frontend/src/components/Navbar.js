@@ -24,28 +24,47 @@ function Navbar() {
     const token = localStorage.getItem('token');
     if (token) {
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/auth/profile`, {
+        console.log('Loading profile data...'); // Debug log
+        const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.ok) {
           const data = await response.json();
+          console.log('Profile data loaded:', data); // Debug log
           setProfileData({
             name: data.name || '',
             email: data.email || '',
             phone: data.phone || '',
             address: data.address || ''
           });
-          // Update localStorage as well
+          // Update localStorage as well for persistence
           localStorage.setItem('name', data.name || '');
           localStorage.setItem('email', data.email || '');
           localStorage.setItem('phone', data.phone || '');
           localStorage.setItem('address', data.address || '');
           if (data.avatar_url) {
             localStorage.setItem('avatar_url', data.avatar_url);
+            setUser(prev => ({ ...prev, avatar_url: data.avatar_url }));
           }
+        } else {
+          console.error('Failed to load profile data:', response.status);
+          // Fallback to localStorage data
+          setProfileData({
+            name: localStorage.getItem('name') || '',
+            email: localStorage.getItem('email') || '',
+            phone: localStorage.getItem('phone') || '',
+            address: localStorage.getItem('address') || ''
+          });
         }
       } catch (error) {
         console.error('Error loading profile data:', error);
+        // Fallback to localStorage data
+        setProfileData({
+          name: localStorage.getItem('name') || '',
+          email: localStorage.getItem('email') || '',
+          phone: localStorage.getItem('phone') || '',
+          address: localStorage.getItem('address') || ''
+        });
       }
     }
   }, []);
@@ -55,28 +74,63 @@ function Navbar() {
     avatar_url: localStorage.getItem('avatar_url')
   });
 
+  // Initialize profile data from localStorage on mount
+  useEffect(() => {
+    // Load cached profile data immediately
+    setProfileData({
+      name: localStorage.getItem('name') || '',
+      email: localStorage.getItem('email') || '',
+      phone: localStorage.getItem('phone') || '',
+      address: localStorage.getItem('address') || ''
+    });
+    
+    // Load fresh data from API
+    loadProfileData();
+  }, [loadProfileData]);
+
   // Load organization data from backend
   const loadOrgData = useCallback(async () => {
     const token = localStorage.getItem('token');
-    if (token && role === 'Admin') {
+    if (token) {
       try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/admin/organization`, {
+        console.log('Loading organization data...'); // Debug log
+        
+        // Try the public endpoint first (for logo and theme)
+        let res = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/organizations/current`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        
+        // If that fails, try the admin endpoint
+        if (!res.ok) {
+          console.log('Public org endpoint failed, trying admin endpoint...');
+          res = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/admin/organization`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        }
+        
         if (res.ok) {
           const orgData = await res.json();
-          if (orgData.logo_url) {
-            setOrgLogo(orgData.logo_url);
+          console.log('Organization data loaded:', orgData); // Debug log
+          
+          // Handle both direct response and nested organization object
+          const organization = orgData.organization || orgData;
+          
+          if (organization.logo_url) {
+            console.log('Setting logo URL:', organization.logo_url);
+            setOrgLogo(organization.logo_url);
           }
-          if (orgData.theme_color && orgData.theme_color !== orgThemeColor) {
-            updateOrgThemeColor(orgData.theme_color);
+          if (organization.theme_color && organization.theme_color !== orgThemeColor) {
+            console.log('Setting theme color:', organization.theme_color);
+            updateOrgThemeColor(organization.theme_color);
           }
+        } else {
+          console.error('Failed to load organization data:', res.status);
         }
       } catch (error) {
         console.error('Error loading org data:', error);
       }
     }
-  }, [role, orgThemeColor, updateOrgThemeColor]);
+  }, [orgThemeColor, updateOrgThemeColor]);
 
   useEffect(() => {
     loadOrgData();
