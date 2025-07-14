@@ -3,6 +3,7 @@ console.log('=== Environment Variables Check ===');
 console.log('NODE_ENV:', process.env.NODE_ENV);
 console.log('REACT_APP_API_URL:', process.env.REACT_APP_API_URL);
 console.log('REACT_APP_GOOGLE_MAPS_API_KEY:', process.env.REACT_APP_GOOGLE_MAPS_API_KEY ? 'SET' : 'NOT SET');
+console.log('Build timestamp:', new Date().toISOString());
 
 // This should be added to your frontend build process to verify
 if (!process.env.REACT_APP_GOOGLE_MAPS_API_KEY) {
