@@ -5,6 +5,7 @@ import Toast from '../components/Toast';
 import UserAvatar from '../components/UserAvatar';
 import GroupEmailManager from '../components/GroupEmailManager';
 import BulkOperations from '../components/BulkOperations';
+import DebugEnv from '../components/DebugEnv';
 
 function AdminDashboard() {
   const [org, setOrg] = useState({ name: '', logo_url: '', theme_color: '#007bff' });
@@ -715,6 +716,14 @@ function AdminDashboard() {
               Bulk Operations
             </button>
           </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link ${activeTab === 'debug' ? 'active' : ''}`}
+              onClick={() => setActiveTab('debug')}
+            >
+              Debug
+            </button>
+          </li>
         </ul>
 
         {/* Organization Tab */}
@@ -1228,6 +1237,15 @@ function AdminDashboard() {
           <div className="row">
             <div className="col-12">
               <BulkOperations showToast={showToast} />
+            </div>
+          </div>
+        )}
+
+        {/* Debug Tab */}
+        {activeTab === 'debug' && (
+          <div className="row">
+            <div className="col-12">
+              <DebugEnv />
             </div>
           </div>
         )}

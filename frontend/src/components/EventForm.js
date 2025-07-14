@@ -232,6 +232,13 @@ function EventForm({ onSubmit, initialData, onCancel }) {
 
   const hasGoogleMaps = process.env.REACT_APP_GOOGLE_MAPS_API_KEY && 
                        process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+  
+  // Debug logging
+  console.log('Google Maps API Key Check:', {
+    apiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY ? 'Present' : 'Missing',
+    value: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+    hasGoogleMaps
+  });
 
   return (
     <div className="card">
