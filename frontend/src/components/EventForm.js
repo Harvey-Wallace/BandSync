@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { getGoogleMapsApiKey } from '../config/constants';
 import { Loader } from '@googlemaps/js-api-loader';
 
 function EventForm({ onSubmit, initialData, onCancel }) {
@@ -59,14 +60,14 @@ function EventForm({ onSubmit, initialData, onCancel }) {
       }
       
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places`;
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
     };
 
     fetchCategories();
-    if (process.env.REACT_APP_GOOGLE_MAPS_API_KEY && process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+    if (googleMapsApiKey && googleMapsApiKey !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
       initializeGoogleMaps();
     }
   }, []);
@@ -81,7 +82,7 @@ function EventForm({ onSubmit, initialData, onCancel }) {
   const initializeGoogleMaps = async () => {
     try {
       const loader = new Loader({
-        apiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+        apiKey: googleMapsApiKey,
         version: 'weekly',
         libraries: ['places']
       });
@@ -230,13 +231,17 @@ function EventForm({ onSubmit, initialData, onCancel }) {
     });
   };
 
-  const hasGoogleMaps = process.env.REACT_APP_GOOGLE_MAPS_API_KEY && 
-                       process.env.REACT_APP_GOOGLE_MAPS_API_KEY !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+  const hasGoogleMaps = (process.env.REACT_APP_GOOGLE_MAPS_API_KEY || getGoogleMapsApiKey()) && 
+                       (process.env.REACT_APP_GOOGLE_MAPS_API_KEY || getGoogleMapsApiKey()) !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+  
+  // Get the API key from environment or fallback
+  const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || getGoogleMapsApiKey();
   
   // Debug logging
   console.log('Google Maps API Key Check:', {
-    apiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY ? 'Present' : 'Missing',
-    value: process.env.REACT_APP_GOOGLE_MAPS_API_KEY,
+    envKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY ? 'Present' : 'Missing',
+    fallbackKey: getGoogleMapsApiKey() ? 'Present' : 'Missing',
+    finalKey: googleMapsApiKey ? 'Present' : 'Missing',
     hasGoogleMaps
   });
 

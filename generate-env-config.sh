@@ -1,3 +1,10 @@
+#!/bin/bash
+
+# Generate environment configuration for React build
+echo "🔧 Generating environment configuration..."
+
+# Create the env-config.js file with actual values
+cat > frontend/public/env-config.js << 'EOF'
 // Runtime environment configuration
 window.ENV = {
   REACT_APP_API_URL: 'https://bandsync-production.up.railway.app',
@@ -13,3 +20,6 @@ if (typeof window !== 'undefined') {
 }
 
 console.log('🔧 Environment configuration loaded:', window.ENV);
+EOF
+
+echo "✅ Environment configuration generated"

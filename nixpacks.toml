@@ -1,7 +1,8 @@
 [phases.build]
 cmds = [
   "chmod +x frontend/pre-build-check.sh && frontend/pre-build-check.sh",
-  "chmod +x build-frontend.sh && ./build-frontend.sh",
+  "chmod +x generate-env-config.sh && ./generate-env-config.sh",
+  "cd frontend && npm install && npm run build",
   "rm -rf backend/static",
   "cp -r frontend/build backend/static"
 ]
