@@ -9,6 +9,51 @@ load_dotenv()
 # Import models and db
 from models import db, User, Event, RSVP, Organization
 
+# Auto-migration for Railway
+def auto_migrate_password_reset():
+    """Automatically add password reset fields on app startup"""
+    
+    # Only run in production
+    if os.getenv('ENVIRONMENT') != 'production':
+        return True
+    
+    database_url = os.getenv('DATABASE_URL')
+    if not database_url:
+        print("DATABASE_URL not found - skipping migration")
+        return False
+    
+    try:
+        from sqlalchemy import create_engine, text
+        engine = create_engine(database_url)
+        
+        with engine.connect() as conn:
+            # Check if columns exist
+            result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'user' 
+                AND column_name IN ('password_reset_token', 'password_reset_expires')
+            """))
+            
+            existing = [row[0] for row in result.fetchall()]
+            
+            # Add missing columns
+            if 'password_reset_token' not in existing:
+                conn.execute(text('ALTER TABLE "user" ADD COLUMN password_reset_token VARCHAR(255) NULL'))
+                print("✅ Added password_reset_token column")
+            
+            if 'password_reset_expires' not in existing:
+                conn.execute(text('ALTER TABLE "user" ADD COLUMN password_reset_expires TIMESTAMP NULL'))
+                print("✅ Added password_reset_expires column")
+            
+            conn.commit()
+            print("🎉 Password reset migration completed")
+            return True
+            
+    except Exception as e:
+        print(f"❌ Migration failed: {e}")
+        return False
+
 # Disable Flask's default static file serving to use our custom route
 app = Flask(__name__, static_folder=None)
 app.config.from_object(Config)
@@ -235,6 +280,9 @@ print("BandSync Flask app is starting...")
 print(f"Current working directory: {os.getcwd()}")
 print(f"Static directory exists: {os.path.exists('static')}")
 print(f"Index.html exists: {os.path.exists('static/index.html')}")
+
+# Run auto-migration on startup
+auto_migrate_password_reset()
 
 if __name__ == '__main__':
     # Railway sets the PORT environment variable
