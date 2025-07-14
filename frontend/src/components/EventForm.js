@@ -231,16 +231,20 @@ function EventForm({ onSubmit, initialData, onCancel }) {
     });
   };
 
-  const hasGoogleMaps = (process.env.REACT_APP_GOOGLE_MAPS_API_KEY || getGoogleMapsApiKey()) && 
-                       (process.env.REACT_APP_GOOGLE_MAPS_API_KEY || getGoogleMapsApiKey()) !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+  // Direct hardcoded values as final fallback
+  const HARDCODED_API_KEY = 'AIzaSyC11N3v1N5Gl14LJ2Cl9TjasJNzE5wVkEc';
   
-  // Get the API key from environment or fallback
-  const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || getGoogleMapsApiKey();
+  const hasGoogleMaps = (process.env.REACT_APP_GOOGLE_MAPS_API_KEY || getGoogleMapsApiKey() || HARDCODED_API_KEY) && 
+                       (process.env.REACT_APP_GOOGLE_MAPS_API_KEY || getGoogleMapsApiKey() || HARDCODED_API_KEY) !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE';
+  
+  // Get the API key from environment, fallback, or hardcoded
+  const googleMapsApiKey = process.env.REACT_APP_GOOGLE_MAPS_API_KEY || getGoogleMapsApiKey() || HARDCODED_API_KEY;
   
   // Debug logging
   console.log('Google Maps API Key Check:', {
     envKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY ? 'Present' : 'Missing',
     fallbackKey: getGoogleMapsApiKey() ? 'Present' : 'Missing',
+    hardcodedKey: HARDCODED_API_KEY ? 'Present' : 'Missing',
     finalKey: googleMapsApiKey ? 'Present' : 'Missing',
     hasGoogleMaps
   });
