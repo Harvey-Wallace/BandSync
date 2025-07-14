@@ -8,9 +8,7 @@ import logging
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
 from jinja2 import Environment, FileSystemLoader
-import sendgrid
-from sendgrid.helpers.mail import Mail, Email, To, Content, Subject
-from sendgrid.helpers.mail import Attachment, FileContent, FileName, FileType, Disposition
+import resend
 from models import db, EmailLog
 
 logger = logging.getLogger(__name__)
@@ -19,15 +17,16 @@ class EmailService:
     """Main email service class for BandSync"""
     
     def __init__(self):
-        self.api_key = os.environ.get('SENDGRID_API_KEY')
+        self.api_key = os.environ.get('RESEND_API_KEY')
         self.from_email = os.environ.get('FROM_EMAIL', 'noreply@bandsync.com')
         self.from_name = os.environ.get('FROM_NAME', 'BandSync')
         self.base_url = os.environ.get('BASE_URL', 'https://bandsync.com')
         
         if self.api_key:
-            self.client = sendgrid.SendGridAPIClient(api_key=self.api_key)
+            resend.api_key = self.api_key
+            self.client = True  # Mark as available
         else:
-            logger.warning("SENDGRID_API_KEY not found. Email functionality will be disabled.")
+            logger.warning("RESEND_API_KEY not found. Email functionality will be disabled.")
             self.client = None
         
         # Initialize template environment
@@ -37,7 +36,7 @@ class EmailService:
     def _send_email(self, to_emails: List[str], subject: str, html_content: str, 
                    text_content: Optional[str] = None, attachments: Optional[List[Dict]] = None) -> bool:
         """
-        Send email using SendGrid
+        Send email using Resend
         
         Args:
             to_emails: List of recipient email addresses
@@ -54,46 +53,49 @@ class EmailService:
             return False
         
         try:
-            from_email = Email(self.from_email, self.from_name)
+            # For multiple recipients, send individual emails
+            # Resend doesn't support bulk sending to multiple recipients in one call
+            success_count = 0
             
-            # Handle multiple recipients
-            if len(to_emails) == 1:
-                to_email = To(to_emails[0])
-                mail = Mail(from_email, to_email, subject, Content("text/html", html_content))
-            else:
-                # For multiple recipients, use personalization
-                mail = Mail()
-                mail.from_email = from_email
-                mail.subject = subject
+            for to_email in to_emails:
+                email_data = {
+                    "from": f"{self.from_name} <{self.from_email}>",
+                    "to": to_email,
+                    "subject": subject,
+                    "html": html_content,
+                }
                 
-                for email in to_emails:
-                    mail.add_to(To(email))
+                # Add plain text version if provided
+                if text_content:
+                    email_data["text"] = text_content
                 
-                mail.add_content(Content("text/html", html_content))
+                # Add attachments if provided
+                if attachments:
+                    email_data["attachments"] = []
+                    for attachment in attachments:
+                        email_data["attachments"].append({
+                            "filename": attachment["filename"],
+                            "content": attachment["content"],
+                            "content_type": attachment.get("type", "application/octet-stream")
+                        })
+                
+                # Send the email using Resend
+                response = resend.Emails.send(email_data)
+                
+                if response.get("id"):
+                    success_count += 1
+                    logger.info(f"Email sent successfully to {to_email}, ID: {response['id']}")
+                else:
+                    logger.error(f"Failed to send email to {to_email}: {response}")
             
-            # Add plain text version if provided
-            if text_content:
-                mail.add_content(Content("text/plain", text_content))
-            
-            # Add attachments if provided
-            if attachments:
-                for attachment in attachments:
-                    file_attachment = Attachment(
-                        FileContent(attachment['content']),
-                        FileName(attachment['filename']),
-                        FileType(attachment['type']),
-                        Disposition('attachment')
-                    )
-                    mail.add_attachment(file_attachment)
-            
-            # Send the email
-            response = self.client.send(mail)
-            
-            if response.status_code in [200, 202]:
-                logger.info(f"Email sent successfully to {len(to_emails)} recipients")
+            if success_count == len(to_emails):
+                logger.info(f"All {len(to_emails)} emails sent successfully")
+                return True
+            elif success_count > 0:
+                logger.warning(f"Sent {success_count} of {len(to_emails)} emails successfully")
                 return True
             else:
-                logger.error(f"Email sending failed with status code: {response.status_code}")
+                logger.error(f"Failed to send all emails")
                 return False
                 
         except Exception as e:
@@ -103,7 +105,7 @@ class EmailService:
     def _log_email(self, user_id: int, organization_id: int, email_type: str, 
                   subject: str, status: str, event_id: Optional[int] = None, 
                   error_message: Optional[str] = None, 
-                  sendgrid_message_id: Optional[str] = None) -> None:
+                  resend_message_id: Optional[str] = None) -> None:
         """
         Log email sending attempt to database
         
@@ -115,7 +117,7 @@ class EmailService:
             status: 'sent' or 'failed'
             event_id: Optional event ID if email is event-related
             error_message: Optional error message if failed
-            sendgrid_message_id: Optional SendGrid message ID for tracking
+            resend_message_id: Optional Resend message ID for tracking
         """
         try:
             log_entry = EmailLog(
@@ -127,7 +129,7 @@ class EmailService:
                 sent_at=datetime.utcnow(),
                 status=status,
                 error_message=error_message,
-                sendgrid_message_id=sendgrid_message_id
+                sendgrid_message_id=resend_message_id  # Reusing the column for Resend message ID
             )
             
             db.session.add(log_entry)

@@ -33,7 +33,7 @@ services:
       - REDIS_URL=redis://redis:6379
       - FLASK_ENV=production
       - JWT_SECRET_KEY=your-jwt-secret-key
-      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - RESEND_API_KEY=${RESEND_API_KEY}
       - FROM_EMAIL=${FROM_EMAIL}
       - BASE_URL=${BASE_URL}
     depends_on:
