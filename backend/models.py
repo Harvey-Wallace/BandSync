@@ -104,6 +104,10 @@ class User(db.Model):
     email_substitute_filled = db.Column(db.Boolean, default=True)
     unsubscribe_token = db.Column(db.String(255), nullable=True)
     
+    # Password reset
+    password_reset_token = db.Column(db.String(255), nullable=True)
+    password_reset_expires = db.Column(db.DateTime, nullable=True)
+    
     # Notification preferences
     notification_messages = db.Column(db.Boolean, default=True)
     notification_substitute_requests = db.Column(db.Boolean, default=True)
@@ -124,6 +128,36 @@ class User(db.Model):
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+    
+    def generate_password_reset_token(self):
+        """Generate a password reset token that expires in 1 hour"""
+        import secrets
+        from datetime import datetime, timedelta
+        
+        token = secrets.token_urlsafe(32)
+        self.password_reset_token = token
+        self.password_reset_expires = datetime.utcnow() + timedelta(hours=1)
+        return token
+    
+    def verify_password_reset_token(self, token):
+        """Verify if the password reset token is valid and not expired"""
+        from datetime import datetime
+        
+        if not self.password_reset_token or not self.password_reset_expires:
+            return False
+        
+        if self.password_reset_token != token:
+            return False
+        
+        if datetime.utcnow() > self.password_reset_expires:
+            return False
+        
+        return True
+    
+    def clear_password_reset_token(self):
+        """Clear the password reset token after use"""
+        self.password_reset_token = None
+        self.password_reset_expires = None
     
     def get_organizations(self):
         """Get all organizations this user belongs to"""

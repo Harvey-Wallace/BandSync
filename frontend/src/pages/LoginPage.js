@@ -9,6 +9,10 @@ function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [multipleOrgs, setMultipleOrgs] = useState(null);
   const [selectedOrgId, setSelectedOrgId] = useState('');
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetMessage, setResetMessage] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -54,9 +58,39 @@ function LoginPage() {
   };
 
   const handleBackToLogin = () => {
+    setShowPasswordReset(false);
     setMultipleOrgs(null);
     setSelectedOrgId('');
     setError('');
+    setResetMessage('');
+    setResetEmail('');
+  };
+
+  const handlePasswordReset = async (e) => {
+    e.preventDefault();
+    setResetLoading(true);
+    setError('');
+    setResetMessage('');
+    
+    try {
+      await axios.post(`${process.env.REACT_APP_API_URL || ''}/api/auth/password-reset-request`, {
+        email: resetEmail
+      });
+      
+      setResetMessage('If an account with that email exists, a password reset link has been sent to your email.');
+      setResetEmail('');
+    } catch (err) {
+      console.error('Password reset error:', err);
+      setError(err.response?.data?.msg || 'An error occurred. Please try again.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleShowPasswordReset = () => {
+    setShowPasswordReset(true);
+    setError('');
+    setResetMessage('');
   };
 
   return (
@@ -67,10 +101,43 @@ function LoginPage() {
             <div className="card-body">
               <h2 className="card-title text-center mb-4">
                 <i className="bi bi-music-note me-2"></i>
-                BandSync Login
+                {showPasswordReset ? 'Reset Password' : 'BandSync Login'}
               </h2>
               
-              {!multipleOrgs ? (
+              {showPasswordReset ? (
+                <form onSubmit={handlePasswordReset}>
+                  <div className="mb-3">
+                    <label className="form-label">Email Address</label>
+                    <input 
+                      type="email"
+                      className="form-control" 
+                      value={resetEmail} 
+                      onChange={e => setResetEmail(e.target.value)} 
+                      required 
+                      disabled={resetLoading}
+                      placeholder="Enter your email address"
+                    />
+                    <div className="form-text">
+                      We'll send a password reset link to this email address.
+                    </div>
+                  </div>
+                  {error && <div className="alert alert-danger">{error}</div>}
+                  {resetMessage && <div className="alert alert-success">{resetMessage}</div>}
+                  <div className="d-grid gap-2">
+                    <button className="btn btn-primary" type="submit" disabled={resetLoading}>
+                      {resetLoading ? <Spinner size={20} /> : 'Send Reset Link'}
+                    </button>
+                    <button 
+                      type="button" 
+                      className="btn btn-outline-secondary" 
+                      onClick={handleBackToLogin}
+                      disabled={resetLoading}
+                    >
+                      Back to Login
+                    </button>
+                  </div>
+                </form>
+              ) : !multipleOrgs ? (
                 <form onSubmit={handleSubmit}>
                   <div className="mb-3">
                     <label className="form-label">Username</label>
@@ -144,7 +211,56 @@ function LoginPage() {
               
               <div className="text-center mt-3">
                 <p className="mb-0">No account? <a href="/register">Register</a></p>
+                {!showPasswordReset && (
+                  <p className="mb-0">
+                    <button 
+                      type="button" 
+                      className="btn btn-link p-0 text-decoration-none" 
+                      onClick={handleShowPasswordReset}
+                    >
+                      Forgot your password?
+                    </button>
+                  </p>
+                )}
               </div>
+              
+              {showPasswordReset && (
+                <div className="mt-4">
+                  <div className="alert alert-info">
+                    <i className="bi bi-info-circle me-2"></i>
+                    Enter your email to receive a password reset link.
+                  </div>
+                  <form onSubmit={handlePasswordReset}>
+                    <div className="mb-3">
+                      <label className="form-label">Email Address</label>
+                      <input 
+                        type="email" 
+                        className="form-control" 
+                        value={resetEmail} 
+                        onChange={e => setResetEmail(e.target.value)} 
+                        required 
+                        disabled={resetLoading}
+                        placeholder="Enter your email address"
+                      />
+                    </div>
+                    {error && <div className="alert alert-danger">{error}</div>}
+                    {resetMessage && <div className="alert alert-success">{resetMessage}</div>}
+                    <div className="d-grid gap-2">
+                      <button className="btn btn-primary" type="submit" disabled={resetLoading}>
+                        {resetLoading ? <Spinner size={20} /> : 'Send Reset Link'}
+                      </button>
+                      <button 
+                        type="button" 
+                        className="btn btn-outline-secondary" 
+                        onClick={handleBackToLogin}
+                        disabled={resetLoading}
+                      >
+                        Back to Login
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
             </div>
           </div>
         </div>
