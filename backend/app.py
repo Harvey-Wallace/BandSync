@@ -88,7 +88,12 @@ def health_check():
 def serve_frontend():
     """Serve the React frontend"""
     try:
-        return send_from_directory('static', 'index.html')
+        response = send_from_directory('static', 'index.html')
+        # Add cache headers to prevent stale index.html
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
     except Exception as e:
         print(f"Error serving index.html: {e}")
         return f"<h1>BandSync Backend is Running</h1><p>Error serving frontend: {e}</p><p>Try <a href='/health'>/health</a> endpoint</p>", 200
@@ -177,29 +182,6 @@ def serve_static_files(path):
         from flask import abort
         abort(404)
     
-    # Only handle specific static file types and React routing
-    if not (path.startswith('static/') or 
-            path.endswith('.js') or 
-            path.endswith('.css') or 
-            path.endswith('.html') or 
-            path.endswith('.ico') or 
-            path.endswith('.png') or 
-            path.endswith('.jpg') or 
-            path.endswith('.svg') or 
-            path.endswith('.woff') or 
-            path.endswith('.woff2') or 
-            path.endswith('.ttf') or 
-            path.endswith('.json') or 
-            path.endswith('.txt') or 
-            path.endswith('.map') or
-            path in ['manifest.json', 'sw.js', 'favicon.ico', 'robots.txt']):
-        # For React Router paths, serve index.html
-        try:
-            return send_from_directory('static', 'index.html')
-        except Exception as e:
-            print(f"Error serving index.html for React Router: {e}")
-            return f"<h1>Page not found</h1>", 404
-    
     print(f"Requested path: {path}")
     
     # Handle static file requests - React is looking for files like:
@@ -213,18 +195,32 @@ def serve_static_files(path):
             return send_from_directory('.', nested_path)
         except Exception as e:
             print(f"Error serving nested static file {nested_path}: {e}")
+            # If nested path fails, return 404 instead of falling back to index.html
+            from flask import abort
+            abort(404)
     
-    # Try to serve the requested file normally from static directory
-    try:
-        return send_from_directory('static', path)
-    except Exception as e:
-        print(f"Error serving static file {path}: {e}")
-        # If file doesn't exist, serve index.html (for React Router)
+    # For static file extensions, try to serve them directly
+    static_extensions = ['.js', '.css', '.html', '.ico', '.png', '.jpg', '.svg', '.woff', '.woff2', '.ttf', '.json', '.txt', '.map']
+    if any(path.endswith(ext) for ext in static_extensions) or path in ['manifest.json', 'sw.js', 'favicon.ico', 'robots.txt']:
         try:
-            return send_from_directory('static', 'index.html')
-        except Exception as e2:
-            print(f"Error serving index.html fallback: {e2}")
-            return f"<h1>BandSync Backend is Running</h1><p>Static file not found: {path}</p><p>Try <a href='/health'>/health</a> endpoint</p>", 200
+            return send_from_directory('static', path)
+        except Exception as e:
+            print(f"Error serving static file {path}: {e}")
+            # For missing static files, return 404 instead of index.html
+            from flask import abort
+            abort(404)
+    
+    # For everything else (React Router paths), serve index.html
+    try:
+        response = send_from_directory('static', 'index.html')
+        # Add cache headers to prevent stale index.html
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
+    except Exception as e:
+        print(f"Error serving index.html for React Router: {e}")
+        return f"<h1>Page not found</h1>", 404
 
 # Initialize database tables
 with app.app_context():
