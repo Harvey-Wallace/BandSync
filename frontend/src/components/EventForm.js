@@ -63,35 +63,27 @@ function EventForm({ onSubmit, initialData, onCancel }) {
       script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places`;
       script.async = true;
       script.defer = true;
+      script.onload = () => {
+        console.log('Google Maps script loaded, initializing map...');
+        // Add a small delay to ensure DOM is ready
+        setTimeout(() => {
+          initializeMap();
+        }, 100);
+      };
       document.head.appendChild(script);
     };
 
-    fetchCategories();
-    if (googleMapsApiKey && googleMapsApiKey !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
-      initializeGoogleMaps();
-    }
-  }, []);
+    const initializeMap = () => {
+      if (!window.google || !window.google.maps || !mapRef.current) {
+        console.error('Google Maps not loaded or map ref not available');
+        return;
+      }
 
-  useEffect(() => {
-    if (mapInstance.current && locationLat && locationLng) {
-      updateMapLocation(locationLat, locationLng);
-    }
-  }, [locationLat, locationLng]);
-
-  // eslint-disable-next-line no-unused-vars
-  const initializeGoogleMaps = async () => {
-    try {
-      const loader = new Loader({
-        apiKey: googleMapsApiKey,
-        version: 'weekly',
-        libraries: ['places']
-      });
-
-      const google = await loader.load();
-      
-      // Initialize map
-      if (mapRef.current) {
-        const map = new google.maps.Map(mapRef.current, {
+      try {
+        console.log('Initializing Google Maps...');
+        
+        // Initialize map
+        const map = new window.google.maps.Map(mapRef.current, {
           center: { lat: 51.5074, lng: -0.1278 }, // Default to London
           zoom: 13,
           mapTypeControl: false,
@@ -101,9 +93,9 @@ function EventForm({ onSubmit, initialData, onCancel }) {
         
         mapInstance.current = map;
 
-        // Initialize autocomplete
+        // Initialize autocomplete if input exists
         if (autocompleteRef.current) {
-          const autocomplete = new google.maps.places.Autocomplete(
+          const autocomplete = new window.google.maps.places.Autocomplete(
             autocompleteRef.current,
             {
               types: ['establishment', 'geocode'],
@@ -120,48 +112,38 @@ function EventForm({ onSubmit, initialData, onCancel }) {
               setLocationAddress(place.formatted_address || '');
               setLocationLat(lat);
               setLocationLng(lng);
-              setLocationPlaceId(place.place_id || '');
               setLocation(place.name || place.formatted_address || '');
-              
               updateMapLocation(lat, lng);
             }
           });
         }
 
-        // Add click listener to map for manual pin placement
+        // Add click listener to map
         map.addListener('click', (event) => {
           const lat = event.latLng.lat();
           const lng = event.latLng.lng();
-          
           setLocationLat(lat);
           setLocationLng(lng);
           updateMapLocation(lat, lng);
-          
-          // Reverse geocode to get address
-          const geocoder = new google.maps.Geocoder();
-          geocoder.geocode(
-            { location: { lat, lng } },
-            (results, status) => {
-              if (status === 'OK' && results[0]) {
-                setLocationAddress(results[0].formatted_address);
-                if (!location) {
-                  setLocation(results[0].formatted_address);
-                }
-              }
-            }
-          );
         });
 
-        // If we have initial coordinates, show them on the map
-        if (initialData?.location_lat && initialData?.location_lng) {
-          updateMapLocation(initialData.location_lat, initialData.location_lng);
-        }
+        console.log('Google Maps initialized successfully');
+      } catch (error) {
+        console.error('Error initializing Google Maps:', error);
       }
+    };
 
-    } catch (error) {
-      console.error('Error loading Google Maps:', error);
+    fetchCategories();
+    if (googleMapsApiKey && googleMapsApiKey !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
+      initializeGoogleMaps();
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (mapInstance.current && locationLat && locationLng) {
+      updateMapLocation(locationLat, locationLng);
+    }
+  }, [locationLat, locationLng]);
 
   const updateMapLocation = (lat, lng) => {
     if (!mapInstance.current || !window.google) return;
