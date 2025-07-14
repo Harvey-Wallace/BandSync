@@ -352,217 +352,247 @@ def refresh():
 @auth_bp.route('/password-reset-request', methods=['POST'])
 def password_reset_request():
     """Request a password reset email"""
-    data = request.get_json()
-    email = data.get('email')
-    
-    if not email:
-        return jsonify({'msg': 'Email is required'}), 400
-    
-    user = User.query.filter_by(email=email).first()
-    
-    # Always return success to prevent email enumeration
-    if user:
-        try:
-            # Generate password reset token
-            token = user.generate_password_reset_token()
-            db.session.commit()
-            
-            # Send password reset email
-            email_service = EmailService()
-            base_url = os.getenv('BASE_URL', 'http://localhost:3000')
-            reset_url = f"{base_url}/reset-password?token={token}"
-            
-            # Get user's organization for context
-            org = user.current_organization or user.primary_organization or user.organization
-            org_name = org.name if org else 'BandSync'
-            
-            html_content = f"""
-            <html>
-            <head>
-                <style>
-                    body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                    .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                    .header {{ text-align: center; margin-bottom: 30px; }}
-                    .logo {{ font-size: 24px; font-weight: bold; color: #007bff; }}
-                    .content {{ background: #f8f9fa; padding: 30px; border-radius: 8px; }}
-                    .button {{ display: inline-block; padding: 12px 30px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
-                    .warning {{ color: #856404; background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; }}
-                    .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
-                </style>
-            </head>
-            <body>
-                <div class="container">
-                    <div class="header">
-                        <div class="logo">🎵 BandSync</div>
-                        <h1>Password Reset Request</h1>
-                    </div>
-                    
-                    <div class="content">
-                        <p>Hello <strong>{user.name or user.username}</strong>,</p>
-                        
-                        <p>You have requested to reset your password for your BandSync account in <strong>{org_name}</strong>.</p>
-                        
-                        <p>Click the button below to reset your password:</p>
-                        
-                        <div style="text-align: center;">
-                            <a href="{reset_url}" class="button">Reset Password</a>
-                        </div>
-                        
-                        <p>Or copy and paste this link into your browser:</p>
-                        <p style="word-break: break-all; background: #e9ecef; padding: 10px; border-radius: 5px;">{reset_url}</p>
-                        
-                        <div class="warning">
-                            <strong>⚠️ Important:</strong>
-                            <ul>
-                                <li>This link will expire in 1 hour</li>
-                                <li>If you didn't request this reset, please ignore this email</li>
-                                <li>For security, this link can only be used once</li>
-                            </ul>
-                        </div>
-                        
-                        <p>If you're having trouble with the link, you can request a new password reset from the login page.</p>
-                    </div>
-                    
-                    <div class="footer">
-                        <p>This email was sent by BandSync for {org_name}</p>
-                        <p>If you have questions, please contact your organization administrator.</p>
-                    </div>
-                </div>
-            </body>
-            </html>
-            """
-            
-            text_content = f"""
-            BandSync - Password Reset Request
-            
-            Hello {user.name or user.username},
-            
-            You have requested to reset your password for your BandSync account in {org_name}.
-            
-            Please visit the following link to reset your password:
-            {reset_url}
-            
-            Important:
-            - This link will expire in 1 hour
-            - If you didn't request this reset, please ignore this email
-            - For security, this link can only be used once
-            
-            If you're having trouble with the link, you can request a new password reset from the login page.
-            
-            This email was sent by BandSync for {org_name}.
-            """
-            
-            success = email_service._send_email(
-                to_emails=[user.email],
-                subject=f"Password Reset - {org_name}",
-                html_content=html_content,
-                text_content=text_content
-            )
-            
-            if not success:
-                print(f"Failed to send password reset email to {user.email}")
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({'msg': 'Email is required'}), 400
+        
+        user = User.query.filter_by(email=email).first()
+        
+        # Always return success to prevent email enumeration
+        if user:
+            try:
+                # Check if password reset columns exist
+                if not hasattr(user, 'password_reset_token'):
+                    return jsonify({'msg': 'Password reset temporarily unavailable. Please contact administrator.'}), 503
                 
-        except Exception as e:
-            print(f"Error sending password reset email: {e}")
-            db.session.rollback()
-    
-    return jsonify({'msg': 'If an account with that email exists, a password reset link has been sent.'})
+                # Generate password reset token
+                token = user.generate_password_reset_token()
+                db.session.commit()
+                
+                # Send password reset email
+                from services.email_service import EmailService
+                email_service = EmailService()
+                
+                if not email_service.client:
+                    return jsonify({'msg': 'Email service not configured. Please contact administrator.'}), 503
+                
+                base_url = os.getenv('BASE_URL', 'http://localhost:3000')
+                reset_url = f"{base_url}/reset-password?token={token}"
+                
+                # Get user's organization for context
+                org = user.current_organization or user.primary_organization or user.organization
+                org_name = org.name if org else 'BandSync'
+                
+                html_content = f"""
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ text-align: center; margin-bottom: 30px; }}
+                        .logo {{ font-size: 24px; font-weight: bold; color: #007bff; }}
+                        .content {{ background: #f8f9fa; padding: 30px; border-radius: 8px; }}
+                        .button {{ display: inline-block; padding: 12px 30px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                        .warning {{ color: #856404; background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+                        .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <div class="logo">🎵 BandSync</div>
+                            <h1>Password Reset Request</h1>
+                        </div>
+                        
+                        <div class="content">
+                            <p>Hello <strong>{user.name or user.username}</strong>,</p>
+                            
+                            <p>You have requested to reset your password for your BandSync account in <strong>{org_name}</strong>.</p>
+                            
+                            <p>Click the button below to reset your password:</p>
+                            
+                            <div style="text-align: center;">
+                                <a href="{reset_url}" class="button">Reset Password</a>
+                            </div>
+                            
+                            <p>Or copy and paste this link into your browser:</p>
+                            <p style="word-break: break-all; background: #e9ecef; padding: 10px; border-radius: 5px;">{reset_url}</p>
+                            
+                            <div class="warning">
+                                <strong>⚠️ Important:</strong>
+                                <ul>
+                                    <li>This link will expire in 1 hour</li>
+                                    <li>If you didn't request this reset, please ignore this email</li>
+                                    <li>For security, this link can only be used once</li>
+                                </ul>
+                            </div>
+                            
+                            <p>If you're having trouble with the link, you can request a new password reset from the login page.</p>
+                        </div>
+                        
+                        <div class="footer">
+                            <p>This email was sent by BandSync for {org_name}</p>
+                            <p>If you have questions, please contact your organization administrator.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                
+                text_content = f"""
+                BandSync - Password Reset Request
+                
+                Hello {user.name or user.username},
+                
+                You have requested to reset your password for your BandSync account in {org_name}.
+                
+                Please visit the following link to reset your password:
+                {reset_url}
+                
+                Important:
+                - This link will expire in 1 hour
+                - If you didn't request this reset, please ignore this email
+                - For security, this link can only be used once
+                
+                If you're having trouble with the link, you can request a new password reset from the login page.
+                
+                This email was sent by BandSync for {org_name}.
+                """
+                
+                success = email_service._send_email(
+                    to_emails=[user.email],
+                    subject=f"Password Reset - {org_name}",
+                    html_content=html_content,
+                    text_content=text_content
+                )
+                
+                if not success:
+                    print(f"Failed to send password reset email to {user.email}")
+                    
+            except Exception as e:
+                print(f"Error sending password reset email: {e}")
+                # Don't reveal the error to prevent information disclosure
+                pass
+        
+        return jsonify({'msg': 'If an account with that email exists, a password reset link has been sent.'})
+        
+    except Exception as e:
+        print(f"Password reset request error: {e}")
+        return jsonify({'msg': 'An error occurred. Please try again later.'}), 500
 
 @auth_bp.route('/password-reset', methods=['POST'])
 def password_reset():
     """Reset password using token"""
-    data = request.get_json()
-    token = data.get('token')
-    new_password = data.get('password')
-    
-    if not token or not new_password:
-        return jsonify({'msg': 'Token and new password are required'}), 400
-    
-    if len(new_password) < 6:
-        return jsonify({'msg': 'Password must be at least 6 characters long'}), 400
-    
-    user = User.query.filter_by(password_reset_token=token).first()
-    
-    if not user or not user.verify_password_reset_token(token):
-        return jsonify({'msg': 'Invalid or expired reset token'}), 400
-    
     try:
-        # Update password
-        user.set_password(new_password)
-        user.clear_password_reset_token()
-        db.session.commit()
+        data = request.get_json()
+        token = data.get('token')
+        new_password = data.get('password')
         
-        # Send confirmation email
-        email_service = EmailService()
-        org = user.current_organization or user.primary_organization or user.organization
-        org_name = org.name if org else 'BandSync'
+        if not token or not new_password:
+            return jsonify({'msg': 'Token and new password are required'}), 400
         
-        html_content = f"""
-        <html>
-        <head>
-            <style>
-                body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
-                .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
-                .header {{ text-align: center; margin-bottom: 30px; }}
-                .logo {{ font-size: 24px; font-weight: bold; color: #007bff; }}
-                .content {{ background: #f8f9fa; padding: 30px; border-radius: 8px; }}
-                .success {{ color: #155724; background: #d4edda; padding: 15px; border-radius: 5px; margin: 20px 0; }}
-                .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <div class="logo">🎵 BandSync</div>
-                    <h1>Password Reset Successful</h1>
-                </div>
+        if len(new_password) < 6:
+            return jsonify({'msg': 'Password must be at least 6 characters long'}), 400
+        
+        user = User.query.filter_by(password_reset_token=token).first()
+        
+        if not user:
+            return jsonify({'msg': 'Invalid or expired reset token'}), 400
+        
+        # Check if password reset columns exist
+        if not hasattr(user, 'password_reset_token') or not hasattr(user, 'password_reset_expires'):
+            return jsonify({'msg': 'Password reset temporarily unavailable. Please contact administrator.'}), 503
+        
+        if not user.verify_password_reset_token(token):
+            return jsonify({'msg': 'Invalid or expired reset token'}), 400
+        
+        try:
+            # Update password
+            user.set_password(new_password)
+            user.clear_password_reset_token()
+            db.session.commit()
+            
+            # Send confirmation email
+            from services.email_service import EmailService
+            email_service = EmailService()
+            
+            if email_service.client:
+                org = user.current_organization or user.primary_organization or user.organization
+                org_name = org.name if org else 'BandSync'
                 
-                <div class="content">
-                    <p>Hello <strong>{user.name or user.username}</strong>,</p>
-                    
-                    <div class="success">
-                        <strong>✅ Success!</strong> Your password has been reset successfully.
+                html_content = f"""
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ text-align: center; margin-bottom: 30px; }}
+                        .logo {{ font-size: 24px; font-weight: bold; color: #007bff; }}
+                        .content {{ background: #f8f9fa; padding: 30px; border-radius: 8px; }}
+                        .success {{ color: #155724; background: #d4edda; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+                        .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <div class="logo">🎵 BandSync</div>
+                            <h1>Password Reset Successful</h1>
+                        </div>
+                        
+                        <div class="content">
+                            <p>Hello <strong>{user.name or user.username}</strong>,</p>
+                            
+                            <div class="success">
+                                <strong>✅ Success!</strong> Your password has been reset successfully.
+                            </div>
+                            
+                            <p>Your password for your BandSync account in <strong>{org_name}</strong> has been changed.</p>
+                            
+                            <p>You can now log in with your new password.</p>
+                            
+                            <p>If you didn't make this change, please contact your organization administrator immediately.</p>
+                        </div>
+                        
+                        <div class="footer">
+                            <p>This email was sent by BandSync for {org_name}</p>
+                        </div>
                     </div>
-                    
-                    <p>Your password for your BandSync account in <strong>{org_name}</strong> has been changed.</p>
-                    
-                    <p>You can now log in with your new password.</p>
-                    
-                    <p>If you didn't make this change, please contact your organization administrator immediately.</p>
-                </div>
+                </body>
+                </html>
+                """
                 
-                <div class="footer">
-                    <p>This email was sent by BandSync for {org_name}</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
-        
-        text_content = f"""
-        BandSync - Password Reset Successful
-        
-        Hello {user.name or user.username},
-        
-        Your password for your BandSync account in {org_name} has been changed successfully.
-        
-        You can now log in with your new password.
-        
-        If you didn't make this change, please contact your organization administrator immediately.
-        
-        This email was sent by BandSync for {org_name}.
-        """
-        
-        email_service._send_email(
-            to_emails=[user.email],
-            subject=f"Password Reset Successful - {org_name}",
-            html_content=html_content,
-            text_content=text_content
-        )
-        
-        return jsonify({'msg': 'Password reset successful. You can now log in with your new password.'})
-        
+                text_content = f"""
+                BandSync - Password Reset Successful
+                
+                Hello {user.name or user.username},
+                
+                Your password for your BandSync account in {org_name} has been changed successfully.
+                
+                You can now log in with your new password.
+                
+                If you didn't make this change, please contact your organization administrator immediately.
+                
+                This email was sent by BandSync for {org_name}.
+                """
+                
+                email_service._send_email(
+                    to_emails=[user.email],
+                    subject=f"Password Reset Successful - {org_name}",
+                    html_content=html_content,
+                    text_content=text_content
+                )
+            
+            return jsonify({'msg': 'Password reset successful. You can now log in with your new password.'})
+            
+        except Exception as e:
+            db.session.rollback()
+            print(f"Error resetting password: {e}")
+            return jsonify({'msg': 'An error occurred while resetting your password. Please try again.'}), 500
+            
     except Exception as e:
-        db.session.rollback()
-        print(f"Error resetting password: {e}")
-        return jsonify({'msg': 'An error occurred while resetting your password. Please try again.'}), 500
+        print(f"Password reset error: {e}")
+        return jsonify({'msg': 'An error occurred. Please try again later.'}), 500
