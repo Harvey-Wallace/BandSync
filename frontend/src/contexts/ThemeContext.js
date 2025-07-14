@@ -25,17 +25,22 @@ export const ThemeProvider = ({ children }) => {
     // Set Bootstrap theme
     root.setAttribute('data-bs-theme', isDark ? 'dark' : 'light');
     
-    // Set custom CSS properties for theming
+    // Set Bootstrap CSS properties for theming
     root.style.setProperty('--bs-primary', orgThemeColor);
     root.style.setProperty('--bs-primary-rgb', hexToRgb(orgThemeColor));
+    
+    // Set custom theme CSS properties for our components
+    root.style.setProperty('--theme-primary', orgThemeColor);
     
     // Create darker variant for hover states
     const darkerColor = adjustColor(orgThemeColor, -20);
     root.style.setProperty('--bs-primary-dark', darkerColor);
+    root.style.setProperty('--theme-primary-dark', darkerColor);
     
     // Create lighter variant for backgrounds
     const lighterColor = adjustColor(orgThemeColor, 40);
     root.style.setProperty('--bs-primary-light', lighterColor);
+    root.style.setProperty('--theme-primary-light', lighterColor);
     
     localStorage.setItem('bandsync-theme', isDark ? 'dark' : 'light');
   }, [isDark, orgThemeColor]);
