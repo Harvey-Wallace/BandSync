@@ -171,11 +171,11 @@ class NetworkManager {
 // Push notification utilities
 class NotificationManager {
   constructor() {
-    this.permission = Notification.permission;
+    this.permission = typeof Notification !== 'undefined' ? Notification.permission : 'denied';
   }
 
   async requestPermission() {
-    if ('Notification' in window) {
+    if (typeof Notification !== 'undefined' && 'Notification' in window) {
       const permission = await Notification.requestPermission();
       this.permission = permission;
       return permission === 'granted';
@@ -196,8 +196,11 @@ class NotificationManager {
       if ('serviceWorker' in navigator) {
         const registration = await navigator.serviceWorker.ready;
         return registration.showNotification(title, defaultOptions);
-      } else {
+      } else if (typeof Notification !== 'undefined') {
         return new Notification(title, defaultOptions);
+      } else {
+        console.warn('Notifications not supported on this device');
+        return null;
       }
     }
   }

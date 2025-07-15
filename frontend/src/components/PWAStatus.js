@@ -6,7 +6,9 @@ const PWAStatus = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [canInstall, setCanInstall] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [notificationPermission, setNotificationPermission] = useState(Notification.permission);
+  const [notificationPermission, setNotificationPermission] = useState(
+    typeof Notification !== 'undefined' ? Notification.permission : 'denied'
+  );
   const [offlineRSVPs, setOfflineRSVPs] = useState([]);
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
