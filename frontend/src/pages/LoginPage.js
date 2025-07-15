@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import Spinner from '../components/Spinner';
 import axios from 'axios';
+import { getApiUrl } from '../utils/apiUrl';
 
 function LoginPage() {
   const [username, setUsername] = useState('');
@@ -25,7 +26,8 @@ function LoginPage() {
         loginData.organization_id = parseInt(selectedOrgId);
       }
       
-      const res = await axios.post(`${process.env.REACT_APP_API_URL || ''}/api/auth/login`, loginData);
+      const apiUrl = getApiUrl();
+      const res = await axios.post(`${apiUrl}/auth/login`, loginData);
       
       // Check if user belongs to multiple organizations
       if (res.data.multiple_organizations && !selectedOrgId) {
@@ -73,7 +75,8 @@ function LoginPage() {
     setResetMessage('');
     
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL || ''}/api/auth/password-reset-request`, {
+      const apiUrl = getApiUrl();
+      await axios.post(`${apiUrl}/auth/password-reset-request`, {
         email: resetEmail
       });
       

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || '';
+const API_URL = process.env.REACT_APP_API_URL || window.ENV?.REACT_APP_API_URL || 'https://app.bandsync.co.uk/api';
 
 // Create axios instance with interceptors for automatic token refresh
 const apiClient = axios.create({

@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BandSync Environment Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .info {
+            background-color: #cce7ff;
+            color: #004085;
+            border: 1px solid #b8daff;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 BandSync Environment Test</h1>
+        <p>This page tests if environment variables are loading correctly on your device.</p>
+        
+        <div id="results"></div>
+        
+        <button onclick="runTests()">Run Tests</button>
+        <button onclick="testLogin()">Test Login</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <!-- Load environment configuration -->
+    <script src="https://app.bandsync.co.uk/env-config.js"></script>
+    
+    <script>
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `status ${type}`;
+            div.innerHTML = message;
+            results.appendChild(div);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        function runTests() {
+            clearResults();
+            
+            addResult('🔍 Starting environment tests...', 'info');
+            
+            // Test 1: Check if window.ENV exists
+            if (typeof window.ENV !== 'undefined') {
+                addResult('✅ window.ENV exists', 'success');
+                addResult(`<pre>${JSON.stringify(window.ENV, null, 2)}</pre>`, 'info');
+            } else {
+                addResult('❌ window.ENV not found', 'error');
+            }
+            
+            // Test 2: Check if process.env exists
+            if (typeof window.process !== 'undefined' && window.process.env) {
+                addResult('✅ window.process.env exists', 'success');
+                addResult(`API URL: ${window.process.env.REACT_APP_API_URL || 'NOT SET'}`, 'info');
+            } else {
+                addResult('❌ window.process.env not found', 'error');
+            }
+            
+            // Test 3: Check process.env.REACT_APP_API_URL specifically
+            const apiUrl = window.process?.env?.REACT_APP_API_URL || window.ENV?.REACT_APP_API_URL;
+            if (apiUrl) {
+                addResult(`✅ API URL found: ${apiUrl}`, 'success');
+            } else {
+                addResult('❌ API URL not found', 'error');
+            }
+            
+            // Test 4: Check browser info
+            addResult(`📱 User Agent: ${navigator.userAgent}`, 'info');
+            addResult(`🌐 Platform: ${navigator.platform}`, 'info');
+            addResult(`📍 Location: ${window.location.href}`, 'info');
+            
+            // Test 5: Check if axios is available (if loaded)
+            if (typeof axios !== 'undefined') {
+                addResult('✅ Axios is available', 'success');
+            } else {
+                addResult('⚠️ Axios not loaded (normal for this test)', 'info');
+            }
+        }
+
+        async function testLogin() {
+            addResult('🔑 Testing login API...', 'info');
+            
+            const apiUrl = window.process?.env?.REACT_APP_API_URL || window.ENV?.REACT_APP_API_URL;
+            
+            if (!apiUrl) {
+                addResult('❌ Cannot test login - API URL not found', 'error');
+                return;
+            }
+            
+            const loginUrl = `${apiUrl}/auth/login`;
+            addResult(`📡 Testing URL: ${loginUrl}`, 'info');
+            
+            try {
+                const response = await fetch(loginUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: 'Rob123',
+                        password: 'Rob123pass'
+                    })
+                });
+                
+                addResult(`📊 Response Status: ${response.status}`, 'info');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    addResult('✅ Login API works!', 'success');
+                    addResult(`Response keys: ${Object.keys(data).join(', ')}`, 'info');
+                } else {
+                    const errorText = await response.text();
+                    addResult(`❌ Login failed: ${response.status}`, 'error');
+                    addResult(`Error: ${errorText}`, 'error');
+                }
+            } catch (error) {
+                addResult(`❌ Network error: ${error.message}`, 'error');
+            }
+        }
+
+        // Run tests automatically on page load
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                runTests();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
