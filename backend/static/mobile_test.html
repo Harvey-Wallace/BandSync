@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BandSync Mobile Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-item {
+            margin: 15px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .warning { background-color: #fff3cd; border-color: #ffeaa7; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #results {
+            margin-top: 20px;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>📱 BandSync Mobile Diagnostics</h1>
+        <p>This page will help diagnose mobile loading issues with BandSync.</p>
+        
+        <div class="test-item info">
+            <h3>Device Information</h3>
+            <p><strong>User Agent:</strong> <span id="userAgent"></span></p>
+            <p><strong>Screen Size:</strong> <span id="screenSize"></span></p>
+            <p><strong>Viewport Size:</strong> <span id="viewportSize"></span></p>
+            <p><strong>Connection:</strong> <span id="connection"></span></p>
+        </div>
+        
+        <div class="test-item">
+            <h3>Connectivity Tests</h3>
+            <button onclick="testMainSite()">Test Main Site</button>
+            <button onclick="testAPI()">Test API</button>
+            <button onclick="testAssets()">Test Assets</button>
+            <button onclick="testLogin()">Test Login</button>
+        </div>
+        
+        <div id="results"></div>
+        
+        <div class="test-item warning">
+            <h3>Manual Steps</h3>
+            <ol>
+                <li>Click the "Test Main Site" button above</li>
+                <li>Try accessing <a href="https://bandsync-production.up.railway.app" target="_blank">BandSync directly</a></li>
+                <li>Check if you can see the login form</li>
+                <li>Try logging in with username: <code>Rob123</code> and password: <code>Rob123pass</code></li>
+            </ol>
+        </div>
+        
+        <div class="test-item info">
+            <h3>Common Issues</h3>
+            <ul>
+                <li><strong>JavaScript disabled:</strong> Enable JavaScript in browser settings</li>
+                <li><strong>Cache issues:</strong> Clear browser cache and cookies</li>
+                <li><strong>Network restrictions:</strong> Try different WiFi/mobile data</li>
+                <li><strong>Browser compatibility:</strong> Try Chrome, Safari, or Firefox</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Display device information
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+        document.getElementById('screenSize').textContent = screen.width + 'x' + screen.height;
+        document.getElementById('viewportSize').textContent = window.innerWidth + 'x' + window.innerHeight;
+        
+        // Connection information
+        const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        document.getElementById('connection').textContent = connection ? 
+            `${connection.effectiveType} (${connection.downlink} Mbps)` : 'Unknown';
+        
+        const results = document.getElementById('results');
+        
+        function addResult(title, status, message) {
+            const div = document.createElement('div');
+            div.className = `test-item ${status}`;
+            div.innerHTML = `<h4>${title}</h4><p>${message}</p>`;
+            results.appendChild(div);
+        }
+        
+        function testMainSite() {
+            addResult('Main Site Test', 'info', '🔄 Testing main site accessibility...');
+            
+            fetch('https://bandsync-production.up.railway.app')
+                .then(response => {
+                    if (response.ok) {
+                        return response.text();
+                    }
+                    throw new Error(`HTTP ${response.status}`);
+                })
+                .then(html => {
+                    if (html.includes('id="root"')) {
+                        addResult('Main Site Test', 'success', '✅ Main site loads successfully and contains React app container');
+                    } else {
+                        addResult('Main Site Test', 'warning', '⚠️ Main site loads but React container not found');
+                    }
+                })
+                .catch(error => {
+                    addResult('Main Site Test', 'error', `❌ Main site failed to load: ${error.message}`);
+                });
+        }
+        
+        function testAPI() {
+            addResult('API Test', 'info', '🔄 Testing API accessibility...');
+            
+            fetch('https://bandsync-production.up.railway.app/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username: 'test', password: 'test' })
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    addResult('API Test', 'success', '✅ API is accessible (401 unauthorized as expected)');
+                } else {
+                    addResult('API Test', 'warning', `⚠️ API responds with status: ${response.status}`);
+                }
+            })
+            .catch(error => {
+                addResult('API Test', 'error', `❌ API failed to respond: ${error.message}`);
+            });
+        }
+        
+        function testAssets() {
+            addResult('Assets Test', 'info', '🔄 Testing static assets...');
+            
+            const assets = [
+                '/static/css/main.6823e305.css',
+                '/static/js/main.fdb8c274.js',
+                '/env-config.js'
+            ];
+            
+            let completed = 0;
+            const total = assets.length;
+            let successCount = 0;
+            
+            assets.forEach(asset => {
+                fetch(`https://bandsync-production.up.railway.app${asset}`)
+                    .then(response => {
+                        if (response.ok) {
+                            successCount++;
+                        }
+                        completed++;
+                        
+                        if (completed === total) {
+                            if (successCount === total) {
+                                addResult('Assets Test', 'success', `✅ All ${total} critical assets loaded successfully`);
+                            } else {
+                                addResult('Assets Test', 'warning', `⚠️ ${successCount}/${total} assets loaded successfully`);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        completed++;
+                        if (completed === total) {
+                            addResult('Assets Test', 'error', `❌ Asset loading failed: ${error.message}`);
+                        }
+                    });
+            });
+        }
+        
+        function testLogin() {
+            addResult('Login Test', 'info', '🔄 Testing login functionality...');
+            
+            fetch('https://bandsync-production.up.railway.app/api/auth/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ username: 'Rob123', password: 'Rob123pass' })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.access_token) {
+                    addResult('Login Test', 'success', '✅ Login successful! Access token received.');
+                } else {
+                    addResult('Login Test', 'error', `❌ Login failed: ${data.msg || 'Unknown error'}`);
+                }
+            })
+            .catch(error => {
+                addResult('Login Test', 'error', `❌ Login request failed: ${error.message}`);
+            });
+        }
+        
+        // Auto-run basic tests
+        setTimeout(() => {
+            testMainSite();
+            testAPI();
+            testAssets();
+        }, 1000);
+    </script>
+</body>
+</html>
