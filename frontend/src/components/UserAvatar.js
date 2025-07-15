@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { getApiUrl } from '../utils/apiUrl';
 
 function UserAvatar({ 
   user, 
@@ -13,7 +14,7 @@ function UserAvatar({
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+  const API_BASE_URL = getApiUrl();
 
   // Generate initials from name or username
   const getInitials = (user) => {
@@ -61,7 +62,7 @@ function UserAvatar({
       const formData = new FormData();
       formData.append('file', selectedFile);
 
-      const response = await fetch(`${API_BASE_URL}/api/admin/users/${user.id}/avatar/upload`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${user.id}/avatar/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`

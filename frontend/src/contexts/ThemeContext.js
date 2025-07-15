@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { getApiUrl } from '../utils/apiUrl';
 
 const ThemeContext = createContext();
 
@@ -61,14 +62,14 @@ export const ThemeProvider = ({ children }) => {
           console.log('Loading theme from API...');
           
           // Try organization current endpoint first
-          let response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/organizations/current`, {
+          let response = await fetch(`${getApiUrl()}/organizations/current`, {
             headers: { Authorization: `Bearer ${token}` }
           });
           
           // If organization endpoint fails, try admin endpoint (for backwards compatibility)
           if (!response.ok) {
             console.log('Public org endpoint failed for theme, trying admin endpoint...');
-            response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/admin/organization`, {
+            response = await fetch(`${getApiUrl()}/admin/organization`, {
               headers: { Authorization: `Bearer ${token}` }
             });
           }

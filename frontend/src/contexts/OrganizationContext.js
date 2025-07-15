@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { getApiUrl } from '../utils/apiUrl';
 
 const OrganizationContext = createContext();
 
@@ -22,7 +23,7 @@ export const OrganizationProvider = ({ children }) => {
     if (!token) return;
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/organizations/current`, {
+      const response = await fetch(`${getApiUrl()}/organizations/current`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -58,7 +59,7 @@ export const OrganizationProvider = ({ children }) => {
     if (!token) return;
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/organizations/available`, {
+      const response = await fetch(`${getApiUrl()}/organizations/available`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -81,7 +82,7 @@ export const OrganizationProvider = ({ children }) => {
     setError(null);
 
     try {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/organizations/switch`, {
+      const response = await fetch(`${getApiUrl()}/organizations/switch`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

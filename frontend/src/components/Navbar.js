@@ -97,14 +97,14 @@ function Navbar() {
         console.log('Loading organization data...'); // Debug log
         
         // Try the public endpoint first (for logo and theme)
-        let res = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/organizations/current`, {
+        let res = await fetch(`${getApiUrl()}/organizations/current`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
         // If that fails, try the admin endpoint
         if (!res.ok) {
           console.log('Public org endpoint failed, trying admin endpoint...');
-          res = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/admin/organization`, {
+          res = await fetch(`${getApiUrl()}/admin/organization`, {
             headers: { Authorization: `Bearer ${token}` }
           });
         }
