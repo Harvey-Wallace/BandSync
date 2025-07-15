@@ -74,7 +74,7 @@ function AdminDashboard() {
     setOrgLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/organization`, {
+      const response = await fetch(`${API_BASE_URL}/admin/organization`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -99,7 +99,7 @@ function AdminDashboard() {
     setUsersLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -123,7 +123,7 @@ function AdminDashboard() {
     setSectionsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/sections`, {
+      const response = await fetch(`${API_BASE_URL}/admin/sections`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -147,7 +147,7 @@ function AdminDashboard() {
     setEmailLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/email-stats`, {
+      const response = await fetch(`${API_BASE_URL}/admin/email-stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -171,7 +171,7 @@ function AdminDashboard() {
     setEmailLogsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/email-logs?per_page=20`, {
+      const response = await fetch(`${API_BASE_URL}/admin/email-logs?per_page=20`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -195,7 +195,7 @@ function AdminDashboard() {
     setJobsLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/scheduled-jobs`, {
+      const response = await fetch(`${API_BASE_URL}/admin/scheduled-jobs`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -219,7 +219,7 @@ function AdminDashboard() {
     setCalendarLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/calendar-stats`, {
+      const response = await fetch(`${API_BASE_URL}/admin/calendar-stats`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -244,7 +244,7 @@ function AdminDashboard() {
     setEmailLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/test-email`, {
+      const response = await fetch(`${API_BASE_URL}/admin/test-email`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -269,7 +269,7 @@ function AdminDashboard() {
     setCalendarLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/test-calendar-feed`, {
+      const response = await fetch(`${API_BASE_URL}/admin/test-calendar-feed`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -298,7 +298,7 @@ function AdminDashboard() {
     setOrgLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/organization`, {
+      const response = await fetch(`${API_BASE_URL}/admin/organization`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -353,7 +353,7 @@ function AdminDashboard() {
       const formData = new FormData();
       formData.append('file', file);
 
-      const response = await fetch(`${API_BASE_URL}/api/admin/upload-logo`, {
+      const response = await fetch(`${API_BASE_URL}/admin/upload-logo`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -386,7 +386,7 @@ function AdminDashboard() {
   const updateUserRole = async (userId, newRole) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -414,7 +414,7 @@ function AdminDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -440,7 +440,7 @@ function AdminDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/users`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -489,7 +489,7 @@ function AdminDashboard() {
   const sendInvitation = async (userId) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/users/${userId}/invite`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${userId}/invite`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -529,7 +529,7 @@ function AdminDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/users/${editUser.id}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/users/${editUser.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -572,7 +572,7 @@ function AdminDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/sections`, {
+      const response = await fetch(`${API_BASE_URL}/admin/sections`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -608,7 +608,7 @@ function AdminDashboard() {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/admin/sections/${sectionId}`, {
+      const response = await fetch(`${API_BASE_URL}/admin/sections/${sectionId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
