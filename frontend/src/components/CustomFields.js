@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Form, Button, Alert, Spinner, Badge } from 'react-bootstrap';
 import axios from 'axios';
+import { getApiUrl } from '../utils/apiUrl';
 
 const CustomFields = ({ eventId, isAdmin = false }) => {
   const [fields, setFields] = useState([]);
@@ -27,7 +28,7 @@ const CustomFields = ({ eventId, isAdmin = false }) => {
   const loadFields = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/events/${eventId}/custom-fields`, {
+      const response = await axios.get(`${getApiUrl()}/events/${eventId}/custom-fields`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setFields(response.data);
@@ -42,7 +43,7 @@ const CustomFields = ({ eventId, isAdmin = false }) => {
   const loadResponses = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`${process.env.REACT_APP_API_URL}/api/events/${eventId}/field-responses`, {
+      const response = await axios.get(`${getApiUrl()}/events/${eventId}/field-responses`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setResponses(response.data);
@@ -62,7 +63,7 @@ const CustomFields = ({ eventId, isAdmin = false }) => {
     setSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${process.env.REACT_APP_API_URL}/api/events/${eventId}/field-responses`, {
+      await axios.post(`${getApiUrl()}/events/${eventId}/field-responses`, {
         responses: responses
       }, {
         headers: { Authorization: `Bearer ${token}` }
@@ -79,7 +80,7 @@ const CustomFields = ({ eventId, isAdmin = false }) => {
   const handleCreateField = async () => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`${process.env.REACT_APP_API_URL}/api/events/${eventId}/custom-fields`, newField, {
+      await axios.post(`${getApiUrl()}/events/${eventId}/custom-fields`, newField, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAlert({ show: true, message: 'Field created successfully', type: 'success' });
@@ -103,7 +104,7 @@ const CustomFields = ({ eventId, isAdmin = false }) => {
     
     try {
       const token = localStorage.getItem('token');
-      await axios.delete(`${process.env.REACT_APP_API_URL}/api/events/${eventId}/custom-fields/${fieldId}`, {
+      await axios.delete(`${getApiUrl()}/events/${eventId}/custom-fields/${fieldId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAlert({ show: true, message: 'Field deleted successfully', type: 'success' });

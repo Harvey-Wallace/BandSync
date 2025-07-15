@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Spinner from '../components/Spinner';
 import axios from 'axios';
-
+import { getApiUrl } from '../utils/apiUrl';
 
 function RegisterPage() {
   const [username, setUsername] = useState('');
@@ -18,7 +18,7 @@ function RegisterPage() {
     setError('');
     setSuccess('');
     try {
-      await axios.post(`${process.env.REACT_APP_API_URL || ''}/api/auth/register`, { username, email, password, organization });
+      await axios.post(`${getApiUrl()}/auth/register`, { username, email, password, organization });
       setSuccess('Registration successful! You can now log in.');
       setError('');
       setLoading(false);

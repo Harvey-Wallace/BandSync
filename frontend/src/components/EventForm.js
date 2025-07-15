@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { getGoogleMapsApiKey } from '../config/constants';
 import { Loader } from '@googlemaps/js-api-loader';
+import { getApiUrl } from '../utils/apiUrl';
 
 function EventForm({ onSubmit, initialData, onCancel }) {
   const [title, setTitle] = useState(initialData?.title || '');
@@ -42,7 +43,7 @@ function EventForm({ onSubmit, initialData, onCancel }) {
     const fetchCategories = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/api/events/categories`, {
+        const response = await fetch(`${getApiUrl()}/events/categories`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.ok) {

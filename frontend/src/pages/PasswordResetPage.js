@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import Spinner from '../components/Spinner';
 import axios from 'axios';
+import { getApiUrl } from '../utils/apiUrl';
 
 function PasswordResetPage() {
   const [searchParams] = useSearchParams();
@@ -41,7 +42,7 @@ function PasswordResetPage() {
     }
 
     try {
-      const res = await axios.post(`${process.env.REACT_APP_API_URL || ''}/api/auth/password-reset`, {
+      const res = await axios.post(`${getApiUrl()}/auth/password-reset`, {
         token,
         password
       });
