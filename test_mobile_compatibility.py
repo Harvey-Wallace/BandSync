@@ -47,8 +47,8 @@ def test_mobile_compatibility():
     # Test 2: Check static assets
     print("\n📦 Testing static assets...")
     static_assets = [
-        "/static/css/main.6823e305.css",
-        "/static/js/main.fdb8c274.js", 
+        "/static/css/main.e1988db2.css",
+        "/static/js/main.11d382e4.js", 
         "/env-config.js",
         "/favicon.ico"
     ]
