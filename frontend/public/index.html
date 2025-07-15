@@ -3,15 +3,71 @@
   <head>
     <meta charset="utf-8" />
     <link rel="icon" href="favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, maximum-scale=1" />
     <meta name="theme-color" content="#0d6efd" />
     <meta name="description" content="BandSync - Band event and attendance manager" />
+    
+    <!-- iOS-specific meta tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="BandSync">
+    
+    <!-- iOS icon -->
+    <link rel="apple-touch-icon" href="favicon.ico">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="%PUBLIC_URL%/env-config.js" as="script">
+    
     <link rel="manifest" href="manifest.json" />
     <title>BandSync</title>
   </head>
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      <div style="padding: 20px; font-family: Arial, sans-serif; text-align: center;">
+        <h1>JavaScript Required</h1>
+        <p>You need to enable JavaScript to run this app.</p>
+        <p>Please enable JavaScript in your browser settings and reload the page.</p>
+      </div>
+    </noscript>
+    
+    <!-- Load environment config before React -->
     <script src="%PUBLIC_URL%/env-config.js"></script>
+    
+    <!-- iOS-specific error handling -->
+    <script>
+      // iOS-specific error handling
+      window.addEventListener('error', function(event) {
+        console.error('Global error:', event.error);
+        // Store error for debugging
+        try {
+          localStorage.setItem('global_error', JSON.stringify({
+            message: event.message,
+            filename: event.filename,
+            lineno: event.lineno,
+            colno: event.colno,
+            stack: event.error ? event.error.stack : null,
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent
+          }));
+        } catch (e) {
+          console.warn('Could not save error to localStorage');
+        }
+      });
+      
+      window.addEventListener('unhandledrejection', function(event) {
+        console.error('Unhandled promise rejection:', event.reason);
+        try {
+          localStorage.setItem('promise_rejection', JSON.stringify({
+            reason: event.reason.toString(),
+            timestamp: new Date().toISOString(),
+            userAgent: navigator.userAgent
+          }));
+        } catch (e) {
+          console.warn('Could not save promise rejection to localStorage');
+        }
+      });
+    </script>
+    
     <div id="root"></div>
   </body>
 </html>
