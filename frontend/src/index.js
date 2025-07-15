@@ -6,6 +6,8 @@ import App from './App';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap-icons/font/bootstrap-icons.css';
 
+console.log('🚀 React index.js starting...');
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
@@ -13,6 +15,10 @@ root.render(
   </React.StrictMode>
 );
 
+console.log('✅ React app rendered');
+
+// Temporarily disable service worker for iOS debugging
+/*
 // iOS-specific service worker registration
 if ('serviceWorker' in navigator) {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -55,3 +61,4 @@ if ('serviceWorker' in navigator) {
 } else {
   console.log('Service workers not supported in this browser');
 }
+*/
