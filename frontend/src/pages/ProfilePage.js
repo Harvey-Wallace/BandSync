@@ -6,6 +6,7 @@ import Toast from '../components/Toast';
 import Spinner from '../components/Spinner';
 import apiClient from '../utils/api';
 import axios from 'axios';
+import { getApiUrl } from '../utils/apiUrl';
 
 function ProfilePage() {
   const [user, setUser] = useState({
@@ -108,7 +109,7 @@ function ProfilePage() {
         avatar_url: avatarUrl
       };
 
-      await axios.put(`${process.env.REACT_APP_API_URL || ''}/api/auth/profile`, 
+      await axios.put(`${getApiUrl()}/auth/profile`, 
         profileData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -171,7 +172,7 @@ function ProfilePage() {
     const token = localStorage.getItem('token');
     
     try {
-      await axios.put(`${process.env.REACT_APP_API_URL || ''}/api/auth/update_password`, 
+      await axios.put(`${getApiUrl()}/auth/update_password`, 
         { 
           current_password: formData.currentPassword,
           new_password: formData.newPassword 
@@ -205,7 +206,7 @@ function ProfilePage() {
     
     try {
       const response = await axios.post(
-        `${process.env.REACT_APP_API_URL || ''}/api/auth/upload-avatar`,
+        `${getApiUrl()}/auth/upload-avatar`,
         uploadFormData,
         {
           headers: {

@@ -4,6 +4,7 @@ import UserAvatar from './UserAvatar';
 import OrganizationSwitcher from './OrganizationSwitcher';
 import { useTheme } from '../contexts/ThemeContext';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { getApiUrl } from '../utils/apiUrl';
 
 function Navbar() {
   const role = localStorage.getItem('role');
@@ -25,7 +26,7 @@ function Navbar() {
     if (token) {
       try {
         console.log('Loading profile data...'); // Debug log
-        const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/auth/profile`, {
+        const response = await fetch(`${getApiUrl()}/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (response.ok) {
