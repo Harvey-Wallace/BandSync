@@ -5,8 +5,8 @@ import json
 
 # Test login data
 login_data = {
-    "username": "testuser2",
-    "password": "testpassword123"
+    "username": "Rob123",
+    "password": "Rob123pass"
 }
 
 def test_login():

@@ -5,6 +5,7 @@ import Spinner from '../components/Spinner';
 import Toast from '../components/Toast';
 import UserAvatar from '../components/UserAvatar';
 import { useTheme } from '../contexts/ThemeContext';
+import { getGoogleMapsApiKey } from '../config/constants';
 import axios from 'axios';
 
 function Dashboard() {
@@ -491,9 +492,9 @@ function Dashboard() {
                                 Location Map
                               </h6>
                               <div className="border rounded" style={{ height: '120px', overflow: 'hidden' }}>
-                                {process.env.REACT_APP_GOOGLE_MAPS_API_KEY ? (
+                                {getGoogleMapsApiKey() && event.lat && event.lng ? (
                                   <iframe
-                                    src={`https://www.google.com/maps/embed/v1/place?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&q=${event.lat},${event.lng}&zoom=14`}
+                                    src={`https://www.google.com/maps/embed/v1/place?key=${getGoogleMapsApiKey()}&q=${event.lat},${event.lng}&zoom=14`}
                                     width="100%"
                                     height="120"
                                     style={{ border: 0 }}
@@ -507,7 +508,13 @@ function Dashboard() {
                                     <div className="text-center">
                                       <i className="bi bi-map" style={{ fontSize: '1.5rem' }}></i>
                                       <div className="mt-1">
-                                        <small>Google Maps API key required</small>
+                                        <small>
+                                          {!getGoogleMapsApiKey() 
+                                            ? 'Google Maps API key required' 
+                                            : !event.lat || !event.lng 
+                                            ? 'Location coordinates not available' 
+                                            : 'Map unavailable'}
+                                        </small>
                                       </div>
                                     </div>
                                   </div>
@@ -652,9 +659,9 @@ function Dashboard() {
                               <div className="col-md-6">
                                 <h6>Location Map</h6>
                                 <div className="border rounded" style={{ height: '200px', overflow: 'hidden' }}>
-                                  {process.env.REACT_APP_GOOGLE_MAPS_API_KEY ? (
+                                  {getGoogleMapsApiKey() ? (
                                     <iframe
-                                      src={`https://www.google.com/maps/embed/v1/place?key=${process.env.REACT_APP_GOOGLE_MAPS_API_KEY}&q=${event.lat},${event.lng}&zoom=15`}
+                                      src={`https://www.google.com/maps/embed/v1/place?key=${getGoogleMapsApiKey()}&q=${event.lat},${event.lng}&zoom=15`}
                                       width="100%"
                                       height="200"
                                       style={{ border: 0 }}
