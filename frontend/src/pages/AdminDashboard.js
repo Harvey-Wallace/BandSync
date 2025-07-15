@@ -6,6 +6,7 @@ import UserAvatar from '../components/UserAvatar';
 import GroupEmailManager from '../components/GroupEmailManager';
 import BulkOperations from '../components/BulkOperations';
 import DebugEnv from '../components/DebugEnv';
+import { getApiUrl } from '../utils/apiUrl';
 
 function AdminDashboard() {
   const [org, setOrg] = useState({ name: '', logo_url: '', theme_color: '#007bff' });
@@ -63,7 +64,7 @@ function AdminDashboard() {
   const [calendarLoading, setCalendarLoading] = useState(false);
   const [calendarInfo, setCalendarInfo] = useState({});
 
-  const API_BASE_URL = process.env.REACT_APP_API_URL || '';
+  const API_BASE_URL = getApiUrl();
 
   const showToast = (message, type = 'success') => {
     setToast({ show: true, message, type });

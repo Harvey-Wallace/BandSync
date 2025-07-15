@@ -6,6 +6,7 @@ import Toast from '../components/Toast';
 import UserAvatar from '../components/UserAvatar';
 import { useTheme } from '../contexts/ThemeContext';
 import { getGoogleMapsApiKey } from '../config/constants';
+import { getApiUrl } from '../utils/apiUrl';
 import axios from 'axios';
 
 function Dashboard() {
@@ -28,21 +29,22 @@ function Dashboard() {
       setError(null);
       try {
         const token = localStorage.getItem('token');
+        const apiUrl = getApiUrl();
         
         // Get sections
-        const resSections = await axios.get(`${process.env.REACT_APP_API_URL || ''}/api/admin/sections`, {
+        const resSections = await axios.get(`${apiUrl}/admin/sections`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSections(resSections.data);
         
         // Get all users with section info
-        const resUsers = await axios.get(`${process.env.REACT_APP_API_URL || ''}/api/admin/users/all`, {
+        const resUsers = await axios.get(`${apiUrl}/admin/users/all`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setAllUsers(resUsers.data);
         
         // Get all events
-        const resEvents = await axios.get(`${process.env.REACT_APP_API_URL || ''}/api/events/`, {
+        const resEvents = await axios.get(`${apiUrl}/events/`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -55,7 +57,7 @@ function Dashboard() {
         const allRsvpMap = {};
         for (const event of sortedEvents) {
           try {
-            const res = await axios.get(`${process.env.REACT_APP_API_URL || ''}/api/events/${event.id}/rsvps`, {
+            const res = await axios.get(`${apiUrl}/events/${event.id}/rsvps`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -91,10 +93,11 @@ function Dashboard() {
   const handleRSVP = async (eventId, rsvpStatus) => {
     try {
       const token = localStorage.getItem('token');
+      const apiUrl = getApiUrl();
       // Capitalize the status to match backend format
       const capitalizedStatus = rsvpStatus.charAt(0).toUpperCase() + rsvpStatus.slice(1);
       
-      await axios.post(`${process.env.REACT_APP_API_URL || ''}/api/events/${eventId}/rsvp`, 
+      await axios.post(`${apiUrl}/events/${eventId}/rsvp`, 
         { status: capitalizedStatus }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -102,7 +105,7 @@ function Dashboard() {
       setToast({ show: true, message: `RSVP updated to "${capitalizedStatus}"`, type: 'success' });
       
       // Refresh the RSVP data to get updated member responses
-      const res = await axios.get(`${process.env.REACT_APP_API_URL || ''}/api/events/${eventId}/rsvps`, {
+      const res = await axios.get(`${apiUrl}/events/${eventId}/rsvps`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setAllRsvps(prev => ({ ...prev, [eventId]: res.data }));
