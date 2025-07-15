@@ -1,6 +1,6 @@
 // Runtime environment configuration
 window.ENV = {
-  REACT_APP_API_URL: 'https://bandsync-production.up.railway.app',
+  REACT_APP_API_URL: 'https://app.bandsync.co.uk/api',
   REACT_APP_GOOGLE_MAPS_API_KEY: 'AIzaSyC11N3v1N5Gl14LJ2Cl9TjasJNzE5wVkEc',
   NODE_ENV: 'production'
 };
@@ -13,3 +13,4 @@ if (typeof window !== 'undefined') {
 }
 
 console.log('🔧 Environment configuration loaded:', window.ENV);
+// Updated: 2025-07-14 21:00
