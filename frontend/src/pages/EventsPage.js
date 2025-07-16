@@ -512,7 +512,7 @@ function EventsPage() {
             </div>
             <div className="card-body">
               <EventForm
-                event={editEvent}
+                initialData={editEvent}
                 onSubmit={editEvent ? handleEdit : handleCreate}
                 onCancel={() => {
                   setShowForm(false);

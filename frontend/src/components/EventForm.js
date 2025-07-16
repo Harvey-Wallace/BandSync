@@ -5,9 +5,29 @@ import { getApiUrl } from '../utils/apiUrl';
 
 function EventForm({ onSubmit, initialData, onCancel }) {
   const [title, setTitle] = useState(initialData?.title || '');
-  const [type, setType] = useState(initialData?.type || 'Rehearsal');
+  const [type, setType] = useState(initialData?.event_type || initialData?.type || 'Rehearsal');
   const [description, setDescription] = useState(initialData?.description || '');
-  const [date, setDate] = useState(initialData?.date ? initialData.date.slice(0, 16) : '');
+  
+  // Handle date and time combination for datetime-local input
+  const getDateTimeValue = (dateStr, timeStr) => {
+    if (!dateStr) return '';
+    
+    if (timeStr) {
+      // Combine date and time
+      const date = new Date(dateStr);
+      const [hours, minutes] = timeStr.split(':');
+      date.setHours(parseInt(hours), parseInt(minutes));
+      return date.toISOString().slice(0, 16);
+    } else {
+      // Just date
+      const date = new Date(dateStr);
+      return date.toISOString().slice(0, 16);
+    }
+  };
+  
+  const [date, setDate] = useState(
+    initialData?.date ? getDateTimeValue(initialData.date, initialData.time) : ''
+  );
   const [endDate, setEndDate] = useState(initialData?.end_date ? initialData.end_date.slice(0, 16) : '');
   const [location, setLocation] = useState(initialData?.location || '');
   const [locationAddress, setLocationAddress] = useState(initialData?.location_address || '');
@@ -38,6 +58,31 @@ function EventForm({ onSubmit, initialData, onCancel }) {
     'Committee Meeting',
     'AGM'
   ];
+
+  // Update form fields when initialData changes (e.g., when switching from create to edit)
+  useEffect(() => {
+    if (initialData) {
+      setTitle(initialData.title || '');
+      setType(initialData.event_type || initialData.type || 'Rehearsal');
+      setDescription(initialData.description || '');
+      setDate(initialData.date ? getDateTimeValue(initialData.date, initialData.time) : '');
+      setEndDate(initialData.end_date ? initialData.end_date.slice(0, 16) : '');
+      setLocation(initialData.location || '');
+      setLocationAddress(initialData.location_address || '');
+      setLocationLat(initialData.lat || null);
+      setLocationLng(initialData.lng || null);
+      setLocationPlaceId(initialData.location_place_id || '');
+      setCategoryId(initialData.category_id || '');
+      setIsRecurring(initialData.is_recurring || false);
+      setRecurringPattern(initialData.recurring_pattern || 'weekly');
+      setRecurringInterval(initialData.recurring_interval || 1);
+      setRecurringEndDate(initialData.recurring_end_date ? initialData.recurring_end_date.slice(0, 10) : '');
+      setIsTemplate(initialData.is_template || false);
+      setTemplateName(initialData.template_name || '');
+      setSendReminders(initialData.send_reminders !== undefined ? initialData.send_reminders : true);
+      setReminderDaysBefore(initialData.reminder_days_before || 1);
+    }
+  }, [initialData]);
 
   useEffect(() => {
     const fetchCategories = async () => {
