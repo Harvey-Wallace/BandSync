@@ -252,41 +252,20 @@ def organization():
     org_id = claims.get('organization_id')
     org = Organization.query.get_or_404(org_id)
     if request.method == 'GET':
-        # Build response with safe field access
-        response_data = {
+        return jsonify({
             'id': org.id, 
             'name': org.name or '',
             'logo_url': org.logo_url or '',
-            'theme_color': org.theme_color or '#007bff'
-        }
-        
-        # Safely add new fields if they exist
-        try:
-            response_data.update({
-                'rehearsal_address': getattr(org, 'rehearsal_address', '') or '',
-                'contact_phone': getattr(org, 'contact_phone', '') or '',
-                'contact_email': getattr(org, 'contact_email', '') or '',
-                'website': getattr(org, 'website', '') or '',
-                'facebook_url': getattr(org, 'facebook_url', '') or '',
-                'instagram_url': getattr(org, 'instagram_url', '') or '',
-                'twitter_url': getattr(org, 'twitter_url', '') or '',
-                'tiktok_url': getattr(org, 'tiktok_url', '') or ''
-            })
-        except Exception as e:
-            # If new fields don't exist, just use basic fields
-            print(f"Warning: New organization fields not available: {e}")
-            response_data.update({
-                'rehearsal_address': '',
-                'contact_phone': '',
-                'contact_email': '',
-                'website': '',
-                'facebook_url': '',
-                'instagram_url': '',
-                'twitter_url': '',
-                'tiktok_url': ''
-            })
-        
-        return jsonify(response_data)
+            'theme_color': org.theme_color or '#007bff',
+            'rehearsal_address': org.rehearsal_address or '',
+            'contact_phone': org.contact_phone or '',
+            'contact_email': org.contact_email or '',
+            'website': org.website or '',
+            'facebook_url': org.facebook_url or '',
+            'instagram_url': org.instagram_url or '',
+            'twitter_url': org.twitter_url or '',
+            'tiktok_url': org.tiktok_url or ''
+        })
     if request.method == 'PUT':
         data = request.get_json()
         if 'name' in data and data['name']:
@@ -295,65 +274,38 @@ def organization():
             org.logo_url = data['logo_url']
         if 'theme_color' in data and data['theme_color']:
             org.theme_color = data['theme_color']
-        
-        # Safely update new fields if they exist
-        try:
-            if 'rehearsal_address' in data and hasattr(org, 'rehearsal_address'):
-                org.rehearsal_address = data['rehearsal_address']
-            if 'contact_phone' in data and hasattr(org, 'contact_phone'):
-                org.contact_phone = data['contact_phone']
-            if 'contact_email' in data and hasattr(org, 'contact_email'):
-                org.contact_email = data['contact_email']
-            if 'website' in data and hasattr(org, 'website'):
-                org.website = data['website']
-            if 'facebook_url' in data and hasattr(org, 'facebook_url'):
-                org.facebook_url = data['facebook_url']
-            if 'instagram_url' in data and hasattr(org, 'instagram_url'):
-                org.instagram_url = data['instagram_url']
-            if 'twitter_url' in data and hasattr(org, 'twitter_url'):
-                org.twitter_url = data['twitter_url']
-            if 'tiktok_url' in data and hasattr(org, 'tiktok_url'):
-                org.tiktok_url = data['tiktok_url']
-        except Exception as e:
-            print(f"Warning: Could not update new organization fields: {e}")
+        if 'rehearsal_address' in data:
+            org.rehearsal_address = data['rehearsal_address']
+        if 'contact_phone' in data:
+            org.contact_phone = data['contact_phone']
+        if 'contact_email' in data:
+            org.contact_email = data['contact_email']
+        if 'website' in data:
+            org.website = data['website']
+        if 'facebook_url' in data:
+            org.facebook_url = data['facebook_url']
+        if 'instagram_url' in data:
+            org.instagram_url = data['instagram_url']
+        if 'twitter_url' in data:
+            org.twitter_url = data['twitter_url']
+        if 'tiktok_url' in data:
+            org.tiktok_url = data['tiktok_url']
         
         db.session.commit()
-        
-        # Build response with safe field access
-        response_data = {
+        return jsonify({
             'msg': 'Organization updated',
             'name': org.name or '',
             'logo_url': org.logo_url or '',
-            'theme_color': org.theme_color or '#007bff'
-        }
-        
-        # Safely add new fields if they exist
-        try:
-            response_data.update({
-                'rehearsal_address': getattr(org, 'rehearsal_address', '') or '',
-                'contact_phone': getattr(org, 'contact_phone', '') or '',
-                'contact_email': getattr(org, 'contact_email', '') or '',
-                'website': getattr(org, 'website', '') or '',
-                'facebook_url': getattr(org, 'facebook_url', '') or '',
-                'instagram_url': getattr(org, 'instagram_url', '') or '',
-                'twitter_url': getattr(org, 'twitter_url', '') or '',
-                'tiktok_url': getattr(org, 'tiktok_url', '') or ''
-            })
-        except Exception as e:
-            # If new fields don't exist, just use basic fields
-            print(f"Warning: New organization fields not available: {e}")
-            response_data.update({
-                'rehearsal_address': '',
-                'contact_phone': '',
-                'contact_email': '',
-                'website': '',
-                'facebook_url': '',
-                'instagram_url': '',
-                'twitter_url': '',
-                'tiktok_url': ''
-            })
-        
-        return jsonify(response_data)
+            'theme_color': org.theme_color or '#007bff',
+            'rehearsal_address': org.rehearsal_address or '',
+            'contact_phone': org.contact_phone or '',
+            'contact_email': org.contact_email or '',
+            'website': org.website or '',
+            'facebook_url': org.facebook_url or '',
+            'instagram_url': org.instagram_url or '',
+            'twitter_url': org.twitter_url or '',
+            'tiktok_url': org.tiktok_url or ''
+        })
 
 @admin_bp.route('/upload-logo', methods=['POST'])
 @jwt_required()
