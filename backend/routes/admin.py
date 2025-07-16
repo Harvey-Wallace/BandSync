@@ -256,7 +256,15 @@ def organization():
             'id': org.id, 
             'name': org.name,
             'logo_url': org.logo_url,
-            'theme_color': org.theme_color
+            'theme_color': org.theme_color,
+            'rehearsal_address': org.rehearsal_address,
+            'contact_phone': org.contact_phone,
+            'contact_email': org.contact_email,
+            'website': org.website,
+            'facebook_url': org.facebook_url,
+            'instagram_url': org.instagram_url,
+            'twitter_url': org.twitter_url,
+            'tiktok_url': org.tiktok_url
         })
     if request.method == 'PUT':
         data = request.get_json()
@@ -266,13 +274,37 @@ def organization():
             org.logo_url = data['logo_url']
         if 'theme_color' in data and data['theme_color']:
             org.theme_color = data['theme_color']
+        if 'rehearsal_address' in data:
+            org.rehearsal_address = data['rehearsal_address']
+        if 'contact_phone' in data:
+            org.contact_phone = data['contact_phone']
+        if 'contact_email' in data:
+            org.contact_email = data['contact_email']
+        if 'website' in data:
+            org.website = data['website']
+        if 'facebook_url' in data:
+            org.facebook_url = data['facebook_url']
+        if 'instagram_url' in data:
+            org.instagram_url = data['instagram_url']
+        if 'twitter_url' in data:
+            org.twitter_url = data['twitter_url']
+        if 'tiktok_url' in data:
+            org.tiktok_url = data['tiktok_url']
         
         db.session.commit()
         return jsonify({
             'msg': 'Organization updated',
             'name': org.name,
             'logo_url': org.logo_url,
-            'theme_color': org.theme_color
+            'theme_color': org.theme_color,
+            'rehearsal_address': org.rehearsal_address,
+            'contact_phone': org.contact_phone,
+            'contact_email': org.contact_email,
+            'website': org.website,
+            'facebook_url': org.facebook_url,
+            'instagram_url': org.instagram_url,
+            'twitter_url': org.twitter_url,
+            'tiktok_url': org.tiktok_url
         })
 
 @admin_bp.route('/upload-logo', methods=['POST'])

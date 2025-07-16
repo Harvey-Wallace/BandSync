@@ -9,8 +9,31 @@ import DebugEnv from '../components/DebugEnv';
 import { getApiUrl } from '../utils/apiUrl';
 
 function AdminDashboard() {
-  const [org, setOrg] = useState({ name: '', logo_url: '', theme_color: '#007bff' });
-  const [orgEdit, setOrgEdit] = useState({ name: '', theme_color: '' });
+  const [org, setOrg] = useState({ 
+    name: '', 
+    logo_url: '', 
+    theme_color: '#007bff',
+    rehearsal_address: '',
+    contact_phone: '',
+    contact_email: '',
+    website: '',
+    facebook_url: '',
+    instagram_url: '',
+    twitter_url: '',
+    tiktok_url: ''
+  });
+  const [orgEdit, setOrgEdit] = useState({ 
+    name: '', 
+    theme_color: '',
+    rehearsal_address: '',
+    contact_phone: '',
+    contact_email: '',
+    website: '',
+    facebook_url: '',
+    instagram_url: '',
+    twitter_url: '',
+    tiktok_url: ''
+  });
   const [orgLoading, setOrgLoading] = useState(false);
   const [logoLoading, setLogoLoading] = useState(false);
   const [users, setUsers] = useState([]);
@@ -84,7 +107,18 @@ function AdminDashboard() {
       if (response.ok) {
         const data = await response.json();
         setOrg(data);
-        setOrgEdit({ name: data.name, theme_color: data.theme_color });
+        setOrgEdit({ 
+          name: data.name || '', 
+          theme_color: data.theme_color || '#007bff',
+          rehearsal_address: data.rehearsal_address || '',
+          contact_phone: data.contact_phone || '',
+          contact_email: data.contact_email || '',
+          website: data.website || '',
+          facebook_url: data.facebook_url || '',
+          instagram_url: data.instagram_url || '',
+          twitter_url: data.twitter_url || '',
+          tiktok_url: data.tiktok_url || ''
+        });
       } else {
         showToast('Failed to fetch organization data', 'danger');
       }
@@ -309,7 +343,19 @@ function AdminDashboard() {
 
       if (response.ok) {
         const data = await response.json();
-        setOrg(prev => ({ ...prev, name: data.name, theme_color: data.theme_color }));
+        setOrg(prev => ({ 
+          ...prev, 
+          name: data.name, 
+          theme_color: data.theme_color,
+          rehearsal_address: data.rehearsal_address,
+          contact_phone: data.contact_phone,
+          contact_email: data.contact_email,
+          website: data.website,
+          facebook_url: data.facebook_url,
+          instagram_url: data.instagram_url,
+          twitter_url: data.twitter_url,
+          tiktok_url: data.tiktok_url
+        }));
         showToast('Organization settings updated successfully');
         // Update localStorage organization name if it changed
         if (data.name) {
@@ -734,7 +780,7 @@ function AdminDashboard() {
             <div className="col-md-6">
               <div className="card">
                 <div className="card-header">
-                  <h5>Organization Settings</h5>
+                  <h5>Basic Information</h5>
                 </div>
                 <div className="card-body">
                   <form onSubmit={(e) => { e.preventDefault(); saveOrgSettings(); }}>
@@ -755,6 +801,16 @@ function AdminDashboard() {
                         className="form-control form-control-color"
                         value={orgEdit.theme_color}
                         onChange={(e) => handleOrgEdit('theme_color', e.target.value)}
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Rehearsal Address</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        value={orgEdit.rehearsal_address}
+                        onChange={(e) => handleOrgEdit('rehearsal_address', e.target.value)}
+                        placeholder="Enter your rehearsal venue address"
                       />
                     </div>
                     <button type="submit" className="btn btn-primary" disabled={orgLoading}>
@@ -799,6 +855,118 @@ function AdminDashboard() {
                       <div className="mt-2">Uploading...</div>
                     </div>
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Contact Information Row */}
+        {activeTab === 'organization' && (
+          <div className="row mt-4">
+            <div className="col-md-6">
+              <div className="card">
+                <div className="card-header">
+                  <h5>Contact Information</h5>
+                </div>
+                <div className="card-body">
+                  <form onSubmit={(e) => { e.preventDefault(); saveOrgSettings(); }}>
+                    <div className="mb-3">
+                      <label className="form-label">Contact Phone</label>
+                      <input
+                        type="tel"
+                        className="form-control"
+                        value={orgEdit.contact_phone}
+                        onChange={(e) => handleOrgEdit('contact_phone', e.target.value)}
+                        placeholder="e.g., +1 (555) 123-4567"
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Contact Email</label>
+                      <input
+                        type="email"
+                        className="form-control"
+                        value={orgEdit.contact_email}
+                        onChange={(e) => handleOrgEdit('contact_email', e.target.value)}
+                        placeholder="e.g., info@yourband.com"
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Website</label>
+                      <input
+                        type="url"
+                        className="form-control"
+                        value={orgEdit.website}
+                        onChange={(e) => handleOrgEdit('website', e.target.value)}
+                        placeholder="e.g., https://www.yourband.com"
+                      />
+                    </div>
+                    <button type="submit" className="btn btn-primary" disabled={orgLoading}>
+                      {orgLoading ? <Spinner size={20} /> : 'Save Changes'}
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-6">
+              <div className="card">
+                <div className="card-header">
+                  <h5>Social Media Links</h5>
+                </div>
+                <div className="card-body">
+                  <form onSubmit={(e) => { e.preventDefault(); saveOrgSettings(); }}>
+                    <div className="mb-3">
+                      <label className="form-label">
+                        <i className="bi bi-facebook text-primary me-2"></i>Facebook URL
+                      </label>
+                      <input
+                        type="url"
+                        className="form-control"
+                        value={orgEdit.facebook_url}
+                        onChange={(e) => handleOrgEdit('facebook_url', e.target.value)}
+                        placeholder="https://facebook.com/yourband"
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">
+                        <i className="bi bi-instagram text-danger me-2"></i>Instagram URL
+                      </label>
+                      <input
+                        type="url"
+                        className="form-control"
+                        value={orgEdit.instagram_url}
+                        onChange={(e) => handleOrgEdit('instagram_url', e.target.value)}
+                        placeholder="https://instagram.com/yourband"
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">
+                        <i className="bi bi-twitter text-info me-2"></i>Twitter/X URL
+                      </label>
+                      <input
+                        type="url"
+                        className="form-control"
+                        value={orgEdit.twitter_url}
+                        onChange={(e) => handleOrgEdit('twitter_url', e.target.value)}
+                        placeholder="https://twitter.com/yourband"
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">
+                        <i className="bi bi-tiktok text-dark me-2"></i>TikTok URL
+                      </label>
+                      <input
+                        type="url"
+                        className="form-control"
+                        value={orgEdit.tiktok_url}
+                        onChange={(e) => handleOrgEdit('tiktok_url', e.target.value)}
+                        placeholder="https://tiktok.com/@yourband"
+                      />
+                    </div>
+                    <button type="submit" className="btn btn-primary" disabled={orgLoading}>
+                      {orgLoading ? <Spinner size={20} /> : 'Save Changes'}
+                    </button>
+                  </form>
                 </div>
               </div>
             </div>

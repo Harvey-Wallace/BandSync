@@ -33,6 +33,20 @@ class Organization(db.Model):
     logo_url = db.Column(db.String(255), nullable=True)  # For organization logos
     theme_color = db.Column(db.String(7), default='#007bff')  # Primary color for branding
     
+    # Organization profile information
+    rehearsal_address = db.Column(db.Text, nullable=True)
+    contact_phone = db.Column(db.String(20), nullable=True)
+    contact_email = db.Column(db.String(120), nullable=True)
+    website = db.Column(db.String(255), nullable=True)
+    
+    # Social media links
+    facebook_url = db.Column(db.String(255), nullable=True)
+    instagram_url = db.Column(db.String(255), nullable=True)
+    twitter_url = db.Column(db.String(255), nullable=True)
+    tiktok_url = db.Column(db.String(255), nullable=True)
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
     # Relationships - specify foreign keys to avoid ambiguity
     legacy_users = db.relationship('User', foreign_keys='User.organization_id', backref='legacy_organization', overlaps="organization")
     events = db.relationship('Event', backref='organization', lazy=True)
