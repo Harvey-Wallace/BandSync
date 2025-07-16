@@ -428,6 +428,14 @@ function Dashboard() {
                               })}
                               {event.time && ` • ${formatTime(event.time)}`}
                             </span>
+                            {event.location_address && (
+                              <span className="badge bg-info text-xs">
+                                <i className="bi bi-geo-alt me-1"></i>
+                                {event.location_address.length > 20 ? 
+                                  event.location_address.substring(0, 20) + '...' : 
+                                  event.location_address}
+                              </span>
+                            )}
                             <span className={`badge bg-${getEventTypeBadge(event.event_type)} text-xs`}>
                               {event.event_type || 'other'}
                             </span>

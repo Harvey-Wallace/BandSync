@@ -279,6 +279,15 @@
   
   .event-card-compact .badge {
     font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  /* Truncate location text more aggressively on mobile */
+  .event-card-compact .badge.bg-info {
+    max-width: 150px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   
   /* Hide "going" text on mobile to save space */
