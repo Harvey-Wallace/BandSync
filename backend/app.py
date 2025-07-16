@@ -54,6 +54,71 @@ def auto_migrate_password_reset():
         print(f"❌ Migration failed: {e}")
         return False
 
+def auto_migrate_organization():
+    """Automatically add organization profile fields on app startup"""
+    
+    # Only run in production
+    if os.getenv('ENVIRONMENT') != 'production':
+        return True
+    
+    database_url = os.getenv('DATABASE_URL')
+    if not database_url:
+        print("DATABASE_URL not found - skipping organization migration")
+        return False
+    
+    try:
+        from sqlalchemy import create_engine, text
+        engine = create_engine(database_url)
+        
+        with engine.connect() as conn:
+            print("🚀 Starting organization migration...")
+            
+            # Check if organization columns exist
+            result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'organization' 
+                AND column_name IN ('rehearsal_address', 'contact_phone', 'contact_email', 
+                                  'website', 'facebook_url', 'instagram_url', 'twitter_url', 
+                                  'tiktok_url', 'created_at')
+            """))
+            
+            existing = [row[0] for row in result.fetchall()]
+            
+            # Define new columns to add
+            new_columns = [
+                ('rehearsal_address', 'TEXT'),
+                ('contact_phone', 'VARCHAR(20)'),
+                ('contact_email', 'VARCHAR(255)'),
+                ('website', 'VARCHAR(255)'),
+                ('facebook_url', 'VARCHAR(255)'),
+                ('instagram_url', 'VARCHAR(255)'),
+                ('twitter_url', 'VARCHAR(255)'),
+                ('tiktok_url', 'VARCHAR(255)'),
+                ('created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+            ]
+            
+            # Add missing columns
+            added_count = 0
+            for column_name, column_type in new_columns:
+                if column_name not in existing:
+                    conn.execute(text(f'ALTER TABLE "organization" ADD COLUMN {column_name} {column_type}'))
+                    print(f"✅ Added {column_name} column")
+                    added_count += 1
+            
+            conn.commit()
+            
+            if added_count > 0:
+                print(f"🎉 Organization migration completed! Added {added_count} columns.")
+            else:
+                print("✅ Organization columns already exist - no migration needed")
+            
+            return True
+            
+    except Exception as e:
+        print(f"❌ Organization migration failed: {e}")
+        return False
+
 # Disable Flask's default static file serving to use our custom route
 app = Flask(__name__, static_folder=None)
 app.config.from_object(Config)
@@ -283,6 +348,7 @@ print(f"Index.html exists: {os.path.exists('static/index.html')}")
 
 # Run auto-migration on startup
 auto_migrate_password_reset()
+auto_migrate_organization()
 
 if __name__ == '__main__':
     # Railway sets the PORT environment variable
