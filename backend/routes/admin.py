@@ -823,6 +823,9 @@ def send_invitation_email(user, password):
     try:
         from services.email_service import email_service
         
+        # Debug: Log the password being passed
+        print(f"DEBUG: Sending invitation email to {user.email} with password: '{password}'")
+        
         # Get the current admin user who is sending the invitation
         current_user_id = get_jwt_identity()
         inviting_admin = User.query.get(current_user_id)
