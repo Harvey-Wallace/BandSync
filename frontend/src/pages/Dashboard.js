@@ -409,197 +409,162 @@ function Dashboard() {
               const isExpanded = expandedEvents[event.id];
               
               return (
-                <div key={event.id} className="col-12 mb-4">
-                  <div className={`card shadow-sm ${!isUpcoming ? 'border-muted' : ''}`}>
-                    {/* Card Header */}
-                    <div className="card-header d-flex justify-content-between align-items-center">
-                      <div className="d-flex align-items-center">
-                        <span className="me-2" style={{ fontSize: '1.2em' }}>
+                <div key={event.id} className="col-12 mb-3">
+                  <div className={`card shadow-sm event-card-compact ${!isUpcoming ? 'border-muted event-past' : 'event-upcoming'}`}>
+                    {/* Collapsed View - Always Visible */}
+                    <div className="card-header d-flex justify-content-between align-items-center py-2">
+                      <div className="d-flex align-items-center flex-grow-1">
+                        <span className="me-2" style={{ fontSize: '1.1em' }}>
                           {getEventTypeIcon(event.event_type)}
                         </span>
-                        <h5 className="mb-0 fw-bold">{event.title}</h5>
-                        <span className={`badge bg-${getEventTypeBadge(event.event_type)} ms-2`}>
-                          {event.event_type || 'other'}
-                        </span>
-                        {!isUpcoming && (
-                          <span className="badge bg-secondary ms-2">Past Event</span>
-                        )}
+                        <div className="d-flex flex-column flex-md-row align-items-md-center flex-grow-1">
+                          <h6 className="mb-0 fw-bold me-md-3">{event.title}</h6>
+                          <div className="d-flex align-items-center gap-2 flex-wrap">
+                            <span className="badge bg-secondary text-xs">
+                              {new Date(event.date).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                              {event.time && ` • ${formatTime(event.time)}`}
+                            </span>
+                            <span className={`badge bg-${getEventTypeBadge(event.event_type)} text-xs`}>
+                              {event.event_type || 'other'}
+                            </span>
+                            {!isUpcoming && (
+                              <span className="badge bg-secondary text-xs">Past</span>
+                            )}
+                            <span className={`badge text-xs ${
+                              eventRsvp === 'Yes' ? 'bg-success' :
+                              eventRsvp === 'No' ? 'bg-danger' :
+                              eventRsvp === 'Maybe' ? 'bg-warning text-dark' :
+                              'bg-outline-secondary'
+                            }`}>
+                              {eventRsvp || 'No RSVP'}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                       <div className="d-flex align-items-center gap-2">
-                        <span className={`badge ${
-                          eventRsvp === 'Yes' ? 'bg-success' :
-                          eventRsvp === 'No' ? 'bg-danger' :
-                          eventRsvp === 'Maybe' ? 'bg-warning text-dark' :
-                          'bg-secondary'
-                        }`}>
-                          Your RSVP: {eventRsvp || 'No response'}
-                        </span>
+                        <small className="text-muted d-none d-md-inline">
+                          {rsvpSummary.yes?.length || 0} going
+                        </small>
                         <button
                           className="btn btn-sm btn-outline-secondary"
                           onClick={() => toggleEventExpansion(event.id)}
                         >
-                          {isExpanded ? 'Less Info' : 'More Info'}
-                          <i className={`bi bi-chevron-${isExpanded ? 'up' : 'down'} ms-1`}></i>
+                          <i className={`bi bi-${isExpanded ? 'dash' : 'plus'}`}></i>
                         </button>
                       </div>
                     </div>
 
-                    <div className="card-body">
-                      <div className="row">
-                        {/* Left Column - Event Details */}
-                        <div className="col-md-6">
-                          <p className="card-text mb-3">{event.description}</p>
-                          
-                          <div className="mb-2">
-                            <i className="bi bi-calendar3 me-2 text-muted"></i>
-                            <strong>Date:</strong> {new Date(event.date).toLocaleDateString('en-US', {
-                              weekday: 'long',
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric'
-                            })}
-                          </div>
-                          
-                          {event.time && (
+                    {/* Expanded View - Only When Expanded */}
+                    {isExpanded && (
+                      <div className="card-body event-card-expanded">
+                        <div className="row">
+                          {/* Left Column - Event Details */}
+                          <div className="col-md-6">
+                            <p className="card-text mb-3">{event.description}</p>
+                            
                             <div className="mb-2">
-                              <i className="bi bi-clock me-2 text-muted"></i>
-                              <strong>Time:</strong> {formatTime(event.time)}
-                            </div>
-                          )}
-                          
-                          {event.location_address && (
-                            <div className="mb-2">
-                              <i className="bi bi-geo-alt me-2 text-muted"></i>
-                              <strong>Location:</strong> {event.location_address}
-                              {event.lat && event.lng && (
-                                <a
-                                  href={`https://www.google.com/maps?q=${event.lat},${event.lng}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="ms-2 text-decoration-none"
-                                >
-                                  <i className="bi bi-box-arrow-up-right"></i> View on Map
-                                </a>
-                              )}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Right Column - Map and RSVP Summary */}
-                        <div className="col-md-6">
-                          {/* Small Map Preview */}
-                          {event.lat && event.lng && (
-                            <div className="mb-3">
-                              <h6 className="mb-2">
-                                <i className="bi bi-map me-2"></i>
-                                Location Map
-                              </h6>
-                              <div className="border rounded" style={{ height: '120px', overflow: 'hidden' }}>
-                                {getGoogleMapsApiKey() && event.lat && event.lng ? (
-                                  <iframe
-                                    src={`https://www.google.com/maps/embed/v1/place?key=${getGoogleMapsApiKey()}&q=${event.lat},${event.lng}&zoom=14`}
-                                    width="100%"
-                                    height="120"
-                                    style={{ border: 0 }}
-                                    allowFullScreen=""
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                    title={`Map for ${event.title}`}
-                                  ></iframe>
-                                ) : (
-                                  <div className="d-flex align-items-center justify-content-center h-100 bg-light text-muted">
-                                    <div className="text-center">
-                                      <i className="bi bi-map" style={{ fontSize: '1.5rem' }}></i>
-                                      <div className="mt-1">
-                                        <small>
-                                          {!getGoogleMapsApiKey() 
-                                            ? 'Google Maps API key required' 
-                                            : !event.lat || !event.lng 
-                                            ? 'Location coordinates not available' 
-                                            : 'Map unavailable'}
-                                        </small>
-                                      </div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                              <div className="mt-1 text-center">
-                                <a
-                                  href={`https://www.google.com/maps?q=${event.lat},${event.lng}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="btn btn-sm btn-outline-primary"
-                                >
-                                  <i className="bi bi-map me-1"></i>
-                                  Open in Google Maps
-                                </a>
-                              </div>
-                            </div>
-                          )}
-
-                          <h6 className="mb-3">
-                            <i className="bi bi-people me-2"></i>
-                            Member Responses ({rsvpSummary.total || 0} total)
-                          </h6>
-                          
-                          <div className="row g-2 mb-3">
-                            <div className="col-4">
-                              <div className="card bg-success bg-opacity-10 border-success">
-                                <div className="card-body text-center py-2">
-                                  <div className="fw-bold text-success">{(rsvpSummary.yes || []).length}</div>
-                                  <div className="small text-success">Going</div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="col-4">
-                              <div className="card bg-warning bg-opacity-10 border-warning">
-                                <div className="card-body text-center py-2">
-                                  <div className="fw-bold text-warning">{(rsvpSummary.maybe || []).length}</div>
-                                  <div className="small text-warning">Maybe</div>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="col-4">
-                              <div className="card bg-danger bg-opacity-10 border-danger">
-                                <div className="card-body text-center py-2">
-                                  <div className="fw-bold text-danger">{(rsvpSummary.no || []).length}</div>
-                                  <div className="small text-danger">Not Going</div>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* RSVP Buttons */}
-                          {isUpcoming && (
-                            <div className="btn-group w-100" role="group">
-                              {["yes", "maybe", "no"].map(option => {
-                                const capitalizedOption = option.charAt(0).toUpperCase() + option.slice(1);
-                                return (
-                                  <button
-                                    key={option}
-                                    type="button"
-                                    className={`btn ${eventRsvp === capitalizedOption ? 
-                                      (option === 'yes' ? 'btn-success' : 
-                                       option === 'no' ? 'btn-danger' : 'btn-warning') :
-                                      'btn-outline-secondary'
-                                    }`}
-                                    onClick={() => handleRSVP(event.id, option)}
-                                  >
-                                    <i className={`bi bi-${
-                                      option === 'yes' ? 'check' :
-                                      option === 'no' ? 'x' : 'question'
-                                    }-circle me-1`}></i>
-                                    {option === 'yes' ? 'Yes' : option === 'no' ? 'No' : 'Maybe'}
-                                  </button>
-                                );
+                              <i className="bi bi-calendar3 me-2 text-muted"></i>
+                              <strong>Date:</strong> {new Date(event.date).toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
                               })}
                             </div>
-                          )}
-                        </div>
-                      </div>
+                            
+                            {event.time && (
+                              <div className="mb-2">
+                                <i className="bi bi-clock me-2 text-muted"></i>
+                                <strong>Time:</strong> {formatTime(event.time)}
+                              </div>
+                            )}
+                            
+                            {event.location_address && (
+                              <div className="mb-2">
+                                <i className="bi bi-geo-alt me-2 text-muted"></i>
+                                <strong>Location:</strong> {event.location_address}
+                                {event.lat && event.lng && (
+                                  <a
+                                    href={`https://www.google.com/maps?q=${event.lat},${event.lng}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="ms-2 text-decoration-none"
+                                  >
+                                    <i className="bi bi-box-arrow-up-right"></i> View on Map
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
 
-                      {/* Expanded Details */}
-                      {isExpanded && (
+                          {/* Right Column - RSVP Summary and Actions */}
+                          <div className="col-md-6">
+                            <h6 className="mb-3">
+                              <i className="bi bi-people me-2"></i>
+                              Member Responses ({rsvpSummary.total || 0} total)
+                            </h6>
+                            
+                            <div className="row g-2 mb-3">
+                              <div className="col-4">
+                                <div className="card bg-success bg-opacity-10 border-success">
+                                  <div className="card-body text-center py-2">
+                                    <div className="fw-bold text-success">{(rsvpSummary.yes || []).length}</div>
+                                    <div className="small text-success">Going</div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="col-4">
+                                <div className="card bg-warning bg-opacity-10 border-warning">
+                                  <div className="card-body text-center py-2">
+                                    <div className="fw-bold text-warning">{(rsvpSummary.maybe || []).length}</div>
+                                    <div className="small text-warning">Maybe</div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="col-4">
+                                <div className="card bg-danger bg-opacity-10 border-danger">
+                                  <div className="card-body text-center py-2">
+                                    <div className="fw-bold text-danger">{(rsvpSummary.no || []).length}</div>
+                                    <div className="small text-danger">Not Going</div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* RSVP Buttons */}
+                            {isUpcoming && (
+                              <div className="btn-group w-100" role="group">
+                                {["yes", "maybe", "no"].map(option => {
+                                  const capitalizedOption = option.charAt(0).toUpperCase() + option.slice(1);
+                                  return (
+                                    <button
+                                      key={option}
+                                      type="button"
+                                      className={`btn ${eventRsvp === capitalizedOption ? 
+                                        (option === 'yes' ? 'btn-success' : 
+                                         option === 'no' ? 'btn-danger' : 'btn-warning') :
+                                        'btn-outline-secondary'
+                                      }`}
+                                      onClick={() => handleRSVP(event.id, option)}
+                                    >
+                                      <i className={`bi bi-${
+                                        option === 'yes' ? 'check' :
+                                        option === 'no' ? 'x' : 'question'
+                                      }-circle me-1`}></i>
+                                      {option === 'yes' ? 'Yes' : option === 'no' ? 'No' : 'Maybe'}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Additional Expanded Details */}
                         <div className="mt-4">
                           <hr />
                           <div className="row">
@@ -657,7 +622,7 @@ function Dashboard() {
                               })()}
                             </div>
 
-                            {/* Map */}
+                            {/* Map - Only One Map in Expanded View */}
                             {event.lat && event.lng && (
                               <div className="col-md-6">
                                 <h6>Location Map</h6>
@@ -701,8 +666,8 @@ function Dashboard() {
                             )}
                           </div>
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
