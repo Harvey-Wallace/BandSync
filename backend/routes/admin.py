@@ -99,11 +99,56 @@ def delete_user(user_id):
     claims = get_jwt()
     if claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
+    
     org_id = claims.get('organization_id')
-    u = User.query.filter_by(id=user_id, organization_id=org_id).first_or_404()
-    db.session.delete(u)
-    db.session.commit()
-    return jsonify({'msg': 'User deleted'})
+    user = User.query.filter_by(id=user_id, organization_id=org_id).first_or_404()
+    
+    try:
+        # Delete related records first to avoid foreign key constraints
+        
+        # Delete RSVPs
+        RSVP.query.filter_by(user_id=user_id).delete()
+        
+        # Delete email logs
+        EmailLog.query.filter_by(user_id=user_id).delete()
+        
+        # Delete user organization relationships
+        UserOrganization.query.filter_by(user_id=user_id).delete()
+        
+        # Update events created by this user to set created_by to None
+        Event.query.filter_by(created_by=user_id).update({'created_by': None})
+        
+        # Delete custom field responses if the model exists
+        try:
+            from models import CustomFieldResponse
+            CustomFieldResponse.query.filter_by(user_id=user_id).delete()
+        except ImportError:
+            pass
+        
+        # Update event attachments uploaded by this user to set uploaded_by to None
+        try:
+            from models import EventAttachment
+            EventAttachment.query.filter_by(uploaded_by=user_id).update({'uploaded_by': None})
+        except ImportError:
+            pass
+        
+        # Update surveys created by this user to set created_by to None
+        try:
+            from models import Survey
+            Survey.query.filter_by(created_by=user_id).update({'created_by': None})
+        except ImportError:
+            pass
+        
+        # Finally delete the user
+        db.session.delete(user)
+        db.session.commit()
+        
+        return jsonify({'msg': 'User deleted successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error deleting user: {str(e)}")
+        return jsonify({'error': f'Failed to delete user: {str(e)}'}), 500
 
 
 # Get or update organization info (name, etc.)
