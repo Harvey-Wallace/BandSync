@@ -40,7 +40,7 @@ function ProfilePage() {
   const loadUserProfile = async () => {
     setLoading(true);
     try {
-      const response = await apiClient.get('/api/auth/profile');
+      const response = await apiClient.get('/auth/profile');
       const userData = response.data;
       setUser(userData);
       setFormData(prev => ({
