@@ -47,6 +47,11 @@ function EventForm({ onSubmit, initialData, onCancel }) {
   const [sendReminders, setSendReminders] = useState(initialData?.send_reminders !== undefined ? initialData.send_reminders : true);
   const [reminderDaysBefore, setReminderDaysBefore] = useState(initialData?.reminder_days_before || 1);
   
+  // Time fields
+  const [arriveByTime, setArriveByTime] = useState(initialData?.arrive_by_time || '');
+  const [startTime, setStartTime] = useState(initialData?.start_time || '');
+  const [endTime, setEndTime] = useState(initialData?.end_time || '');
+  
   const mapRef = useRef(null);
   const autocompleteRef = useRef(null);
   const markerRef = useRef(null);
@@ -81,6 +86,9 @@ function EventForm({ onSubmit, initialData, onCancel }) {
       setTemplateName(initialData.template_name || '');
       setSendReminders(initialData.send_reminders !== undefined ? initialData.send_reminders : true);
       setReminderDaysBefore(initialData.reminder_days_before || 1);
+      setArriveByTime(initialData.arrive_by_time || '');
+      setStartTime(initialData.start_time || '');
+      setEndTime(initialData.end_time || '');
     }
   }, [initialData]);
 
@@ -255,7 +263,10 @@ function EventForm({ onSubmit, initialData, onCancel }) {
       is_template: isTemplate,
       template_name: isTemplate ? templateName : null,
       send_reminders: sendReminders,
-      reminder_days_before: reminderDaysBefore
+      reminder_days_before: reminderDaysBefore,
+      arrive_by_time: arriveByTime || null,
+      start_time: startTime || null,
+      end_time: endTime || null
     });
   };
 
@@ -426,6 +437,57 @@ function EventForm({ onSubmit, initialData, onCancel }) {
                   value={endDate} 
                   onChange={e => setEndDate(e.target.value)}
                 />
+              </div>
+            </div>
+          </div>
+
+          {/* Time Fields Section */}
+          <div className="row">
+            <div className="col-md-4">
+              <div className="mb-3">
+                <label className="form-label">
+                  <i className="bi bi-clock me-1"></i>
+                  Arrive By Time
+                </label>
+                <input 
+                  type="time" 
+                  className="form-control" 
+                  value={arriveByTime} 
+                  onChange={e => setArriveByTime(e.target.value)}
+                />
+                <small className="text-muted">When participants need to arrive</small>
+              </div>
+            </div>
+            
+            <div className="col-md-4">
+              <div className="mb-3">
+                <label className="form-label">
+                  <i className="bi bi-play-circle me-1"></i>
+                  Start Time
+                </label>
+                <input 
+                  type="time" 
+                  className="form-control" 
+                  value={startTime} 
+                  onChange={e => setStartTime(e.target.value)}
+                />
+                <small className="text-muted">When the event actually starts</small>
+              </div>
+            </div>
+            
+            <div className="col-md-4">
+              <div className="mb-3">
+                <label className="form-label">
+                  <i className="bi bi-stop-circle me-1"></i>
+                  End Time
+                </label>
+                <input 
+                  type="time" 
+                  className="form-control" 
+                  value={endTime} 
+                  onChange={e => setEndTime(e.target.value)}
+                />
+                <small className="text-muted">When the event ends</small>
               </div>
             </div>
           </div>

@@ -50,6 +50,9 @@ def get_events():
         'description': e.description,
         'date': e.date.isoformat(),
         'end_date': e.end_date.isoformat() if e.end_date else None,
+        'arrive_by_time': e.arrive_by_time.strftime('%H:%M') if e.arrive_by_time else None,
+        'start_time': e.start_time.strftime('%H:%M') if e.start_time else None,
+        'end_time': e.end_time.strftime('%H:%M') if e.end_time else None,
         'location': e.location_address,  # For backward compatibility
         'location_address': e.location_address,
         'lat': e.location_lat,
@@ -110,6 +113,18 @@ def create_event():
         if data.get('recurring_end_date'):
             recurring_end_date = datetime.fromisoformat(data['recurring_end_date'])
     
+    # Parse time fields
+    arrive_by_time = None
+    start_time = None
+    end_time = None
+    
+    if data.get('arrive_by_time'):
+        arrive_by_time = datetime.strptime(data['arrive_by_time'], '%H:%M').time()
+    if data.get('start_time'):
+        start_time = datetime.strptime(data['start_time'], '%H:%M').time()
+    if data.get('end_time'):
+        end_time = datetime.strptime(data['end_time'], '%H:%M').time()
+    
     # Create the main event
     event = Event(
         title=data.get('title') or data.get('name'),
@@ -117,6 +132,9 @@ def create_event():
         description=data.get('description'),
         date=event_date,
         end_date=end_date,
+        arrive_by_time=arrive_by_time,
+        start_time=start_time,
+        end_time=end_time,
         location_address=data.get('location_address'),
         location_lat=data.get('lat'),
         location_lng=data.get('lng'),
@@ -171,6 +189,14 @@ def edit_event(event_id):
         event.date = datetime.fromisoformat(data['date'])
     if 'end_date' in data:
         event.end_date = datetime.fromisoformat(data['end_date']) if data['end_date'] else None
+    
+    # Update time fields
+    if 'arrive_by_time' in data:
+        event.arrive_by_time = datetime.strptime(data['arrive_by_time'], '%H:%M').time() if data['arrive_by_time'] else None
+    if 'start_time' in data:
+        event.start_time = datetime.strptime(data['start_time'], '%H:%M').time() if data['start_time'] else None
+    if 'end_time' in data:
+        event.end_time = datetime.strptime(data['end_time'], '%H:%M').time() if data['end_time'] else None
     
     # Update location
     event.location_address = data.get('location_address', event.location_address)
