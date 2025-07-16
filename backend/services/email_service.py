@@ -103,7 +103,7 @@ class EmailService:
             return False
     
     def _log_email(self, user_id: int, organization_id: int, email_type: str, 
-                  subject: str, status: str, event_id: Optional[int] = None, 
+                  status: str, event_id: Optional[int] = None, 
                   error_message: Optional[str] = None, 
                   resend_message_id: Optional[str] = None) -> None:
         """
@@ -113,7 +113,6 @@ class EmailService:
             user_id: ID of the user receiving the email
             organization_id: ID of the organization
             email_type: Type of email (event_reminder, rsvp_deadline_reminder, etc.)
-            subject: Email subject line
             status: 'sent' or 'failed'
             event_id: Optional event ID if email is event-related
             error_message: Optional error message if failed
@@ -125,7 +124,6 @@ class EmailService:
                 event_id=event_id,
                 organization_id=organization_id,
                 email_type=email_type,
-                subject=subject,
                 sent_at=datetime.utcnow(),
                 status=status,
                 error_message=error_message,
@@ -265,7 +263,6 @@ class EmailService:
                         event_id=event.id,
                         organization_id=event.organization_id,
                         email_type='rsvp_deadline_reminder',
-                        subject=subject,
                         status='sent'
                     )
                     success_count += 1
@@ -276,7 +273,6 @@ class EmailService:
                         event_id=event.id,
                         organization_id=event.organization_id,
                         email_type='rsvp_deadline_reminder',
-                        subject=subject,
                         status='failed',
                         error_message='Failed to send via email service'
                     )
@@ -370,7 +366,6 @@ The BandSync Team
                     event_id=event.id,
                     organization_id=event.organization_id,
                     email_type='event_cancellation',
-                    subject=subject,
                     status='sent'
                 )
                 return True
@@ -382,7 +377,6 @@ The BandSync Team
                     event_id=event.id,
                     organization_id=event.organization_id,
                     email_type='event_cancellation',
-                    subject=subject,
                     status='failed',
                     error_message='Failed to send via email service'
                 )
