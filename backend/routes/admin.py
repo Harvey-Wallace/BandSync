@@ -405,7 +405,10 @@ def create_user():
             phone=data.get('phone', ''),
             address=data.get('address', ''),
             role=data.get('role', 'Member'),
-            organization_id=org_id
+            organization_id=org_id,  # Legacy field
+            current_organization_id=org_id,  # Current organization context
+            primary_organization_id=org_id,  # Primary organization
+            section_id=data.get('section_id')
         )
         
         # Set password (either provided or generate temporary)
@@ -413,6 +416,18 @@ def create_user():
         new_user.set_password(password)
         
         db.session.add(new_user)
+        db.session.flush()  # Flush to get the user ID
+        
+        # Create UserOrganization entry for multi-organization support
+        user_org = UserOrganization(
+            user_id=new_user.id,
+            organization_id=org_id,
+            role=data.get('role', 'Member'),
+            section_id=data.get('section_id'),
+            is_active=True
+        )
+        
+        db.session.add(user_org)
         db.session.commit()
         
         # Send invitation email if requested
