@@ -254,17 +254,17 @@ def organization():
     if request.method == 'GET':
         return jsonify({
             'id': org.id, 
-            'name': org.name,
-            'logo_url': org.logo_url,
-            'theme_color': org.theme_color,
-            'rehearsal_address': org.rehearsal_address,
-            'contact_phone': org.contact_phone,
-            'contact_email': org.contact_email,
-            'website': org.website,
-            'facebook_url': org.facebook_url,
-            'instagram_url': org.instagram_url,
-            'twitter_url': org.twitter_url,
-            'tiktok_url': org.tiktok_url
+            'name': org.name or '',
+            'logo_url': org.logo_url or '',
+            'theme_color': org.theme_color or '#007bff',
+            'rehearsal_address': org.rehearsal_address or '',
+            'contact_phone': org.contact_phone or '',
+            'contact_email': org.contact_email or '',
+            'website': org.website or '',
+            'facebook_url': org.facebook_url or '',
+            'instagram_url': org.instagram_url or '',
+            'twitter_url': org.twitter_url or '',
+            'tiktok_url': org.tiktok_url or ''
         })
     if request.method == 'PUT':
         data = request.get_json()
@@ -294,17 +294,17 @@ def organization():
         db.session.commit()
         return jsonify({
             'msg': 'Organization updated',
-            'name': org.name,
-            'logo_url': org.logo_url,
-            'theme_color': org.theme_color,
-            'rehearsal_address': org.rehearsal_address,
-            'contact_phone': org.contact_phone,
-            'contact_email': org.contact_email,
-            'website': org.website,
-            'facebook_url': org.facebook_url,
-            'instagram_url': org.instagram_url,
-            'twitter_url': org.twitter_url,
-            'tiktok_url': org.tiktok_url
+            'name': org.name or '',
+            'logo_url': org.logo_url or '',
+            'theme_color': org.theme_color or '#007bff',
+            'rehearsal_address': org.rehearsal_address or '',
+            'contact_phone': org.contact_phone or '',
+            'contact_email': org.contact_email or '',
+            'website': org.website or '',
+            'facebook_url': org.facebook_url or '',
+            'instagram_url': org.instagram_url or '',
+            'twitter_url': org.twitter_url or '',
+            'tiktok_url': org.tiktok_url or ''
         })
 
 @admin_bp.route('/upload-logo', methods=['POST'])

@@ -120,6 +120,8 @@ function AdminDashboard() {
           tiktok_url: data.tiktok_url || ''
         });
       } else {
+        const errorData = await response.json();
+        console.error('Failed to fetch organization data:', errorData);
         showToast('Failed to fetch organization data', 'danger');
       }
     } catch (error) {
@@ -367,7 +369,9 @@ function AdminDashboard() {
           detail: { theme_color: data.theme_color, name: data.name }
         }));
       } else {
-        showToast('Failed to update organization settings', 'danger');
+        const errorData = await response.json();
+        console.error('Failed to update organization settings:', errorData);
+        showToast(`Failed to update organization settings: ${errorData.msg || 'Unknown error'}`, 'danger');
       }
     } catch (error) {
       console.error('Error updating organization:', error);
