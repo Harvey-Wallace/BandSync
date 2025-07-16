@@ -249,7 +249,13 @@ def create_user():
         
         # Send invitation email if requested
         if data.get('send_invitation', False):
-            send_invitation_email(new_user, password)
+            try:
+                email_sent = send_invitation_email(new_user, password)
+                if not email_sent:
+                    print(f"Warning: Failed to send invitation email to {new_user.email}")
+            except Exception as e:
+                print(f"Error sending invitation email: {str(e)}")
+                # Don't fail the user creation if email fails
         
         return jsonify({
             'msg': 'User created successfully',
@@ -285,7 +291,12 @@ def send_user_invitation(user_id):
         db.session.commit()
         
         # Send invitation email
-        send_invitation_email(user, temp_password)
+        try:
+            email_sent = send_invitation_email(user, temp_password)
+            if not email_sent:
+                return jsonify({'error': 'Failed to send invitation email'}), 500
+        except Exception as e:
+            return jsonify({'error': f'Failed to send invitation email: {str(e)}'}), 500
         
         return jsonify({
             'msg': 'Invitation sent successfully',
@@ -672,30 +683,31 @@ def test_calendar_feed():
         return jsonify({'error': f'Failed to generate calendar feed: {str(e)}'}), 500
 
 def send_invitation_email(user, password):
-    """Send invitation email to user (placeholder - implement with actual email service)"""
-    # This is a placeholder function. In a real application, you would:
-    # 1. Use a service like SendGrid, AWS SES, or similar
-    # 2. Create a proper email template
-    # 3. Include a link to reset password on first login
-    
-    print(f"=== EMAIL INVITATION ===")
-    print(f"To: {user.email}")
-    print(f"Subject: Welcome to BandSync!")
-    print(f"")
-    print(f"Hi {user.name or user.username},")
-    print(f"")
-    print(f"You've been invited to join BandSync!")
-    print(f"")
-    print(f"Login details:")
-    print(f"Username: {user.username}")
-    print(f"Temporary Password: {password}")
-    print(f"")
-    print(f"Please log in and change your password immediately.")
-    print(f"=========================")
-    
-    # For now, just log the invitation details
-    # In production, replace this with actual email sending
-    pass
+    """Send invitation email to user using the proper email service"""
+    try:
+        from services.email_service import email_service
+        
+        # Get the current admin user who is sending the invitation
+        current_user_id = get_jwt_identity()
+        inviting_admin = User.query.get(current_user_id)
+        
+        if not inviting_admin:
+            print(f"Warning: Could not find admin user with ID {current_user_id}")
+            return False
+        
+        # Send the invitation email using the proper email service
+        success = email_service.send_user_invitation(user, password, inviting_admin)
+        
+        if success:
+            print(f"Invitation email sent successfully to {user.email}")
+        else:
+            print(f"Failed to send invitation email to {user.email}")
+            
+        return success
+        
+    except Exception as e:
+        print(f"Error sending invitation email: {str(e)}")
+        return False
 
 # Public endpoint to get all users with section info (for dashboard RSVP display)
 @admin_bp.route('/users/all', methods=['GET'])

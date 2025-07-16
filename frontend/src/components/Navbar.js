@@ -253,33 +253,9 @@ function Navbar() {
               </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link text-white px-2" to="/messaging">
-                <i className="bi bi-chat-dots me-1"></i>
-                <span>Messages</span>
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link text-white px-2" to="/substitution">
-                <i className="bi bi-person-plus me-1"></i>
-                <span>Substitutes</span>
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link text-white px-2" to="/polls">
-                <i className="bi bi-bar-chart me-1"></i>
-                <span>Polls</span>
-              </Link>
-            </li>
-            <li className="nav-item">
               <Link className="nav-link text-white px-2" to="/admin">
                 <i className="bi bi-gear me-1"></i>
                 <span>Admin</span>
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link className="nav-link text-white px-2" to="/bulk-operations">
-                <i className="bi bi-stack me-1"></i>
-                <span>Bulk</span>
               </Link>
             </li>
           </ul>
