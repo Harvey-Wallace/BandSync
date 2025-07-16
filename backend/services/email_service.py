@@ -383,13 +383,6 @@ class EmailService:
             
             login_url = f"{self.base_url}/login"
             
-            # Debug: Log what we're about to render
-            print(f"DEBUG: Rendering email template with:")
-            print(f"  user.username: {user.username}")
-            print(f"  temporary_password: '{temporary_password}'")
-            print(f"  inviting_admin: {inviting_admin.username if inviting_admin else None}")
-            print(f"  organization: {user.organization.name if user.organization else None}")
-            
             html_content = template.render(
                 user=user,
                 temporary_password=temporary_password,
