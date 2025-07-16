@@ -113,8 +113,19 @@ def delete_user(user_id):
         # Delete all records that reference this user
         
         # 1. Delete RSVPs
-        rsvp_count = RSVP.query.filter_by(user_id=user_id).delete()
-        print(f"Deleted {rsvp_count} RSVPs")
+        try:
+            rsvp_count = RSVP.query.filter_by(user_id=user_id).delete()
+            print(f"Deleted {rsvp_count} RSVPs")
+        except Exception as e:
+            # Handle potential column name mismatch (timestamp vs created_at)
+            if "timestamp does not exist" in str(e):
+                print(f"RSVP table schema mismatch detected, trying alternative deletion method")
+                # Use raw SQL to delete RSVPs if model is out of sync
+                db.session.execute(db.text("DELETE FROM rsvp WHERE user_id = :user_id"), {"user_id": user_id})
+                print("Deleted RSVPs using raw SQL")
+            else:
+                print(f"Error deleting RSVPs: {e}")
+                raise
         
         # 2. Delete email logs
         email_log_count = EmailLog.query.filter_by(user_id=user_id).delete()
