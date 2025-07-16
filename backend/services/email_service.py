@@ -288,6 +288,95 @@ class EmailService:
             logger.error(f"Error sending RSVP deadline reminders: {str(e)}")
             return False
     
+    def send_event_cancellation_notification(self, user, event, reason: str) -> bool:
+        """
+        Send event cancellation notification to a user
+        
+        Args:
+            user: User object to send notification to
+            event: Event object that was cancelled
+            reason: Reason for cancellation
+        
+        Returns:
+            bool: True if email sent successfully, False otherwise
+        """
+        try:
+            # Format event date
+            event_date = event.date.strftime('%A, %B %d, %Y')
+            event_time = event.date.strftime('%I:%M %p') if event.date else ''
+            
+            # Calculate how far in advance the cancellation is
+            days_until_event = (event.date.date() - datetime.now().date()).days if event.date else 0
+            
+            # Prepare template context
+            context = {
+                'user_name': user.name,
+                'event_title': event.title,
+                'event_date': event_date,
+                'event_time': event_time,
+                'event_location': event.location_address or 'Location TBD',
+                'cancellation_reason': reason,
+                'days_until_event': days_until_event,
+                'cancelled_at': event.cancelled_at.strftime('%B %d, %Y at %I:%M %p') if event.cancelled_at else 'Unknown',
+                'base_url': self.base_url
+            }
+            
+            # Load and render template
+            template = self.template_env.get_template('event_cancellation.html')
+            html_content = template.render(**context)
+            
+            # Create plain text version
+            text_content = f"""
+Hello {user.name},
+
+We regret to inform you that the following event has been cancelled:
+
+Event: {event.title}
+Date: {event_date}
+Time: {event_time}
+Location: {event.location_address or 'Location TBD'}
+
+Reason for cancellation: {reason}
+
+This cancellation was made {days_until_event} days before the event.
+
+We apologize for any inconvenience this may cause.
+
+Best regards,
+The BandSync Team
+"""
+            
+            subject = f"Event Cancelled: {event.title}"
+            
+            # Send email
+            if self._send_email([user.email], subject, html_content, text_content):
+                # Log successful email
+                self._log_email(
+                    user_id=user.id,
+                    event_id=event.id,
+                    organization_id=event.organization_id,
+                    email_type='event_cancellation',
+                    subject=subject,
+                    status='sent'
+                )
+                return True
+            else:
+                # Log failed email
+                self._log_email(
+                    user_id=user.id,
+                    event_id=event.id,
+                    organization_id=event.organization_id,
+                    email_type='event_cancellation',
+                    subject=subject,
+                    status='failed',
+                    error_message='Failed to send via email service'
+                )
+                return False
+                
+        except Exception as e:
+            logger.error(f"Error sending event cancellation notification to {user.email}: {str(e)}")
+            return False
+    
     def send_daily_summary(self, organization, admin_users: List, summary_data: Dict) -> bool:
         """
         Send daily summary of changes to admin users

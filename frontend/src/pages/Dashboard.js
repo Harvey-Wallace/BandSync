@@ -436,20 +436,28 @@ function Dashboard() {
                                   event.location_address}
                               </span>
                             )}
+                            {event.is_cancelled && (
+                              <span className="badge bg-danger text-xs">
+                                <i className="bi bi-x-circle me-1"></i>
+                                CANCELLED
+                              </span>
+                            )}
                             <span className={`badge bg-${getEventTypeBadge(event.event_type)} text-xs`}>
                               {event.event_type || 'other'}
                             </span>
                             {!isUpcoming && (
                               <span className="badge bg-secondary text-xs">Past</span>
                             )}
-                            <span className={`badge text-xs ${
-                              eventRsvp === 'Yes' ? 'bg-success' :
-                              eventRsvp === 'No' ? 'bg-danger' :
-                              eventRsvp === 'Maybe' ? 'bg-warning text-dark' :
-                              'bg-outline-secondary'
-                            }`}>
-                              {eventRsvp || 'No RSVP'}
-                            </span>
+                            {!event.is_cancelled && (
+                              <span className={`badge text-xs ${
+                                eventRsvp === 'Yes' ? 'bg-success' :
+                                eventRsvp === 'No' ? 'bg-danger' :
+                                eventRsvp === 'Maybe' ? 'bg-warning text-dark' :
+                                'bg-outline-secondary'
+                              }`}>
+                                {eventRsvp || 'No RSVP'}
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -459,7 +467,7 @@ function Dashboard() {
                         </small>
                         
                         {/* Quick RSVP buttons - only for upcoming events */}
-                        {isUpcoming && (
+                        {isUpcoming && !event.is_cancelled && (
                           <div className="btn-group me-2" role="group">
                             {["yes", "maybe", "no"].map(option => {
                               const capitalizedOption = option.charAt(0).toUpperCase() + option.slice(1);
@@ -500,6 +508,28 @@ function Dashboard() {
                         <div className="row">
                           {/* Left Column - Event Details */}
                           <div className="col-md-6">
+                            {event.is_cancelled && (
+                              <div className="alert alert-danger mb-3">
+                                <h6 className="alert-heading">
+                                  <i className="bi bi-x-circle-fill me-2"></i>
+                                  Event Cancelled
+                                </h6>
+                                <p className="mb-1">
+                                  <strong>Reason:</strong> {event.cancellation_reason}
+                                </p>
+                                <hr className="my-2" />
+                                <small className="text-muted">
+                                  Cancelled on {event.cancelled_at ? new Date(event.cancelled_at).toLocaleDateString('en-US', {
+                                    weekday: 'long',
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric'
+                                  }) : 'Unknown date'}
+                                  {event.canceller_name && ` by ${event.canceller_name}`}
+                                </small>
+                              </div>
+                            )}
+                            
                             <p className="card-text mb-3">{event.description}</p>
                             
                             <div className="mb-2">
@@ -572,7 +602,7 @@ function Dashboard() {
                             </div>
 
                             {/* RSVP Buttons */}
-                            {isUpcoming && (
+                            {isUpcoming && !event.is_cancelled && (
                               <div className="btn-group w-100" role="group">
                                 {["yes", "maybe", "no"].map(option => {
                                   const capitalizedOption = option.charAt(0).toUpperCase() + option.slice(1);
@@ -595,6 +625,12 @@ function Dashboard() {
                                     </button>
                                   );
                                 })}
+                              </div>
+                            )}
+                            {event.is_cancelled && (
+                              <div className="alert alert-secondary text-center">
+                                <i className="bi bi-x-circle me-2"></i>
+                                RSVP is disabled for cancelled events
                               </div>
                             )}
                           </div>

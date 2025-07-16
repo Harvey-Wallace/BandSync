@@ -28,6 +28,13 @@ function EventsPage() {
   const [showTemplates, setShowTemplates] = useState(false);
   // const [showTemplateForm, setShowTemplateForm] = useState(false); // Future use
   const [substituteRequests, setSubstituteRequests] = useState({}); // Track substitute requests
+  
+  // Event cancellation state
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [eventToCancel, setEventToCancel] = useState(null);
+  const [cancellationReason, setCancellationReason] = useState('');
+  const [sendCancellationNotification, setSendCancellationNotification] = useState(true);
+  const [cancelLoading, setCancelLoading] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -232,6 +239,64 @@ function EventsPage() {
         setToast({ show: true, message: 'Failed to delete event', type: 'danger' });
       }
     }
+  };
+
+  const handleCancelEvent = async () => {
+    if (!eventToCancel || !cancellationReason.trim()) {
+      setToast({ show: true, message: 'Please provide a reason for cancellation', type: 'danger' });
+      return;
+    }
+
+    setCancelLoading(true);
+    const token = localStorage.getItem('token');
+    
+    try {
+      const response = await axios.post(`${getApiUrl()}/events/${eventToCancel.id}/cancel`, {
+        reason: cancellationReason.trim(),
+        send_notification: sendCancellationNotification
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const { msg, notification_sent, notifications_count } = response.data;
+      
+      let successMessage = 'Event cancelled successfully';
+      if (notification_sent && notifications_count > 0) {
+        successMessage += ` - ${notifications_count} notification(s) sent`;
+      }
+      
+      setToast({ show: true, message: successMessage, type: 'success' });
+      
+      // Reset modal state
+      setShowCancelModal(false);
+      setEventToCancel(null);
+      setCancellationReason('');
+      setSendCancellationNotification(true);
+      
+      // Refresh events
+      fetchEvents();
+      if (role === 'Admin') fetchRsvpSummary();
+      
+    } catch (error) {
+      const errorMessage = error.response?.data?.msg || 'Failed to cancel event';
+      setToast({ show: true, message: errorMessage, type: 'danger' });
+    } finally {
+      setCancelLoading(false);
+    }
+  };
+
+  const openCancelModal = (event) => {
+    setEventToCancel(event);
+    setShowCancelModal(true);
+    setCancellationReason('');
+    setSendCancellationNotification(true);
+  };
+
+  const closeCancelModal = () => {
+    setShowCancelModal(false);
+    setEventToCancel(null);
+    setCancellationReason('');
+    setSendCancellationNotification(true);
   };
 
   const handleCategoryFilter = (categoryId) => {
@@ -531,7 +596,7 @@ function EventsPage() {
           <div className="row">
             {events.map(event => (
               <div key={event.id} className="col-md-6 col-lg-4 mb-4">
-                <div className="card h-100">
+                <div className={`card h-100 ${event.is_cancelled ? 'border-danger' : ''}`}>
                   <div className="card-header d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center">
                       <span className="me-2" style={{ fontSize: '1.2em' }}>
@@ -543,6 +608,12 @@ function EventsPage() {
                       )}
                     </div>
                     <div>
+                      {event.is_cancelled && (
+                        <span className="badge bg-danger me-2">
+                          <i className="bi bi-x-circle me-1"></i>
+                          CANCELLED
+                        </span>
+                      )}
                       {event.category && (
                         <span 
                           className={typeof getEventTypeBadge(event) === 'string' ? `badge bg-${getEventTypeBadge(event)} me-2` : 'badge me-2'}
@@ -557,6 +628,20 @@ function EventsPage() {
                     </div>
                   </div>
                   <div className="card-body">
+                    {event.is_cancelled && (
+                      <div className="alert alert-danger py-2 mb-3">
+                        <small>
+                          <strong>⚠️ This event has been cancelled</strong>
+                          <br />
+                          <em>Reason: {event.cancellation_reason}</em>
+                          <br />
+                          <small className="text-muted">
+                            Cancelled {event.cancelled_at ? new Date(event.cancelled_at).toLocaleDateString() : 'recently'}
+                            {event.canceller_name && ` by ${event.canceller_name}`}
+                          </small>
+                        </small>
+                      </div>
+                    )}
                     <p className="card-text">{event.description}</p>
                     <div className="mb-2">
                       <small className="text-muted">
@@ -633,9 +718,19 @@ function EventsPage() {
                               setShowForm(true);
                             }}
                             title="Edit Event"
+                            disabled={event.is_cancelled}
                           >
                             <i className="bi bi-pencil"></i>
                           </button>
+                          {!event.is_cancelled && (
+                            <button
+                              className="btn btn-sm btn-outline-warning me-2"
+                              onClick={() => openCancelModal(event)}
+                              title="Cancel Event"
+                            >
+                              <i className="bi bi-x-circle"></i>
+                            </button>
+                          )}
                           <button
                             className="btn btn-sm btn-outline-danger"
                             onClick={() => handleDelete(event.id)}
@@ -716,6 +811,103 @@ function EventsPage() {
           </div>
         )}
       </div>
+
+      {/* Event Cancellation Modal */}
+      {showCancelModal && (
+        <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="bi bi-x-circle-fill text-danger me-2"></i>
+                  Cancel Event
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={closeCancelModal}
+                  disabled={cancelLoading}
+                ></button>
+              </div>
+              <div className="modal-body">
+                {eventToCancel && (
+                  <>
+                    <div className="alert alert-warning">
+                      <strong>⚠️ Are you sure you want to cancel this event?</strong>
+                      <br />
+                      <strong>Event:</strong> {eventToCancel.title}
+                      <br />
+                      <strong>Date:</strong> {new Date(eventToCancel.date).toLocaleDateString()}
+                      <br />
+                      <small className="text-muted">
+                        This action cannot be undone. The event will be marked as cancelled.
+                      </small>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <label htmlFor="cancellationReason" className="form-label">
+                        <strong>Reason for cancellation *</strong>
+                      </label>
+                      <textarea
+                        id="cancellationReason"
+                        className="form-control"
+                        rows="3"
+                        placeholder="Please provide a reason for the cancellation (e.g., weather, illness, venue unavailable)..."
+                        value={cancellationReason}
+                        onChange={(e) => setCancellationReason(e.target.value)}
+                        disabled={cancelLoading}
+                      />
+                    </div>
+                    
+                    <div className="form-check mb-3">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="sendNotification"
+                        checked={sendCancellationNotification}
+                        onChange={(e) => setSendCancellationNotification(e.target.checked)}
+                        disabled={cancelLoading}
+                      />
+                      <label className="form-check-label" htmlFor="sendNotification">
+                        Send cancellation notification email to all members who have RSVP'd
+                      </label>
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={closeCancelModal}
+                  disabled={cancelLoading}
+                >
+                  Keep Event
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={handleCancelEvent}
+                  disabled={cancelLoading || !cancellationReason.trim()}
+                >
+                  {cancelLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Cancelling...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-x-circle me-1"></i>
+                      Cancel Event
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showCancelModal && <div className="modal-backdrop fade show"></div>}
 
       <Toast 
         show={toast.show}

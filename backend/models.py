@@ -242,6 +242,13 @@ class Event(db.Model):
     send_reminders = db.Column(db.Boolean, default=True)
     reminder_days_before = db.Column(db.Integer, default=1)  # Days before event to send reminder
     
+    # Event cancellation
+    is_cancelled = db.Column(db.Boolean, default=False)
+    cancelled_at = db.Column(db.DateTime, nullable=True)  # When event was cancelled
+    cancelled_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)  # Who cancelled it
+    cancellation_reason = db.Column(db.Text, nullable=True)  # Why it was cancelled
+    cancellation_notification_sent = db.Column(db.Boolean, default=False)  # Whether notification was sent
+    
     # Basic metadata
     organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -251,6 +258,7 @@ class Event(db.Model):
     rsvps = db.relationship('RSVP', backref='event', lazy=True)
     child_events = db.relationship('Event', backref=db.backref('parent_event', remote_side=[id]), lazy=True)
     creator = db.relationship('User', backref='created_events', lazy=True)
+    canceller = db.relationship('User', foreign_keys=[cancelled_by], backref='cancelled_events', lazy=True)
 
 class RSVP(db.Model):
     id = db.Column(db.Integer, primary_key=True)

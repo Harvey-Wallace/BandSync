@@ -68,7 +68,14 @@ def get_events():
         'reminder_days_before': e.reminder_days_before,
         'created_at': e.created_at.isoformat() if e.created_at else None,
         'created_by': e.created_by,
-        'creator_name': e.creator.name if e.creator else None
+        'creator_name': e.creator.name if e.creator else None,
+        # Cancellation information
+        'is_cancelled': e.is_cancelled,
+        'cancelled_at': e.cancelled_at.isoformat() if e.cancelled_at else None,
+        'cancelled_by': e.cancelled_by,
+        'canceller_name': e.canceller.name if e.canceller else None,
+        'cancellation_reason': e.cancellation_reason,
+        'cancellation_notification_sent': e.cancellation_notification_sent
     } for e in events])
 
 @events_bp.route('/', methods=['POST'])
@@ -182,6 +189,87 @@ def edit_event(event_id):
     
     db.session.commit()
     return jsonify({'msg': 'Event updated'})
+
+@events_bp.route('/<int:event_id>/cancel', methods=['POST'])
+@jwt_required()
+def cancel_event(event_id):
+    claims = get_jwt()
+    if claims.get('role') != 'Admin':
+        return jsonify({'msg': 'Admins only'}), 403
+    
+    org_id = claims.get('organization_id')
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    
+    event = Event.query.filter_by(id=event_id, organization_id=org_id).first_or_404()
+    
+    # Check if event is already cancelled
+    if event.is_cancelled:
+        return jsonify({'msg': 'Event is already cancelled'}), 400
+    
+    # Get cancellation data
+    reason = data.get('reason', '').strip()
+    send_notification = data.get('send_notification', False)
+    
+    if not reason:
+        return jsonify({'msg': 'Cancellation reason is required'}), 400
+    
+    # Mark event as cancelled
+    event.is_cancelled = True
+    event.cancelled_at = datetime.utcnow()
+    event.cancelled_by = user_id
+    event.cancellation_reason = reason
+    event.cancellation_notification_sent = False
+    
+    try:
+        db.session.commit()
+        
+        # Send cancellation notifications if requested
+        if send_notification and email_service:
+            try:
+                # Get all users who have RSVPed to this event
+                rsvps = RSVP.query.filter_by(event_id=event_id).all()
+                users_to_notify = []
+                
+                for rsvp in rsvps:
+                    user = User.query.get(rsvp.user_id)
+                    if user and user.email:
+                        users_to_notify.append(user)
+                
+                # Send cancellation email to each user
+                for user in users_to_notify:
+                    email_service.send_event_cancellation_notification(
+                        user=user,
+                        event=event,
+                        reason=reason
+                    )
+                
+                # Mark notification as sent
+                event.cancellation_notification_sent = True
+                db.session.commit()
+                
+                return jsonify({
+                    'msg': 'Event cancelled successfully',
+                    'notification_sent': True,
+                    'notifications_count': len(users_to_notify)
+                })
+                
+            except Exception as e:
+                print(f"Error sending cancellation notifications: {e}")
+                return jsonify({
+                    'msg': 'Event cancelled successfully but failed to send notifications',
+                    'notification_sent': False,
+                    'error': str(e)
+                })
+        else:
+            return jsonify({
+                'msg': 'Event cancelled successfully',
+                'notification_sent': False
+            })
+            
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'msg': 'Failed to cancel event', 'error': str(e)}), 500
 
 @events_bp.route('/<int:event_id>', methods=['DELETE'])
 @jwt_required()
