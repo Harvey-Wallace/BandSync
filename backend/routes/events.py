@@ -181,9 +181,11 @@ def create_event():
         create_recurring_events(event)
     
     # Send new event notifications (only for non-template events)
-    if not event.is_template and email_service:
+    if not event.is_template and email_service and data.get('send_notification', True):
         try:
-            email_service.send_new_event_notification(event)
+            # Get all users in the organization
+            users = User.query.filter_by(organization_id=org_id).all()
+            email_service.send_new_event_notification(event, users)
         except Exception as e:
             print(f"Failed to send new event notification: {e}")
     

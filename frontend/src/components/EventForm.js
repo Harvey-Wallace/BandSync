@@ -36,6 +36,7 @@ function EventForm({ onSubmit, initialData, onCancel }) {
   const [templateName, setTemplateName] = useState(initialData?.template_name || '');
   const [sendReminders, setSendReminders] = useState(initialData?.send_reminders !== undefined ? initialData.send_reminders : true);
   const [reminderDaysBefore, setReminderDaysBefore] = useState(initialData?.reminder_days_before || 1);
+  const [sendNotification, setSendNotification] = useState(initialData?.send_notification !== undefined ? initialData.send_notification : true);
   
   // Time fields
   const [arriveByTime, setArriveByTime] = useState(initialData?.arrive_by_time || '');
@@ -76,6 +77,7 @@ function EventForm({ onSubmit, initialData, onCancel }) {
       setTemplateName(initialData.template_name || '');
       setSendReminders(initialData.send_reminders !== undefined ? initialData.send_reminders : true);
       setReminderDaysBefore(initialData.reminder_days_before || 1);
+      setSendNotification(initialData.send_notification !== undefined ? initialData.send_notification : true);
       setArriveByTime(initialData.arrive_by_time || '');
       setStartTime(initialData.start_time || '');
       setEndTime(initialData.end_time || '');
@@ -254,6 +256,7 @@ function EventForm({ onSubmit, initialData, onCancel }) {
       template_name: isTemplate ? templateName : null,
       send_reminders: sendReminders,
       reminder_days_before: reminderDaysBefore,
+      send_notification: sendNotification,
       arrive_by_time: arriveByTime || null,
       start_time: startTime || null,
       end_time: endTime || null
@@ -382,6 +385,26 @@ function EventForm({ onSubmit, initialData, onCancel }) {
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Email Notification Section */}
+          <div className="mb-3">
+            <div className="form-check">
+              <input 
+                className="form-check-input" 
+                type="checkbox" 
+                id="sendNotification"
+                checked={sendNotification}
+                onChange={e => setSendNotification(e.target.checked)}
+              />
+              <label className="form-check-label" htmlFor="sendNotification">
+                <i className="bi bi-envelope me-1"></i>
+                Send email notification to all members when event is created
+              </label>
+            </div>
+            <small className="text-muted">
+              This will send an email to all organization members asking them to RSVP to the new event.
+            </small>
           </div>
 
           <div className="mb-3">
