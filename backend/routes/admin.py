@@ -1,6 +1,10 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from models import User, db, Organization, Section, EmailLog, UserOrganization, Event, RSVP
+from models import (
+    User, db, Organization, Section, EmailLog, UserOrganization, Event, RSVP,
+    EventFieldResponse, EventAttachment, EventSurvey, SurveyResponse, 
+    MessageThread, Message, MessageRecipient, SubstituteRequest, CallList, CallListMember
+)
 from datetime import datetime
 import cloudinary
 import cloudinary.uploader
@@ -104,51 +108,127 @@ def delete_user(user_id):
     user = User.query.filter_by(id=user_id, organization_id=org_id).first_or_404()
     
     try:
-        # Delete related records first to avoid foreign key constraints
+        print(f"Starting deletion process for user {user_id}")
         
-        # Delete RSVPs
-        RSVP.query.filter_by(user_id=user_id).delete()
+        # Delete all records that reference this user
         
-        # Delete email logs
-        EmailLog.query.filter_by(user_id=user_id).delete()
+        # 1. Delete RSVPs
+        rsvp_count = RSVP.query.filter_by(user_id=user_id).delete()
+        print(f"Deleted {rsvp_count} RSVPs")
         
-        # Delete user organization relationships
-        UserOrganization.query.filter_by(user_id=user_id).delete()
+        # 2. Delete email logs
+        email_log_count = EmailLog.query.filter_by(user_id=user_id).delete()
+        print(f"Deleted {email_log_count} email logs")
         
-        # Update events created by this user to set created_by to None
-        Event.query.filter_by(created_by=user_id).update({'created_by': None})
+        # 3. Delete user organization relationships
+        user_org_count = UserOrganization.query.filter_by(user_id=user_id).delete()
+        print(f"Deleted {user_org_count} user organization relationships")
         
-        # Delete custom field responses if the model exists
+        # 4. Delete event field responses
         try:
-            from models import CustomFieldResponse
-            CustomFieldResponse.query.filter_by(user_id=user_id).delete()
-        except ImportError:
-            pass
+            field_response_count = EventFieldResponse.query.filter_by(user_id=user_id).delete()
+            print(f"Deleted {field_response_count} event field responses")
+        except Exception as e:
+            print(f"Error deleting event field responses: {e}")
         
-        # Update event attachments uploaded by this user to set uploaded_by to None
+        # 5. Delete survey responses
         try:
-            from models import EventAttachment
-            EventAttachment.query.filter_by(uploaded_by=user_id).update({'uploaded_by': None})
-        except ImportError:
-            pass
+            survey_response_count = SurveyResponse.query.filter_by(user_id=user_id).delete()
+            print(f"Deleted {survey_response_count} survey responses")
+        except Exception as e:
+            print(f"Error deleting survey responses: {e}")
         
-        # Update surveys created by this user to set created_by to None
+        # 6. Delete message recipients
         try:
-            from models import Survey
-            Survey.query.filter_by(created_by=user_id).update({'created_by': None})
-        except ImportError:
-            pass
+            message_recipient_count = MessageRecipient.query.filter_by(user_id=user_id).delete()
+            print(f"Deleted {message_recipient_count} message recipients")
+        except Exception as e:
+            print(f"Error deleting message recipients: {e}")
+        
+        # 7. Delete substitute requests (both requested_by and filled_by)
+        try:
+            substitute_request_count = SubstituteRequest.query.filter_by(requested_by=user_id).delete()
+            substitute_filled_count = SubstituteRequest.query.filter_by(filled_by=user_id).update({'filled_by': None})
+            print(f"Deleted {substitute_request_count} substitute requests, updated {substitute_filled_count} filled requests")
+        except Exception as e:
+            print(f"Error handling substitute requests: {e}")
+        
+        # 8. Delete call list entries
+        try:
+            call_list_count = CallList.query.filter_by(user_id=user_id).delete()
+            call_list_member_count = CallListMember.query.filter_by(user_id=user_id).delete()
+            print(f"Deleted {call_list_count} call list entries and {call_list_member_count} call list members")
+        except Exception as e:
+            print(f"Error deleting call list entries: {e}")
+        
+        # 9. Update events created by this user to set created_by to None
+        event_update_count = Event.query.filter_by(created_by=user_id).update({'created_by': None})
+        print(f"Updated {event_update_count} events")
+        
+        # 10. Update event attachments uploaded by this user to set uploaded_by to None
+        try:
+            attachment_update_count = EventAttachment.query.filter_by(uploaded_by=user_id).update({'uploaded_by': None})
+            print(f"Updated {attachment_update_count} event attachments")
+        except Exception as e:
+            print(f"Error updating event attachments: {e}")
+        
+        # 11. Update event surveys created by this user to set created_by to None
+        try:
+            survey_update_count = EventSurvey.query.filter_by(created_by=user_id).update({'created_by': None})
+            print(f"Updated {survey_update_count} event surveys")
+        except Exception as e:
+            print(f"Error updating event surveys: {e}")
+        
+        # 12. Update message threads created by this user to set created_by to None
+        try:
+            thread_update_count = MessageThread.query.filter_by(created_by=user_id).update({'created_by': None})
+            print(f"Updated {thread_update_count} message threads")
+        except Exception as e:
+            print(f"Error updating message threads: {e}")
+        
+        # 13. Update messages sent by this user to set sender_id to None
+        try:
+            message_update_count = Message.query.filter_by(sender_id=user_id).update({'sender_id': None})
+            print(f"Updated {message_update_count} messages")
+        except Exception as e:
+            print(f"Error updating messages: {e}")
+        
+        # 14. Handle additional models that might exist but aren't imported
+        try:
+            # Try to handle any other models that might reference the user
+            from models import (
+                EventCustomField, OrganizationEmailAlias, EmailForwardingRule,
+                SectionMembership, PollResponse
+            )
+            
+            # Update email forwarding rules
+            EmailForwardingRule.query.filter_by(user_id=user_id).update({'user_id': None})
+            
+            # Delete section memberships
+            SectionMembership.query.filter_by(user_id=user_id).delete()
+            
+            # Delete poll responses
+            PollResponse.query.filter_by(user_id=user_id).delete()
+            
+            print("Handled additional models")
+            
+        except ImportError as e:
+            print(f"Some models not available: {e}")
+        except Exception as e:
+            print(f"Error handling additional models: {e}")
         
         # Finally delete the user
         db.session.delete(user)
         db.session.commit()
         
+        print(f"Successfully deleted user {user_id}")
         return jsonify({'msg': 'User deleted successfully'}), 200
         
     except Exception as e:
         db.session.rollback()
-        print(f"Error deleting user: {str(e)}")
-        return jsonify({'error': f'Failed to delete user: {str(e)}'}), 500
+        error_message = f'Failed to delete user: {str(e)}'
+        print(f"Error deleting user: {error_message}")
+        return jsonify({'error': error_message}), 500
 
 
 # Get or update organization info (name, etc.)

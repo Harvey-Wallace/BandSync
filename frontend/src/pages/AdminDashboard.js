@@ -426,7 +426,8 @@ function AdminDashboard() {
         setUsers(prev => prev.filter(user => user.id !== userId));
         showToast('User deleted successfully');
       } else {
-        showToast('Failed to delete user', 'danger');
+        const errorData = await response.json();
+        showToast(errorData.error || 'Failed to delete user', 'danger');
       }
     } catch (error) {
       console.error('Error deleting user:', error);
