@@ -197,10 +197,10 @@ class Event(db.Model):
     date = db.Column(db.DateTime, nullable=True)  # Nullable for templates
     end_date = db.Column(db.DateTime, nullable=True)  # For events with duration
     
-    # Time fields for better event scheduling
-    arrive_by_time = db.Column(db.Time, nullable=True)  # When participants should arrive
-    start_time = db.Column(db.Time, nullable=True)      # When the event actually starts
-    end_time = db.Column(db.Time, nullable=True)        # When the event ends
+    # Time fields for better event scheduling (commented out until migration runs)
+    # arrive_by_time = db.Column(db.Time, nullable=True)  # When participants should arrive
+    # start_time = db.Column(db.Time, nullable=True)      # When the event actually starts
+    # end_time = db.Column(db.Time, nullable=True)        # When the event ends
     
     # Enhanced location fields for Google Maps integration
     location_address = db.Column(db.Text, nullable=True)  # Full formatted address

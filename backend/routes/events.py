@@ -43,6 +43,15 @@ def get_events():
     
     events = query.order_by(Event.date.asc()).all()
     
+    def safe_get_time_field(event, field_name):
+        """Safely get time field, handling missing columns"""
+        try:
+            value = getattr(event, field_name, None)
+            return value.strftime('%H:%M') if value else None
+        except AttributeError:
+            # Column doesn't exist yet (before migration)
+            return None
+    
     return jsonify([{
         'id': e.id,
         'title': e.title,
@@ -50,9 +59,9 @@ def get_events():
         'description': e.description,
         'date': e.date.isoformat(),
         'end_date': e.end_date.isoformat() if e.end_date else None,
-        'arrive_by_time': e.arrive_by_time.strftime('%H:%M') if e.arrive_by_time else None,
-        'start_time': e.start_time.strftime('%H:%M') if e.start_time else None,
-        'end_time': e.end_time.strftime('%H:%M') if e.end_time else None,
+        'arrive_by_time': safe_get_time_field(e, 'arrive_by_time'),
+        'start_time': safe_get_time_field(e, 'start_time'),
+        'end_time': safe_get_time_field(e, 'end_time'),
         'location': e.location_address,  # For backward compatibility
         'location_address': e.location_address,
         'lat': e.location_lat,
@@ -125,33 +134,44 @@ def create_event():
     if data.get('end_time'):
         end_time = datetime.strptime(data['end_time'], '%H:%M').time()
     
-    # Create the main event
-    event = Event(
-        title=data.get('title') or data.get('name'),
-        type=data.get('type', 'Rehearsal'),
-        description=data.get('description'),
-        date=event_date,
-        end_date=end_date,
-        arrive_by_time=arrive_by_time,
-        start_time=start_time,
-        end_time=end_time,
-        location_address=data.get('location_address'),
-        location_lat=data.get('lat'),
-        location_lng=data.get('lng'),
-        location_place_id=data.get('location_place_id'),
-        category_id=data.get('category_id'),
-        is_recurring=data.get('is_recurring', False),
-        recurring_pattern=data.get('recurring_pattern'),
-        recurring_interval=data.get('recurring_interval', 1),
-        recurring_end_date=recurring_end_date,
-        recurring_count=data.get('recurring_count'),
-        is_template=data.get('is_template', False),
-        template_name=data.get('template_name'),
-        send_reminders=data.get('send_reminders', True),
-        reminder_days_before=data.get('reminder_days_before', 1),
-        organization_id=org_id,
-        created_by=user_id
-    )
+    # Create the main event (time fields will be ignored if columns don't exist)
+    event_data = {
+        'title': data.get('title') or data.get('name'),
+        'type': data.get('type', 'Rehearsal'),
+        'description': data.get('description'),
+        'date': event_date,
+        'end_date': end_date,
+        'location_address': data.get('location_address'),
+        'location_lat': data.get('lat'),
+        'location_lng': data.get('lng'),
+        'location_place_id': data.get('location_place_id'),
+        'category_id': data.get('category_id'),
+        'is_recurring': data.get('is_recurring', False),
+        'recurring_pattern': data.get('recurring_pattern'),
+        'recurring_interval': data.get('recurring_interval', 1),
+        'recurring_end_date': recurring_end_date,
+        'recurring_count': data.get('recurring_count'),
+        'is_template': data.get('is_template', False),
+        'template_name': data.get('template_name'),
+        'send_reminders': data.get('send_reminders', True),
+        'reminder_days_before': data.get('reminder_days_before', 1),
+        'organization_id': org_id,
+        'created_by': user_id
+    }
+    
+    # Add time fields only if they exist in the model
+    try:
+        if hasattr(Event, 'arrive_by_time'):
+            event_data['arrive_by_time'] = arrive_by_time
+        if hasattr(Event, 'start_time'):
+            event_data['start_time'] = start_time
+        if hasattr(Event, 'end_time'):
+            event_data['end_time'] = end_time
+    except Exception:
+        # Time fields not available yet, skip them
+        pass
+    
+    event = Event(**event_data)
     
     db.session.add(event)
     db.session.commit()
@@ -190,13 +210,28 @@ def edit_event(event_id):
     if 'end_date' in data:
         event.end_date = datetime.fromisoformat(data['end_date']) if data['end_date'] else None
     
-    # Update time fields
+    # Update time fields (only if columns exist)
     if 'arrive_by_time' in data:
-        event.arrive_by_time = datetime.strptime(data['arrive_by_time'], '%H:%M').time() if data['arrive_by_time'] else None
+        try:
+            if hasattr(event, 'arrive_by_time'):
+                event.arrive_by_time = datetime.strptime(data['arrive_by_time'], '%H:%M').time() if data['arrive_by_time'] else None
+        except AttributeError:
+            # Column doesn't exist yet
+            pass
     if 'start_time' in data:
-        event.start_time = datetime.strptime(data['start_time'], '%H:%M').time() if data['start_time'] else None
+        try:
+            if hasattr(event, 'start_time'):
+                event.start_time = datetime.strptime(data['start_time'], '%H:%M').time() if data['start_time'] else None
+        except AttributeError:
+            # Column doesn't exist yet
+            pass
     if 'end_time' in data:
-        event.end_time = datetime.strptime(data['end_time'], '%H:%M').time() if data['end_time'] else None
+        try:
+            if hasattr(event, 'end_time'):
+                event.end_time = datetime.strptime(data['end_time'], '%H:%M').time() if data['end_time'] else None
+        except AttributeError:
+            # Column doesn't exist yet
+            pass
     
     # Update location
     event.location_address = data.get('location_address', event.location_address)
