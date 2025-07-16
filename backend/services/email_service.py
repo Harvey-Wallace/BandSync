@@ -301,6 +301,13 @@ class EmailService:
             bool: True if email sent successfully, False otherwise
         """
         try:
+            print(f"📧 Attempting to send cancellation notification to {user.email}")
+            
+            # Check if email service is available
+            if not self.client:
+                print("❌ Email service not available (no API key)")
+                return False
+            
             # Format event date
             event_date = event.date.strftime('%A, %B %d, %Y')
             event_time = event.date.strftime('%I:%M %p') if event.date else ''
@@ -321,9 +328,13 @@ class EmailService:
                 'base_url': self.base_url
             }
             
+            print(f"📄 Template context prepared: {context}")
+            
             # Load and render template
             template = self.template_env.get_template('event_cancellation.html')
             html_content = template.render(**context)
+            
+            print(f"📝 HTML content rendered, length: {len(html_content)}")
             
             # Create plain text version
             text_content = f"""
@@ -348,8 +359,11 @@ The BandSync Team
             
             subject = f"Event Cancelled: {event.title}"
             
+            print(f"📬 Sending email with subject: {subject}")
+            
             # Send email
             if self._send_email([user.email], subject, html_content, text_content):
+                print(f"✅ Email sent successfully to {user.email}")
                 # Log successful email
                 self._log_email(
                     user_id=user.id,
@@ -361,6 +375,7 @@ The BandSync Team
                 )
                 return True
             else:
+                print(f"❌ Failed to send email to {user.email}")
                 # Log failed email
                 self._log_email(
                     user_id=user.id,
@@ -374,6 +389,7 @@ The BandSync Team
                 return False
                 
         except Exception as e:
+            print(f"❌ Error sending event cancellation notification to {user.email}: {str(e)}")
             logger.error(f"Error sending event cancellation notification to {user.email}: {str(e)}")
             return False
     

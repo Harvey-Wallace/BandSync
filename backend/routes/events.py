@@ -227,6 +227,8 @@ def cancel_event(event_id):
         # Send cancellation notifications if requested
         if send_notification and email_service:
             try:
+                print(f"🔍 Starting cancellation notification process for event {event_id}")
+                
                 # Get all active members of the organization
                 from models import UserOrganization
                 user_orgs = UserOrganization.query.filter_by(
@@ -234,19 +236,37 @@ def cancel_event(event_id):
                     is_active=True
                 ).all()
                 
+                print(f"📊 Found {len(user_orgs)} active user organizations")
+                
                 users_to_notify = []
                 for user_org in user_orgs:
                     user = User.query.get(user_org.user_id)
                     if user and user.email and user.email_notifications:
                         users_to_notify.append(user)
+                        print(f"✅ Added user {user.name} ({user.email}) to notification list")
+                    elif user:
+                        print(f"⚠️  Skipped user {user.name} - email: {user.email}, notifications: {user.email_notifications}")
                 
+                print(f"📧 Will send notifications to {len(users_to_notify)} users")
+                
+                success_count = 0
                 # Send cancellation email to each user
                 for user in users_to_notify:
-                    email_service.send_event_cancellation_notification(
-                        user=user,
-                        event=event,
-                        reason=reason
-                    )
+                    try:
+                        result = email_service.send_event_cancellation_notification(
+                            user=user,
+                            event=event,
+                            reason=reason
+                        )
+                        if result:
+                            success_count += 1
+                            print(f"✅ Successfully sent cancellation email to {user.email}")
+                        else:
+                            print(f"❌ Failed to send cancellation email to {user.email}")
+                    except Exception as e:
+                        print(f"❌ Error sending to {user.email}: {e}")
+                
+                print(f"📈 Successfully sent {success_count} of {len(users_to_notify)} cancellation emails")
                 
                 # Mark notification as sent
                 event.cancellation_notification_sent = True
@@ -255,7 +275,8 @@ def cancel_event(event_id):
                 return jsonify({
                     'msg': 'Event cancelled successfully',
                     'notification_sent': True,
-                    'notifications_count': len(users_to_notify)
+                    'notifications_count': len(users_to_notify),
+                    'success_count': success_count
                 })
                 
             except Exception as e:
