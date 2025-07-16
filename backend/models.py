@@ -48,7 +48,6 @@ class Organization(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships - specify foreign keys to avoid ambiguity
-    legacy_users = db.relationship('User', foreign_keys='User.organization_id', backref='legacy_organization', overlaps="organization")
     events = db.relationship('Event', backref='organization', lazy=True)
     sections = db.relationship('Section', backref='organization', lazy=True)
     event_categories = db.relationship('EventCategory', backref='organization', lazy=True)
@@ -132,10 +131,8 @@ class User(db.Model):
     
     # Relationships
     rsvps = db.relationship('RSVP', backref='user', lazy=True)
-    current_organization = db.relationship('Organization', foreign_keys=[current_organization_id])
-    primary_organization = db.relationship('Organization', foreign_keys=[primary_organization_id])
-    # Legacy relationship (kept for backward compatibility)
-    organization = db.relationship('Organization', foreign_keys=[organization_id], overlaps="legacy_organization,legacy_users")
+    current_organization = db.relationship('Organization', foreign_keys=[current_organization_id], overlaps="primary_organization")
+    primary_organization = db.relationship('Organization', foreign_keys=[primary_organization_id], overlaps="current_organization")
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -257,7 +254,7 @@ class Event(db.Model):
     # Relationships
     rsvps = db.relationship('RSVP', backref='event', lazy=True)
     child_events = db.relationship('Event', backref=db.backref('parent_event', remote_side=[id]), lazy=True)
-    creator = db.relationship('User', backref='created_events', lazy=True)
+    creator = db.relationship('User', foreign_keys=[created_by], backref='created_events', lazy=True)
     canceller = db.relationship('User', foreign_keys=[cancelled_by], backref='cancelled_events', lazy=True)
 
 class RSVP(db.Model):
