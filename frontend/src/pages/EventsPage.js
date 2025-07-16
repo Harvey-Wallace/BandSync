@@ -869,7 +869,7 @@ function EventsPage() {
                         disabled={cancelLoading}
                       />
                       <label className="form-check-label" htmlFor="sendNotification">
-                        Send cancellation notification email to all members who have RSVP'd
+                        Send cancellation notification email to all organization members
                       </label>
                     </div>
                   </>

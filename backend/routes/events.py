@@ -227,13 +227,17 @@ def cancel_event(event_id):
         # Send cancellation notifications if requested
         if send_notification and email_service:
             try:
-                # Get all users who have RSVPed to this event
-                rsvps = RSVP.query.filter_by(event_id=event_id).all()
-                users_to_notify = []
+                # Get all active members of the organization
+                from models import UserOrganization
+                user_orgs = UserOrganization.query.filter_by(
+                    organization_id=org_id,
+                    is_active=True
+                ).all()
                 
-                for rsvp in rsvps:
-                    user = User.query.get(rsvp.user_id)
-                    if user and user.email:
+                users_to_notify = []
+                for user_org in user_orgs:
+                    user = User.query.get(user_org.user_id)
+                    if user and user.email and user.email_notifications:
                         users_to_notify.append(user)
                 
                 # Send cancellation email to each user
