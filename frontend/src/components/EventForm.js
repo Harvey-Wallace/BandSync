@@ -8,27 +8,17 @@ function EventForm({ onSubmit, initialData, onCancel }) {
   const [type, setType] = useState(initialData?.event_type || initialData?.type || 'Rehearsal');
   const [description, setDescription] = useState(initialData?.description || '');
   
-  // Handle date and time combination for datetime-local input
-  const getDateTimeValue = (dateStr, timeStr) => {
+  // Handle date values for date-only input
+  const getDateValue = (dateStr) => {
     if (!dateStr) return '';
-    
-    if (timeStr) {
-      // Combine date and time
-      const date = new Date(dateStr);
-      const [hours, minutes] = timeStr.split(':');
-      date.setHours(parseInt(hours), parseInt(minutes));
-      return date.toISOString().slice(0, 16);
-    } else {
-      // Just date
-      const date = new Date(dateStr);
-      return date.toISOString().slice(0, 16);
-    }
+    const date = new Date(dateStr);
+    return date.toISOString().slice(0, 10); // YYYY-MM-DD format
   };
   
   const [date, setDate] = useState(
-    initialData?.date ? getDateTimeValue(initialData.date, initialData.time) : ''
+    initialData?.date ? getDateValue(initialData.date) : ''
   );
-  const [endDate, setEndDate] = useState(initialData?.end_date ? initialData.end_date.slice(0, 16) : '');
+  const [endDate, setEndDate] = useState(initialData?.end_date ? getDateValue(initialData.end_date) : '');
   const [location, setLocation] = useState(initialData?.location || '');
   const [locationAddress, setLocationAddress] = useState(initialData?.location_address || '');
   const [locationLat, setLocationLat] = useState(initialData?.lat || null);
@@ -70,8 +60,8 @@ function EventForm({ onSubmit, initialData, onCancel }) {
       setTitle(initialData.title || '');
       setType(initialData.event_type || initialData.type || 'Rehearsal');
       setDescription(initialData.description || '');
-      setDate(initialData.date ? getDateTimeValue(initialData.date, initialData.time) : '');
-      setEndDate(initialData.end_date ? initialData.end_date.slice(0, 16) : '');
+      setDate(initialData.date ? getDateValue(initialData.date) : '');
+      setEndDate(initialData.end_date ? getDateValue(initialData.end_date) : '');
       setLocation(initialData.location || '');
       setLocationAddress(initialData.location_address || '');
       setLocationLat(initialData.lat || null);
@@ -413,10 +403,10 @@ function EventForm({ onSubmit, initialData, onCancel }) {
               <div className="mb-3">
                 <label className="form-label">
                   <i className="bi bi-calendar-event me-1"></i>
-                  Start Date & Time *
+                  Start Date *
                 </label>
                 <input 
-                  type="datetime-local" 
+                  type="date" 
                   className="form-control" 
                   value={date} 
                   onChange={e => setDate(e.target.value)} 
@@ -429,10 +419,10 @@ function EventForm({ onSubmit, initialData, onCancel }) {
               <div className="mb-3">
                 <label className="form-label">
                   <i className="bi bi-calendar-check me-1"></i>
-                  End Date & Time
+                  End Date
                 </label>
                 <input 
-                  type="datetime-local" 
+                  type="date" 
                   className="form-control" 
                   value={endDate} 
                   onChange={e => setEndDate(e.target.value)}
