@@ -449,6 +449,34 @@ function Dashboard() {
                         <small className="text-muted d-none d-md-inline">
                           {rsvpSummary.yes?.length || 0} going
                         </small>
+                        
+                        {/* Quick RSVP buttons - only for upcoming events */}
+                        {isUpcoming && (
+                          <div className="btn-group me-2" role="group">
+                            {["yes", "maybe", "no"].map(option => {
+                              const capitalizedOption = option.charAt(0).toUpperCase() + option.slice(1);
+                              return (
+                                <button
+                                  key={option}
+                                  type="button"
+                                  className={`btn btn-sm ${eventRsvp === capitalizedOption ? 
+                                    (option === 'yes' ? 'btn-success' : 
+                                     option === 'no' ? 'btn-danger' : 'btn-warning') :
+                                    'btn-outline-secondary'
+                                  }`}
+                                  onClick={() => handleRSVP(event.id, option)}
+                                  title={`RSVP ${option === 'yes' ? 'Yes' : option === 'no' ? 'No' : 'Maybe'}`}
+                                >
+                                  <i className={`bi bi-${
+                                    option === 'yes' ? 'check' :
+                                    option === 'no' ? 'x' : 'question'
+                                  }-circle`}></i>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                        
                         <button
                           className="btn btn-sm btn-outline-secondary"
                           onClick={() => toggleEventExpansion(event.id)}
