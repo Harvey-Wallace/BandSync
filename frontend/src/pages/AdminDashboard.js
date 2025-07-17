@@ -6,6 +6,7 @@ import UserAvatar from '../components/UserAvatar';
 import GroupEmailManager from '../components/GroupEmailManager';
 import BulkOperations from '../components/BulkOperations';
 import DebugEnv from '../components/DebugEnv';
+import AnalyticsDashboard from '../components/AnalyticsDashboard';
 import { getApiUrl } from '../utils/apiUrl';
 
 function AdminDashboard() {
@@ -738,6 +739,14 @@ function AdminDashboard() {
           </li>
           <li className="nav-item">
             <button
+              className={`nav-link ${activeTab === 'analytics' ? 'active' : ''}`}
+              onClick={() => setActiveTab('analytics')}
+            >
+              Analytics
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
               className={`nav-link ${activeTab === 'groupemail' ? 'active' : ''}`}
               onClick={() => setActiveTab('groupemail')}
             >
@@ -1402,6 +1411,15 @@ function AdminDashboard() {
           <div className="row">
             <div className="col-12">
               <GroupEmailManager showToast={showToast} />
+            </div>
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <div className="row">
+            <div className="col-12">
+              <AnalyticsDashboard showToast={showToast} />
             </div>
           </div>
         )}

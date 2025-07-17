@@ -147,6 +147,7 @@ from routes.messages import messages_bp
 from routes.substitutes import substitutes_bp
 from routes.bulk_ops import bulk_ops_bp
 from routes.quick_polls import quick_polls_bp
+from routes.analytics import analytics_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(events_bp, url_prefix='/api/events')
@@ -164,6 +165,7 @@ app.register_blueprint(messages_bp, url_prefix='/api/messages')
 app.register_blueprint(substitutes_bp, url_prefix='/api/substitutes')
 app.register_blueprint(bulk_ops_bp, url_prefix='/api/bulk-ops')
 app.register_blueprint(quick_polls_bp, url_prefix='/api/quick-polls')
+app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 
 # JWT error handlers
 @jwt.unauthorized_loader
