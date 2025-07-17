@@ -299,6 +299,39 @@ function EventsPage() {
     setSendCancellationNotification(true);
   };
 
+  const downloadEventRSVPPDF = async (event) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`${getApiUrl()}/events/${event.id}/rsvp-report/pdf`, {
+        headers: { 
+          Authorization: `Bearer ${token}` 
+        },
+        responseType: 'blob'
+      });
+
+      // Create blob and download
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Create safe filename
+      const safeTitle = event.title.replace(/[^a-zA-Z0-9\s\-_]/g, '');
+      const date = new Date().toISOString().split('T')[0];
+      link.download = `RSVP_Report_${safeTitle}_${date}.pdf`;
+      
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      setToast({ show: true, message: 'PDF report downloaded successfully', type: 'success' });
+    } catch (error) {
+      const errorMessage = error.response?.data?.msg || 'Failed to download PDF report';
+      setToast({ show: true, message: errorMessage, type: 'danger' });
+    }
+  };
+
   const handleCategoryFilter = (categoryId) => {
     setSelectedCategory(categoryId);
     // Trigger refetch when category changes
@@ -731,6 +764,13 @@ function EventsPage() {
                               <i className="bi bi-x-circle"></i>
                             </button>
                           )}
+                          <button
+                            className="btn btn-sm btn-outline-info me-2"
+                            onClick={() => downloadEventRSVPPDF(event)}
+                            title="Download RSVP Report PDF"
+                          >
+                            <i className="bi bi-file-earmark-pdf"></i>
+                          </button>
                           <button
                             className="btn btn-sm btn-outline-danger"
                             onClick={() => handleDelete(event.id)}

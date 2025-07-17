@@ -89,7 +89,8 @@ class ScheduledTaskService:
                     Event.date.isnot(None),
                     Event.date <= cutoff_time,
                     Event.date >= datetime.utcnow(),
-                    Event.is_template == False
+                    Event.is_template == False,
+                    Event.is_cancelled == False  # Don't send reminders for cancelled events
                 ).all()
                 
                 for event in events:
@@ -186,7 +187,8 @@ class ScheduledTaskService:
                     Event.date.isnot(None),
                     Event.date <= cutoff_time,
                     Event.date >= datetime.utcnow(),
-                    Event.is_template == False
+                    Event.is_template == False,
+                    Event.is_cancelled == False  # Don't send RSVP reminders for cancelled events
                 ).all()
                 
                 total_reminders_sent = 0

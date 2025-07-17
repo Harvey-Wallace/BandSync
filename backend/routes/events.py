@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 from models import Event, RSVP, EventCategory, User, db
 from datetime import datetime, timedelta
@@ -688,3 +688,43 @@ def send_event_reminder(event, users):
     print(f"Recipients: {', '.join([user.email for user in users])}")
     print("=======================")
     # TODO: Implement actual email sending when email service is configured
+
+@events_bp.route('/<int:event_id>/rsvp-report/pdf', methods=['GET'])
+@jwt_required()
+def download_event_rsvp_pdf(event_id):
+    """Download PDF report of event RSVP status"""
+    claims = get_jwt()
+    if claims.get('role') != 'Admin':
+        return jsonify({'msg': 'Admins only'}), 403
+    
+    org_id = claims.get('organization_id')
+    
+    try:
+        from services.pdf_service import PDFReportService
+        
+        # Generate PDF
+        pdf_data = PDFReportService.generate_event_rsvp_report(event_id, org_id)
+        
+        if not pdf_data:
+            return jsonify({'msg': 'Event not found'}), 404
+        
+        # Get event name for filename
+        event = Event.query.filter_by(id=event_id, organization_id=org_id).first()
+        if not event:
+            return jsonify({'msg': 'Event not found'}), 404
+        
+        # Create safe filename
+        safe_title = "".join(c for c in event.title if c.isalnum() or c in (' ', '-', '_')).rstrip()
+        filename = f"RSVP_Report_{safe_title}_{datetime.utcnow().strftime('%Y%m%d')}.pdf"
+        
+        # Create response
+        response = make_response(pdf_data)
+        response.headers['Content-Type'] = 'application/pdf'
+        response.headers['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        return response
+        
+    except ImportError:
+        return jsonify({'msg': 'PDF service not available. Please install reportlab: pip install reportlab'}), 500
+    except Exception as e:
+        return jsonify({'msg': f'Error generating PDF: {str(e)}'}), 500
