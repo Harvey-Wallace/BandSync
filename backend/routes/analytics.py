@@ -127,6 +127,12 @@ def get_analytics_dashboard():
     current_user_id = get_jwt_identity()
     user = User.query.get(current_user_id)
     
+    # Debug logging
+    print(f"DEBUG: User ID: {current_user_id}, Org ID: {user.organization_id if user else 'None'}")
+    
+    if not user or not user.organization_id:
+        return jsonify({'error': 'User organization not found'}), 400
+    
     try:
         # Get all analytics data for dashboard
         overview = AnalyticsService.get_organization_overview(user.organization_id, 30)
@@ -152,8 +158,10 @@ def get_analytics_dashboard():
             'generated_at': datetime.utcnow().isoformat()
         }
         
+        print(f"DEBUG: Dashboard data: {dashboard_data}")
         return jsonify(dashboard_data)
     except Exception as e:
+        print(f"DEBUG: Analytics error: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @analytics_bp.route('/export', methods=['GET'])
