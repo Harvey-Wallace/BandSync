@@ -51,16 +51,12 @@ class AnalyticsService:
             RSVP.created_at >= start_date
         ).count()
         
-        # Engagement rate
-        total_possible_rsvps = db.session.query(func.count()).select_from(
-            db.session.query(Event.id, User.id)
-            .filter(Event.organization_id == org_id)
-            .filter(User.organization_id == org_id)
-            .filter(Event.date >= start_date)
-            .subquery()
-        ).scalar()
-        
-        engagement_rate = (recent_rsvps / total_possible_rsvps * 100) if total_possible_rsvps > 0 else 0
+        # Simplified engagement rate calculation
+        # Calculate as: (actual RSVPs / (total members * recent events)) * 100
+        engagement_rate = 0
+        if total_members > 0 and recent_events > 0:
+            max_possible_rsvps = total_members * recent_events
+            engagement_rate = (recent_rsvps / max_possible_rsvps * 100) if max_possible_rsvps > 0 else 0
         
         return {
             'total_members': total_members,
@@ -89,7 +85,7 @@ class AnalyticsService:
             func.count(case((RSVP.status == 'No', 1))).label('no_rsvps'),
             func.count(case((RSVP.status == 'Maybe', 1))).label('maybe_rsvps'),
             func.max(RSVP.created_at).label('last_rsvp')
-        ).outerjoin(RSVP).outerjoin(Event, Event.id == RSVP.event_id).filter(
+        ).select_from(User).outerjoin(RSVP).outerjoin(Event, Event.id == RSVP.event_id).filter(
             User.organization_id == org_id,
             db.or_(Event.date >= start_date, Event.date.is_(None))
         ).group_by(User.id).all()
@@ -99,7 +95,7 @@ class AnalyticsService:
             Section.name.label('section_name'),
             func.count(User.id).label('member_count'),
             func.avg(func.count(RSVP.id)).label('avg_participation')
-        ).outerjoin(User).outerjoin(RSVP).outerjoin(Event, Event.id == RSVP.event_id).filter(
+        ).select_from(Section).outerjoin(User, User.section_id == Section.id).outerjoin(RSVP).outerjoin(Event, Event.id == RSVP.event_id).filter(
             Section.organization_id == org_id,
             db.or_(Event.date >= start_date, Event.date.is_(None))
         ).group_by(Section.id, Section.name).all()
@@ -163,7 +159,7 @@ class AnalyticsService:
             func.count(case((RSVP.status == 'Yes', 1))).label('yes_count'),
             func.count(case((RSVP.status == 'No', 1))).label('no_count'),
             func.count(case((RSVP.status == 'Maybe', 1))).label('maybe_count')
-        ).outerjoin(RSVP).filter(
+        ).select_from(Event).outerjoin(RSVP).filter(
             Event.organization_id == org_id,
             Event.date >= start_date
         ).group_by(Event.id).order_by(desc(Event.date)).all()
@@ -174,7 +170,7 @@ class AnalyticsService:
             func.count(Event.id).label('event_count'),
             func.avg(func.count(case((RSVP.status == 'Yes', 1)))).label('avg_attendance'),
             func.avg(func.count(RSVP.id)).label('avg_responses')
-        ).outerjoin(RSVP).filter(
+        ).select_from(Event).outerjoin(RSVP).filter(
             Event.organization_id == org_id,
             Event.date >= start_date
         ).group_by(Event.event_type).all()
@@ -184,7 +180,7 @@ class AnalyticsService:
             func.date_trunc('month', Event.date).label('month'),
             func.count(Event.id).label('event_count'),
             func.count(case((RSVP.status == 'Yes', 1))).label('total_attendance')
-        ).outerjoin(RSVP).filter(
+        ).select_from(Event).outerjoin(RSVP).filter(
             Event.organization_id == org_id,
             Event.date >= start_date
         ).group_by(func.date_trunc('month', Event.date)).order_by('month').all()
@@ -231,7 +227,7 @@ class AnalyticsService:
             func.count(Message.id).label('total_messages'),
             func.count(func.distinct(MessageThread.id)).label('active_threads'),
             func.count(func.distinct(Message.sender_id)).label('active_users')
-        ).join(MessageThread).filter(
+        ).select_from(Message).join(MessageThread).filter(
             MessageThread.organization_id == org_id,
             Message.created_at >= start_date
         ).first()
@@ -251,7 +247,7 @@ class AnalyticsService:
             func.count(SubstituteRequest.id).label('total_requests'),
             func.count(case((SubstituteRequest.status == 'fulfilled', 1))).label('fulfilled_requests'),
             func.avg(func.extract('epoch', SubstituteRequest.fulfilled_at - SubstituteRequest.created_at) / 3600).label('avg_response_hours')
-        ).join(Event).filter(
+        ).select_from(SubstituteRequest).join(Event).filter(
             Event.organization_id == org_id,
             SubstituteRequest.created_at >= start_date
         ).first()
