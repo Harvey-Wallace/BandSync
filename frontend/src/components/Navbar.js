@@ -272,38 +272,6 @@ function Navbar() {
                 <span className="text-white d-none d-sm-inline">{username}</span>
                 <i className={`bi bi-chevron-${showProfile ? 'up' : 'down'} text-white ms-1`}></i>
               </button>
-              
-              <button 
-                className="btn btn-link p-0 ms-1"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-                title="Menu"
-              >
-                <i className="bi bi-three-dots-vertical text-white"></i>
-              </button>
-              <ul className="dropdown-menu dropdown-menu-end">
-                <li>
-                  <Link className="dropdown-item" to="/profile">
-                    <i className="bi bi-person me-2"></i>Profile
-                  </Link>
-                </li>
-                <li>
-                  <Link className="dropdown-item" to="/email-preferences">
-                    <i className="bi bi-envelope-gear me-2"></i>Email Preferences
-                  </Link>
-                </li>
-                <li>
-                  <Link className="dropdown-item" to="/calendar">
-                    <i className="bi bi-calendar-plus me-2"></i>Calendar Sync
-                  </Link>
-                </li>
-                <li><hr className="dropdown-divider" /></li>
-                <li>
-                  <button className="dropdown-item" onClick={handleLogout}>
-                    <i className="bi bi-box-arrow-right me-2"></i>Logout
-                  </button>
-                </li>
-              </ul>
             </div>
           </div>
         </div>
