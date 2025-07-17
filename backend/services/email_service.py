@@ -465,7 +465,7 @@ The BandSync Team
             logger.error(f"Error sending substitute requests: {str(e)}")
             return False
     
-    def send_user_invitation(self, user, temporary_password: str, inviting_admin) -> bool:
+    def send_user_invitation(self, user, temporary_password: str, inviting_admin, organization) -> bool:
         """
         Send user invitation email with login credentials
         
@@ -473,6 +473,7 @@ The BandSync Team
             user: User model instance
             temporary_password: Temporary password for the user
             inviting_admin: User model instance of the admin sending invitation
+            organization: Organization model instance
         
         Returns:
             bool: True if email sent successfully
@@ -486,12 +487,12 @@ The BandSync Team
                 user=user,
                 temporary_password=temporary_password,
                 inviting_admin=inviting_admin,
-                organization=user.organization,
+                organization=organization,
                 login_url=login_url,
                 base_url=self.base_url
             )
             
-            subject = f"Welcome to {user.organization.name} on BandSync!"
+            subject = f"Welcome to {organization.name} on BandSync!"
             
             return self._send_email([user.email], subject, html_content)
             

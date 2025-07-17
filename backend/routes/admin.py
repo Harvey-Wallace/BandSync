@@ -95,8 +95,8 @@ def update_user(user_id):
     # Only update email if provided and it's different
     new_email = data.get('email')
     if new_email and new_email != u.email:
-        # Check if email is already taken
-        existing_user = User.query.filter_by(email=new_email, organization_id=org_id).first()
+        # Check if email is already taken globally (not just in org)
+        existing_user = User.query.filter_by(email=new_email).first()
         if existing_user:
             return jsonify({'msg': 'Email already exists'}), 400
         u.email = new_email
@@ -826,7 +826,17 @@ def assign_user_section(user_id):
         return jsonify({'msg': 'Admins only'}), 403
     
     org_id = claims.get('organization_id')
-    user = User.query.filter_by(id=user_id, organization_id=org_id).first_or_404()
+    
+    # Get user through UserOrganization table
+    user_org = UserOrganization.query.filter_by(
+        user_id=user_id, 
+        organization_id=org_id, 
+        is_active=True
+    ).first()
+    if not user_org:
+        return jsonify({'error': 'User not found'}), 404
+    
+    user = user_org.user
     
     data = request.get_json()
     section_id = data.get('section_id')
@@ -1059,6 +1069,7 @@ def send_invitation_email(user, password):
     """Send invitation email to user using the proper email service"""
     try:
         from services.email_service import email_service
+        from flask_jwt_extended import get_jwt
         
         # Get the current admin user who is sending the invitation
         current_user_id = get_jwt_identity()
@@ -1068,8 +1079,17 @@ def send_invitation_email(user, password):
             print(f"Warning: Could not find admin user with ID {current_user_id}")
             return False
         
+        # Get the organization from JWT context
+        claims = get_jwt()
+        org_id = claims.get('organization_id')
+        organization = Organization.query.get(org_id)
+        
+        if not organization:
+            print(f"Warning: Could not find organization with ID {org_id}")
+            return False
+        
         # Send the invitation email using the proper email service
-        success = email_service.send_user_invitation(user, password, inviting_admin)
+        success = email_service.send_user_invitation(user, password, inviting_admin, organization)
         
         if success:
             print(f"Invitation email sent successfully to {user.email}")
@@ -1090,10 +1110,12 @@ def get_all_users():
     claims = get_jwt()
     org_id = claims.get('organization_id')
     
-    users = User.query.filter_by(organization_id=org_id).all()
+    # Get users through UserOrganization table
+    user_orgs = UserOrganization.query.filter_by(organization_id=org_id, is_active=True).all()
     users_data = []
     
-    for u in users:
+    for user_org in user_orgs:
+        u = user_org.user
         user_data = {
             'id': u.id,
             'username': u.username,
@@ -1144,10 +1166,16 @@ def upload_user_avatar(user_id):
         
         org_id = claims.get('organization_id')
         
-        # Verify user exists and belongs to the same organization
-        user = User.query.filter_by(id=user_id, organization_id=org_id).first()
-        if not user:
+        # Verify user exists and belongs to the organization
+        user_org = UserOrganization.query.filter_by(
+            user_id=user_id, 
+            organization_id=org_id, 
+            is_active=True
+        ).first()
+        if not user_org:
             return jsonify({'error': 'User not found'}), 404
+        
+        user = user_org.user
         
         # Upload to Cloudinary with user-specific folder
         result = cloudinary.uploader.upload(
