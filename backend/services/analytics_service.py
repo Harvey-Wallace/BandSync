@@ -46,7 +46,7 @@ class AnalyticsService:
             Event.date >= start_date
         ).count()
         
-        recent_rsvps = RSVP.query.join(Event).filter(
+        recent_rsvps = RSVP.query.join(Event, RSVP.event_id == Event.id).filter(
             Event.organization_id == org_id,
             RSVP.created_at >= start_date
         ).count()
@@ -85,7 +85,7 @@ class AnalyticsService:
             func.count(case((RSVP.status == 'No', 1))).label('no_rsvps'),
             func.count(case((RSVP.status == 'Maybe', 1))).label('maybe_rsvps'),
             func.max(RSVP.created_at).label('last_rsvp')
-        ).select_from(User).outerjoin(RSVP).outerjoin(Event, Event.id == RSVP.event_id).filter(
+        ).select_from(User).outerjoin(RSVP, RSVP.user_id == User.id).outerjoin(Event, Event.id == RSVP.event_id).filter(
             User.organization_id == org_id,
             db.or_(Event.date >= start_date, Event.date.is_(None))
         ).group_by(User.id).all()
@@ -103,7 +103,7 @@ class AnalyticsService:
         section_participation = []
         for section in section_stats:
             # Get RSVP count for this section's users
-            rsvp_count = db.session.query(func.count(RSVP.id)).select_from(RSVP).join(User).join(Event).filter(
+            rsvp_count = db.session.query(func.count(RSVP.id)).select_from(RSVP).join(User, RSVP.user_id == User.id).join(Event, RSVP.event_id == Event.id).filter(
                 User.section_id == section.section_id,
                 Event.organization_id == org_id,
                 Event.date >= start_date
@@ -171,7 +171,7 @@ class AnalyticsService:
             func.count(case((RSVP.status == 'Yes', 1))).label('yes_count'),
             func.count(case((RSVP.status == 'No', 1))).label('no_count'),
             func.count(case((RSVP.status == 'Maybe', 1))).label('maybe_count')
-        ).select_from(Event).outerjoin(RSVP).filter(
+        ).select_from(Event).outerjoin(RSVP, RSVP.event_id == Event.id).filter(
             Event.organization_id == org_id,
             Event.date >= start_date
         ).group_by(Event.id).order_by(desc(Event.date)).all()
@@ -182,7 +182,7 @@ class AnalyticsService:
             func.count(Event.id).label('event_count'),
             func.count(case((RSVP.status == 'Yes', 1))).label('total_attendance'),
             func.count(RSVP.id).label('total_responses')
-        ).select_from(Event).outerjoin(RSVP).filter(
+        ).select_from(Event).outerjoin(RSVP, RSVP.event_id == Event.id).filter(
             Event.organization_id == org_id,
             Event.date >= start_date
         ).group_by(Event.event_type).all()
@@ -207,7 +207,7 @@ class AnalyticsService:
             func.date_trunc('month', Event.date).label('month'),
             func.count(Event.id).label('event_count'),
             func.count(case((RSVP.status == 'Yes', 1))).label('total_attendance')
-        ).select_from(Event).outerjoin(RSVP).filter(
+        ).select_from(Event).outerjoin(RSVP, RSVP.event_id == Event.id).filter(
             Event.organization_id == org_id,
             Event.date >= start_date
         ).group_by(func.date_trunc('month', Event.date)).order_by('month').all()
