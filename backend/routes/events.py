@@ -389,14 +389,26 @@ def rsvp_event(event_id):
     else:
         return jsonify({'msg': 'Invalid RSVP status'}), 400
     
+    # Track previous status for admin notifications
+    previous_status = None
     rsvp = RSVP.query.filter_by(user_id=user_id, event_id=event_id).first()
     if rsvp:
+        previous_status = rsvp.status
         rsvp.status = status
     else:
         rsvp = RSVP(user_id=user_id, event_id=event_id, status=status)
         db.session.add(rsvp)
     
     db.session.commit()
+    
+    # Track RSVP change for admin notifications
+    try:
+        from services.admin_attendance_service import AdminAttendanceService
+        AdminAttendanceService.track_rsvp_change(event_id, user_id, previous_status, status)
+    except Exception as e:
+        # Don't fail the RSVP if notification tracking fails
+        print(f"Error tracking RSVP change: {str(e)}")
+    
     return jsonify({'msg': 'RSVP updated'})
 
 @events_bp.route('/<int:event_id>', methods=['GET'])

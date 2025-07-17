@@ -26,7 +26,12 @@ def get_email_preferences():
         'email_rsvp_reminders': user.email_rsvp_reminders,
         'email_daily_summary': user.email_daily_summary,
         'email_weekly_summary': user.email_weekly_summary,
-        'email_substitute_requests': user.email_substitute_requests
+        'email_substitute_requests': user.email_substitute_requests,
+        'email_admin_attendance_reports': user.email_admin_attendance_reports,
+        'admin_attendance_report_timing': user.admin_attendance_report_timing,
+        'admin_attendance_report_unit': user.admin_attendance_report_unit,
+        'email_admin_rsvp_changes': user.email_admin_rsvp_changes,
+        'is_admin': user.role == 'admin'
     })
 
 @email_prefs_bp.route('/preferences', methods=['PUT'])
@@ -56,6 +61,17 @@ def update_email_preferences():
         user.email_weekly_summary = data['email_weekly_summary']
     if 'email_substitute_requests' in data:
         user.email_substitute_requests = data['email_substitute_requests']
+    
+    # Admin attendance notification preferences (only for admins)
+    if user.role == 'admin':
+        if 'email_admin_attendance_reports' in data:
+            user.email_admin_attendance_reports = data['email_admin_attendance_reports']
+        if 'admin_attendance_report_timing' in data:
+            user.admin_attendance_report_timing = data['admin_attendance_report_timing']
+        if 'admin_attendance_report_unit' in data:
+            user.admin_attendance_report_unit = data['admin_attendance_report_unit']
+        if 'email_admin_rsvp_changes' in data:
+            user.email_admin_rsvp_changes = data['email_admin_rsvp_changes']
     
     db.session.commit()
     
@@ -98,6 +114,21 @@ def generate_unsubscribe_token():
         db.session.commit()
     
     return jsonify({'unsubscribe_token': user.unsubscribe_token})
+
+@email_prefs_bp.route('/admin/attendance-timing-options', methods=['GET'])
+@jwt_required()
+def get_attendance_timing_options():
+    """Get available timing options for admin attendance reports"""
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    
+    if not user or user.role != 'admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    from services.admin_attendance_service import AdminAttendanceService
+    options = AdminAttendanceService.get_timing_options()
+    
+    return jsonify({'timing_options': options})
 
 @email_prefs_bp.route('/test-email', methods=['POST'])
 @jwt_required()

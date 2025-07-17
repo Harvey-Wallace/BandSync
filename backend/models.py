@@ -115,6 +115,13 @@ class User(db.Model):
     email_group_messages = db.Column(db.Boolean, default=True)
     email_substitute_requests = db.Column(db.Boolean, default=True)
     email_substitute_filled = db.Column(db.Boolean, default=True)
+    
+    # Admin attendance notification preferences
+    email_admin_attendance_reports = db.Column(db.Boolean, default=True)
+    admin_attendance_report_timing = db.Column(db.Integer, default=120)  # Minutes before event
+    admin_attendance_report_unit = db.Column(db.String(20), default='minutes')  # 'minutes', 'hours', 'days'
+    email_admin_rsvp_changes = db.Column(db.Boolean, default=True)
+    
     unsubscribe_token = db.Column(db.String(255), nullable=True)
     
     # Password reset
@@ -286,6 +293,43 @@ class EmailLog(db.Model):
     user = db.relationship('User', backref='email_logs')
     event = db.relationship('Event', backref='email_logs')
     organization = db.relationship('Organization', backref='email_logs')
+
+
+class AdminAttendanceReport(db.Model):
+    """Track which events have had admin attendance reports sent"""
+    __tablename__ = 'admin_attendance_reports'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
+    report_sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+    total_yes = db.Column(db.Integer, default=0)
+    total_no = db.Column(db.Integer, default=0)
+    total_maybe = db.Column(db.Integer, default=0)
+    total_no_response = db.Column(db.Integer, default=0)
+    
+    # Relationships
+    event = db.relationship('Event', backref='admin_attendance_reports')
+    organization = db.relationship('Organization', backref='admin_attendance_reports')
+
+
+class AdminRSVPChangeNotification(db.Model):
+    """Track RSVP changes that occurred after attendance report was sent"""
+    __tablename__ = 'admin_rsvp_change_notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
+    previous_status = db.Column(db.String(10), nullable=True)  # Previous RSVP status
+    new_status = db.Column(db.String(10), nullable=False)  # New RSVP status
+    changed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    notification_sent = db.Column(db.Boolean, default=False)
+    
+    # Relationships
+    event = db.relationship('Event', backref='admin_rsvp_change_notifications')
+    user = db.relationship('User', backref='admin_rsvp_change_notifications')
+    organization = db.relationship('Organization', backref='admin_rsvp_change_notifications')
 
 
 class EventCustomField(db.Model):
