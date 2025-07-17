@@ -51,6 +51,15 @@ function AdminDashboard() {
     section_id: null
   });
   const [createUserLoading, setCreateUserLoading] = useState(false);
+  const [showAddExistingUser, setShowAddExistingUser] = useState(false);
+  const [addExistingUser, setAddExistingUser] = useState({
+    username: '',
+    email: '',
+    role: 'Member',
+    send_invitation: false,
+    section_id: null
+  });
+  const [addExistingUserLoading, setAddExistingUserLoading] = useState(false);
   const [showEditUser, setShowEditUser] = useState(false);
   const [editUser, setEditUser] = useState({
     id: null,
@@ -538,6 +547,51 @@ function AdminDashboard() {
     setCreateUserLoading(false);
   };
 
+  const handleAddExistingUser = async (e) => {
+    e.preventDefault();
+    setAddExistingUserLoading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/admin/users/add-existing`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(addExistingUser)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setShowAddExistingUser(false);
+        setAddExistingUser({
+          username: '',
+          email: '',
+          role: 'Member',
+          send_invitation: false,
+          section_id: null
+        });
+        
+        let message = 'User added to organization successfully';
+        if (addExistingUser.send_invitation) {
+          message += '. Invitation email sent.';
+        }
+        
+        showToast(message);
+        fetchUsers(); // Refresh the list
+      } else {
+        const errorData = await response.json();
+        showToast(errorData.error || 'Failed to add user', 'danger');
+      }
+    } catch (error) {
+      console.error('Error adding existing user:', error);
+      showToast('Error adding existing user', 'danger');
+    }
+    
+    setAddExistingUserLoading(false);
+  };
+
   const sendInvitation = async (userId) => {
     try {
       const token = localStorage.getItem('token');
@@ -993,12 +1047,20 @@ function AdminDashboard() {
               <div className="card">
                 <div className="card-header d-flex justify-content-between align-items-center">
                   <h5>Users</h5>
-                  <button
-                    className="btn btn-success btn-sm"
-                    onClick={() => setShowCreateUser(true)}
-                  >
-                    <i className="bi bi-plus-lg me-2"></i>Create User
-                  </button>
+                  <div>
+                    <button
+                      className="btn btn-primary btn-sm me-2"
+                      onClick={() => setShowAddExistingUser(true)}
+                    >
+                      <i className="bi bi-person-plus me-2"></i>Add Existing User
+                    </button>
+                    <button
+                      className="btn btn-success btn-sm"
+                      onClick={() => setShowCreateUser(true)}
+                    >
+                      <i className="bi bi-plus-lg me-2"></i>Create User
+                    </button>
+                  </div>
                 </div>
                 <div className="card-body">
                   {usersLoading ? (
@@ -1438,6 +1500,113 @@ function AdminDashboard() {
           <div className="row">
             <div className="col-12">
               <DebugEnv />
+            </div>
+          </div>
+        )}
+
+        {/* Add Existing User Modal */}
+        {showAddExistingUser && (
+          <div className="modal show d-block">
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Add Existing User to Organization</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowAddExistingUser(false)}
+                  ></button>
+                </div>
+                <form onSubmit={handleAddExistingUser}>
+                  <div className="modal-body">
+                    <div className="alert alert-info">
+                      <i className="bi bi-info-circle me-2"></i>
+                      Add an existing BandSync user to this organization. You can search by username or email.
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Username</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={addExistingUser.username}
+                        onChange={(e) => setAddExistingUser({ ...addExistingUser, username: e.target.value, email: '' })}
+                        placeholder="Enter username"
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <div className="text-center">
+                        <span className="text-muted">--- OR ---</span>
+                      </div>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Email</label>
+                      <input
+                        type="email"
+                        className="form-control"
+                        value={addExistingUser.email}
+                        onChange={(e) => setAddExistingUser({ ...addExistingUser, email: e.target.value, username: '' })}
+                        placeholder="Enter email address"
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Role</label>
+                      <select
+                        className="form-select"
+                        value={addExistingUser.role}
+                        onChange={(e) => setAddExistingUser({ ...addExistingUser, role: e.target.value })}
+                      >
+                        <option value="Member">Member</option>
+                        <option value="Admin">Admin</option>
+                      </select>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Section</label>
+                      <select
+                        className="form-select"
+                        value={addExistingUser.section_id || ''}
+                        onChange={(e) => setAddExistingUser({ ...addExistingUser, section_id: e.target.value || null })}
+                      >
+                        <option value="">No section</option>
+                        {sections.map(section => (
+                          <option key={section.id} value={section.id}>
+                            {section.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="mb-3">
+                      <div className="form-check">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id="sendInvitationExisting"
+                          checked={addExistingUser.send_invitation}
+                          onChange={(e) => setAddExistingUser({ ...addExistingUser, send_invitation: e.target.checked })}
+                        />
+                        <label className="form-check-label" htmlFor="sendInvitationExisting">
+                          Send invitation email with new temporary password
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setShowAddExistingUser(false)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={addExistingUserLoading || (!addExistingUser.username && !addExistingUser.email)}
+                    >
+                      {addExistingUserLoading ? <Spinner size={20} /> : 'Add User'}
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         )}

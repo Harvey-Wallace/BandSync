@@ -21,16 +21,27 @@ def get_users():
     if claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     org_id = claims.get('organization_id')
-    users = User.query.filter_by(organization_id=org_id).all()
-    return jsonify([{
-        'id': u.id, 
-        'username': u.username, 
-        'email': u.email, 
-        'name': u.name,
-        'role': u.role,
-        'section_id': u.section_id,
-        'section_name': u.section.name if u.section else None
-    } for u in users])
+    
+    # Get users through UserOrganization relationship for multi-organization support
+    user_orgs = UserOrganization.query.filter_by(
+        organization_id=org_id,
+        is_active=True
+    ).all()
+    
+    users_data = []
+    for user_org in user_orgs:
+        user = user_org.user
+        users_data.append({
+            'id': user.id, 
+            'username': user.username, 
+            'email': user.email, 
+            'name': user.name,
+            'role': user_org.role,  # Use role from UserOrganization
+            'section_id': user_org.section_id,
+            'section_name': user_org.section.name if user_org.section else None
+        })
+    
+    return jsonify(users_data)
 
 @admin_bp.route('/users/<int:user_id>', methods=['PUT'])
 @jwt_required()
@@ -39,18 +50,28 @@ def update_user(user_id):
     if claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     org_id = claims.get('organization_id')
-    u = User.query.filter_by(id=user_id, organization_id=org_id).first_or_404()
+    
+    # Find user through UserOrganization relationship
+    user_org = UserOrganization.query.filter_by(
+        user_id=user_id, 
+        organization_id=org_id,
+        is_active=True
+    ).first_or_404()
+    
+    u = user_org.user
     data = request.get_json()
     
     # Update user fields
-    u.role = data.get('role', u.role)
     u.name = data.get('name', u.name)
     u.email = data.get('email', u.email)
     u.phone = data.get('phone', u.phone)
     u.address = data.get('address', u.address)
     u.avatar_url = data.get('avatar_url', u.avatar_url)
     
-    # Handle section assignment
+    # Update role in UserOrganization (not in User table)
+    user_org.role = data.get('role', user_org.role)
+    
+    # Handle section assignment in UserOrganization
     if 'section_id' in data:
         section_id = data.get('section_id')
         if section_id:
@@ -58,15 +79,15 @@ def update_user(user_id):
             section = Section.query.filter_by(id=section_id, organization_id=org_id).first()
             if not section:
                 return jsonify({'msg': 'Section not found'}), 404
-            u.section_id = section_id
+            user_org.section_id = section_id
         else:
-            u.section_id = None
+            user_org.section_id = None
     
     # Only update username if provided and it's different
     new_username = data.get('username')
     if new_username and new_username != u.username:
-        # Check if username is already taken
-        existing_user = User.query.filter_by(username=new_username, organization_id=org_id).first()
+        # Check if username is already taken globally (not just in org)
+        existing_user = User.query.filter_by(username=new_username).first()
         if existing_user:
             return jsonify({'msg': 'Username already exists'}), 400
         u.username = new_username
@@ -105,27 +126,85 @@ def delete_user(user_id):
         return jsonify({'msg': 'Admins only'}), 403
     
     org_id = claims.get('organization_id')
-    user = User.query.filter_by(id=user_id, organization_id=org_id).first_or_404()
+    
+    # Find user through UserOrganization relationship
+    user_org = UserOrganization.query.filter_by(
+        user_id=user_id, 
+        organization_id=org_id,
+        is_active=True
+    ).first_or_404()
+    
+    user = user_org.user
     
     try:
-        print(f"Starting deletion process for user {user_id}")
+        print(f"Starting removal process for user {user_id} from organization {org_id}")
         
-        # Delete all records that reference this user
+        # Check if user belongs to other organizations
+        other_org_count = UserOrganization.query.filter(
+            UserOrganization.user_id == user_id,
+            UserOrganization.organization_id != org_id,
+            UserOrganization.is_active == True
+        ).count()
         
-        # 1. Delete RSVPs
-        try:
-            rsvp_count = RSVP.query.filter_by(user_id=user_id).delete()
-            print(f"Deleted {rsvp_count} RSVPs")
-        except Exception as e:
-            # Handle potential column name mismatch (timestamp vs created_at)
-            if "timestamp does not exist" in str(e):
-                print(f"RSVP table schema mismatch detected, trying alternative deletion method")
-                # Use raw SQL to delete RSVPs if model is out of sync
-                db.session.execute(db.text("DELETE FROM rsvp WHERE user_id = :user_id"), {"user_id": user_id})
-                print("Deleted RSVPs using raw SQL")
-            else:
+        if other_org_count > 0:
+            # User belongs to other organizations, just remove from current org
+            print(f"User belongs to {other_org_count} other organizations. Removing from current org only.")
+            
+            # Delete organization-specific RSVPs (events from this org)
+            try:
+                rsvp_count = db.session.execute(
+                    db.text("""
+                        DELETE FROM rsvp 
+                        WHERE user_id = :user_id 
+                        AND event_id IN (
+                            SELECT id FROM event WHERE organization_id = :org_id
+                        )
+                    """), 
+                    {"user_id": user_id, "org_id": org_id}
+                ).rowcount
+                print(f"Deleted {rsvp_count} RSVPs for this organization")
+            except Exception as e:
                 print(f"Error deleting RSVPs: {e}")
-                raise
+                db.session.execute(db.text("DELETE FROM rsvp WHERE user_id = :user_id AND event_id IN (SELECT id FROM event WHERE organization_id = :org_id)"), {"user_id": user_id, "org_id": org_id})
+            
+            # Remove user from this organization
+            db.session.delete(user_org)
+            
+            # Update user's current organization if this was their current org
+            if user.current_organization_id == org_id:
+                # Set to their first remaining organization
+                remaining_org = UserOrganization.query.filter_by(
+                    user_id=user_id,
+                    is_active=True
+                ).first()
+                if remaining_org:
+                    user.current_organization_id = remaining_org.organization_id
+                else:
+                    user.current_organization_id = None
+            
+            db.session.commit()
+            print(f"Successfully removed user {user_id} from organization {org_id}")
+            return jsonify({'msg': 'User removed from organization successfully'})
+        
+        else:
+            # User only belongs to this organization, do full deletion
+            print(f"User only belongs to this organization. Performing full deletion.")
+            
+            # Delete all records that reference this user (original full deletion logic)
+            # 1. Delete RSVPs
+            try:
+                rsvp_count = RSVP.query.filter_by(user_id=user_id).delete()
+                print(f"Deleted {rsvp_count} RSVPs")
+            except Exception as e:
+                # Handle potential column name mismatch (timestamp vs created_at)
+                if "timestamp does not exist" in str(e):
+                    print(f"RSVP table schema mismatch detected, trying alternative deletion method")
+                    # Use raw SQL to delete RSVPs if model is out of sync
+                    db.session.execute(db.text("DELETE FROM rsvp WHERE user_id = :user_id"), {"user_id": user_id})
+                    print("Deleted RSVPs using raw SQL")
+                else:
+                    print(f"Error deleting RSVPs: {e}")
+                    raise
         
         # 2. Delete email logs
         email_log_count = EmailLog.query.filter_by(user_id=user_id).delete()
@@ -465,7 +544,15 @@ def send_user_invitation(user_id):
         return jsonify({'msg': 'Admins only'}), 403
     
     org_id = claims.get('organization_id')
-    user = User.query.filter_by(id=user_id, organization_id=org_id).first_or_404()
+    
+    # Find user through UserOrganization relationship
+    user_org = UserOrganization.query.filter_by(
+        user_id=user_id, 
+        organization_id=org_id,
+        is_active=True
+    ).first_or_404()
+    
+    user = user_org.user
     
     try:
         # Generate a temporary password
@@ -489,6 +576,101 @@ def send_user_invitation(user_id):
     except Exception as e:
         return jsonify({'error': f'Failed to send invitation: {str(e)}'}), 500
 
+@admin_bp.route('/users/add-existing', methods=['POST'])
+@jwt_required()
+def add_existing_user_to_organization():
+    """Add an existing user to the current organization"""
+    claims = get_jwt()
+    if claims.get('role') != 'Admin':
+        return jsonify({'msg': 'Admins only'}), 403
+    
+    data = request.get_json()
+    org_id = claims.get('organization_id')
+    
+    # Validate required fields
+    if not data.get('username') and not data.get('email'):
+        return jsonify({'error': 'Username or email is required'}), 400
+    
+    try:
+        # Find the existing user by username or email
+        existing_user = None
+        if data.get('username'):
+            existing_user = User.query.filter_by(username=data['username']).first()
+        elif data.get('email'):
+            existing_user = User.query.filter_by(email=data['email']).first()
+        
+        if not existing_user:
+            return jsonify({'error': 'User not found. Please check the username or email.'}), 404
+        
+        # Check if user is already in this organization
+        existing_membership = UserOrganization.query.filter_by(
+            user_id=existing_user.id,
+            organization_id=org_id
+        ).first()
+        
+        if existing_membership:
+            if existing_membership.is_active:
+                return jsonify({'error': 'User is already a member of this organization'}), 400
+            else:
+                # Reactivate the membership
+                existing_membership.is_active = True
+                existing_membership.role = data.get('role', 'Member')
+                existing_membership.section_id = data.get('section_id')
+                db.session.commit()
+                
+                return jsonify({
+                    'msg': 'User re-added to organization successfully',
+                    'user': {
+                        'id': existing_user.id,
+                        'username': existing_user.username,
+                        'email': existing_user.email,
+                        'name': existing_user.name,
+                        'role': existing_membership.role
+                    }
+                }), 200
+        
+        # Add user to organization
+        user_org = UserOrganization(
+            user_id=existing_user.id,
+            organization_id=org_id,
+            role=data.get('role', 'Member'),
+            section_id=data.get('section_id'),
+            is_active=True
+        )
+        
+        db.session.add(user_org)
+        db.session.commit()
+        
+        # Send invitation email if requested
+        if data.get('send_invitation', False):
+            try:
+                # Generate a temporary password
+                temp_password = f"temp_{existing_user.username}123"
+                existing_user.set_password(temp_password)
+                db.session.commit()
+                
+                email_sent = send_invitation_email(existing_user, temp_password)
+                if not email_sent:
+                    print(f"Warning: Failed to send invitation email to {existing_user.email}")
+            except Exception as e:
+                print(f"Error sending invitation email: {str(e)}")
+                # Don't fail the user addition if email fails
+        
+        return jsonify({
+            'msg': 'User added to organization successfully',
+            'user': {
+                'id': existing_user.id,
+                'username': existing_user.username,
+                'email': existing_user.email,
+                'name': existing_user.name,
+                'role': user_org.role
+            }
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to add user to organization: {str(e)}'}), 500
+
 @admin_bp.route('/users/<int:user_id>', methods=['GET'])
 @jwt_required()
 def get_user(user_id):
@@ -496,7 +678,15 @@ def get_user(user_id):
     if claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     org_id = claims.get('organization_id')
-    u = User.query.filter_by(id=user_id, organization_id=org_id).first_or_404()
+    
+    # Find user through UserOrganization relationship
+    user_org = UserOrganization.query.filter_by(
+        user_id=user_id, 
+        organization_id=org_id,
+        is_active=True
+    ).first_or_404()
+    
+    u = user_org.user
     return jsonify({
         'id': u.id,
         'username': u.username,
@@ -504,10 +694,10 @@ def get_user(user_id):
         'email': u.email,
         'phone': u.phone,
         'address': u.address,
-        'role': u.role,
+        'role': user_org.role,  # Use role from UserOrganization
         'avatar_url': u.avatar_url,
-        'section_id': u.section_id,
-        'section_name': u.section.name if u.section else None
+        'section_id': user_org.section_id,  # Use section from UserOrganization
+        'section_name': user_org.section.name if user_org.section else None
     })
 
 # Section Management Endpoints
