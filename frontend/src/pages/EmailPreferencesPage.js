@@ -11,8 +11,14 @@ function EmailPreferencesPage() {
     email_rsvp_reminders: true,
     email_daily_summary: false,
     email_weekly_summary: true,
-    email_substitute_requests: true
+    email_substitute_requests: true,
+    email_admin_attendance_reports: true,
+    admin_attendance_report_timing: 120,
+    admin_attendance_report_unit: 'minutes',
+    email_admin_rsvp_changes: true,
+    is_admin: false
   });
+  const [timingOptions, setTimingOptions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [sendingTest, setSendingTest] = useState(false);
@@ -26,6 +32,16 @@ function EmailPreferencesPage() {
     try {
       const response = await api.get('/email/preferences');
       setPreferences(response.data);
+      
+      // Fetch timing options for admin users
+      if (response.data.is_admin) {
+        try {
+          const timingResponse = await api.get('/email/admin/attendance-timing-options');
+          setTimingOptions(timingResponse.data.timing_options);
+        } catch (error) {
+          console.error('Failed to load timing options:', error);
+        }
+      }
     } catch (error) {
       setToast({ type: 'error', message: 'Failed to load email preferences' });
     } finally {
@@ -200,6 +216,77 @@ function EmailPreferencesPage() {
                         <div className="form-text">Get a weekly digest of upcoming events (Monday 8 AM)</div>
                       </label>
                     </div>
+
+                    {/* Admin Attendance Preferences */}
+                    {preferences.is_admin && (
+                      <>
+                        <hr className="my-4" />
+                        <h5 className="mb-3">
+                          <i className="fas fa-users-cog me-2"></i>
+                          Admin Attendance Notifications
+                        </h5>
+                        
+                        <div className="form-check mb-3">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="email_admin_attendance_reports"
+                            checked={preferences.email_admin_attendance_reports}
+                            onChange={(e) => handlePreferenceChange('email_admin_attendance_reports', e.target.checked)}
+                            disabled={!preferences.email_notifications}
+                          />
+                          <label className="form-check-label" htmlFor="email_admin_attendance_reports">
+                            <strong>Event Attendance Reports</strong>
+                            <div className="form-text">Get attendance reports before events showing who's coming</div>
+                          </label>
+                        </div>
+
+                        {preferences.email_admin_attendance_reports && (
+                          <div className="ms-4 mb-3 p-3 border rounded bg-light">
+                            <label className="form-label">
+                              <strong>Send report before event:</strong>
+                            </label>
+                            <select
+                              className="form-select"
+                              value={`${preferences.admin_attendance_report_timing}-${preferences.admin_attendance_report_unit}`}
+                              onChange={(e) => {
+                                const [timing, unit] = e.target.value.split('-');
+                                handlePreferenceChange('admin_attendance_report_timing', parseInt(timing));
+                                handlePreferenceChange('admin_attendance_report_unit', unit);
+                              }}
+                              disabled={!preferences.email_notifications}
+                            >
+                              {timingOptions.map((option) => (
+                                <option 
+                                  key={`${option.value}-${option.unit}`}
+                                  value={`${option.value}-${option.unit}`}
+                                >
+                                  {option.label}
+                                </option>
+                              ))}
+                            </select>
+                            <div className="form-text mt-2">
+                              Choose how far in advance you want to receive attendance reports
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="form-check mb-3">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="email_admin_rsvp_changes"
+                            checked={preferences.email_admin_rsvp_changes}
+                            onChange={(e) => handlePreferenceChange('email_admin_rsvp_changes', e.target.checked)}
+                            disabled={!preferences.email_notifications}
+                          />
+                          <label className="form-check-label" htmlFor="email_admin_rsvp_changes">
+                            <strong>RSVP Change Notifications</strong>
+                            <div className="form-text">Get notified when members change their RSVP after attendance report is sent</div>
+                          </label>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
