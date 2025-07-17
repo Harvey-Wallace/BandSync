@@ -249,7 +249,7 @@ class AnalyticsService:
             func.count(func.distinct(Message.sender_id)).label('active_users')
         ).select_from(Message).join(MessageThread).filter(
             MessageThread.organization_id == org_id,
-            Message.created_at >= start_date
+            Message.sent_at >= start_date
         ).first()
         
         # Email statistics
@@ -259,14 +259,14 @@ class AnalyticsService:
             func.count(case((EmailLog.status == 'failed', 1))).label('failed_emails')
         ).filter(
             EmailLog.organization_id == org_id,
-            EmailLog.created_at >= start_date
+            EmailLog.sent_at >= start_date
         ).first()
         
         # Substitute request analytics
         substitute_stats = db.session.query(
             func.count(SubstituteRequest.id).label('total_requests'),
-            func.count(case((SubstituteRequest.status == 'fulfilled', 1))).label('fulfilled_requests'),
-            func.avg(func.extract('epoch', SubstituteRequest.fulfilled_at - SubstituteRequest.created_at) / 3600).label('avg_response_hours')
+            func.count(case((SubstituteRequest.status == 'filled', 1))).label('fulfilled_requests'),
+            func.avg(func.extract('epoch', SubstituteRequest.filled_at - SubstituteRequest.created_at) / 3600).label('avg_response_hours')
         ).select_from(SubstituteRequest).join(Event).filter(
             Event.organization_id == org_id,
             SubstituteRequest.created_at >= start_date
