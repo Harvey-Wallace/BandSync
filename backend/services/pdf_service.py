@@ -141,17 +141,10 @@ class PDFReportService:
                     status = rsvp.status
                     response_date = rsvp.created_at.strftime('%m/%d/%Y') if rsvp.created_at else 'N/A'
                     
-                    # Color code status
-                    if status == 'Yes':
-                        status_display = f'<font color="green"><b>{status}</b></font>'
-                    elif status == 'No':
-                        status_display = f'<font color="red"><b>{status}</b></font>'
-                    elif status == 'Maybe':
-                        status_display = f'<font color="orange"><b>{status}</b></font>'
-                    else:
-                        status_display = status
+                    # Simple text status (no HTML)
+                    status_display = status
                 else:
-                    status_display = '<font color="gray"><i>No Response</i></font>'
+                    status_display = 'No Response'
                     response_date = 'N/A'
                 
                 member_data.append([
@@ -162,7 +155,9 @@ class PDFReportService:
                 ])
             
             member_table = Table(member_data, colWidths=[2*inch, 2.5*inch, 1*inch, 1*inch])
-            member_table.setStyle(TableStyle([
+            
+            # Base table style
+            table_style = [
                 ('BACKGROUND', (0, 0), (-1, 0), HexColor('#34495e')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), white),
                 ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
@@ -173,7 +168,25 @@ class PDFReportService:
                 ('GRID', (0, 0), (-1, -1), 1, black),
                 ('FONTSIZE', (0, 1), (-1, -1), 9),
                 ('ROWBACKGROUNDS', (0, 1), (-1, -1), [white, HexColor('#f8f9fa')])
-            ]))
+            ]
+            
+            # Add color coding for RSVP status column (column 2)
+            for row_idx, row in enumerate(member_data[1:], 1):  # Skip header row
+                status = row[2]  # RSVP Status column
+                if status == 'Yes':
+                    table_style.append(('TEXTCOLOR', (2, row_idx), (2, row_idx), HexColor('#28a745')))
+                    table_style.append(('FONTNAME', (2, row_idx), (2, row_idx), 'Helvetica-Bold'))
+                elif status == 'No':
+                    table_style.append(('TEXTCOLOR', (2, row_idx), (2, row_idx), HexColor('#dc3545')))
+                    table_style.append(('FONTNAME', (2, row_idx), (2, row_idx), 'Helvetica-Bold'))
+                elif status == 'Maybe':
+                    table_style.append(('TEXTCOLOR', (2, row_idx), (2, row_idx), HexColor('#ffc107')))
+                    table_style.append(('FONTNAME', (2, row_idx), (2, row_idx), 'Helvetica-Bold'))
+                elif status == 'No Response':
+                    table_style.append(('TEXTCOLOR', (2, row_idx), (2, row_idx), HexColor('#6c757d')))
+                    table_style.append(('FONTNAME', (2, row_idx), (2, row_idx), 'Helvetica-Oblique'))
+            
+            member_table.setStyle(TableStyle(table_style))
             
             content.append(member_table)
             content.append(Spacer(1, 20))
