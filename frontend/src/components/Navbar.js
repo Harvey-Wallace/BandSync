@@ -270,7 +270,6 @@ function Navbar() {
               >
                 <UserAvatar user={user} size={32} className="me-2" />
                 <span className="text-white d-none d-sm-inline">{username}</span>
-                <i className={`bi bi-chevron-${showProfile ? 'up' : 'down'} text-white ms-1`}></i>
               </button>
             </div>
           </div>
