@@ -18,6 +18,34 @@ from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.lib import colors
 from models import Event, RSVP, User, Organization, Section
 
+def add_page_footer(canvas, doc):
+    """Add BandSync branding footer to every page"""
+    canvas.saveState()
+    
+    # Footer positioning
+    footer_y = 50  # 50 points from bottom
+    page_width = doc.pagesize[0]
+    
+    # BandSync branding
+    canvas.setFont("Helvetica", 10)
+    canvas.setFillColor(HexColor('#6c757d'))
+    
+    # Center the text
+    website_text = "www.bandsync.co.uk"
+    email_text = "info@bandsync.co.uk"
+    
+    # Calculate text width for centering
+    website_width = canvas.stringWidth(website_text, "Helvetica", 10)
+    email_width = canvas.stringWidth(email_text, "Helvetica", 10)
+    
+    # Draw website
+    canvas.drawString((page_width - website_width) / 2, footer_y + 15, website_text)
+    
+    # Draw email
+    canvas.drawString((page_width - email_width) / 2, footer_y, email_text)
+    
+    canvas.restoreState()
+
 class PDFReportService:
     
     @staticmethod
@@ -39,7 +67,7 @@ class PDFReportService:
         
         # Create PDF buffer
         buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=90)  # Increased bottom margin for footer
         
         # Container for PDF content
         content = []
@@ -197,7 +225,7 @@ class PDFReportService:
         content.append(Paragraph(footer_text, styles['Normal']))
         
         # Build PDF
-        doc.build(content)
+        doc.build(content, onFirstPage=add_page_footer, onLaterPages=add_page_footer)
         
         # Get PDF data
         pdf_data = buffer.getvalue()
@@ -224,7 +252,7 @@ class PDFReportService:
         
         # Create PDF buffer
         buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=90)  # Increased bottom margin for footer
         
         # Container for PDF content
         content = []
@@ -308,7 +336,7 @@ class PDFReportService:
                 content.append(Spacer(1, 12))
         
         # Build PDF
-        doc.build(content)
+        doc.build(content, onFirstPage=add_page_footer, onLaterPages=add_page_footer)
         
         # Get PDF data
         pdf_data = buffer.getvalue()
