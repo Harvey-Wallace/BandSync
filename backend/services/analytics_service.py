@@ -90,15 +90,33 @@ class AnalyticsService:
             db.or_(Event.date >= start_date, Event.date.is_(None))
         ).group_by(User.id).all()
         
-        # Section participation
+        # Section participation - fix nested aggregate function
         section_stats = db.session.query(
+            Section.id.label('section_id'),
             Section.name.label('section_name'),
-            func.count(User.id).label('member_count'),
-            func.avg(func.count(RSVP.id)).label('avg_participation')
-        ).select_from(Section).outerjoin(User, User.section_id == Section.id).outerjoin(RSVP).outerjoin(Event, Event.id == RSVP.event_id).filter(
-            Section.organization_id == org_id,
-            db.or_(Event.date >= start_date, Event.date.is_(None))
+            func.count(func.distinct(User.id)).label('member_count')
+        ).select_from(Section).outerjoin(User, User.section_id == Section.id).filter(
+            Section.organization_id == org_id
         ).group_by(Section.id, Section.name).all()
+        
+        # Calculate average participation per section separately
+        section_participation = []
+        for section in section_stats:
+            # Get RSVP count for this section's users
+            rsvp_count = db.session.query(func.count(RSVP.id)).select_from(RSVP).join(User).join(Event).filter(
+                User.section_id == section.section_id,
+                Event.organization_id == org_id,
+                Event.date >= start_date
+            ).scalar() or 0
+            
+            avg_participation = (rsvp_count / section.member_count) if section.member_count > 0 else 0
+            section_participation.append({
+                'section_name': section.section_name,
+                'member_count': section.member_count,
+                'avg_participation': round(avg_participation, 1)
+            })
+        
+        section_stats = section_participation
         
         # Top participants
         top_participants = sorted(
@@ -126,13 +144,7 @@ class AnalyticsService:
                     'last_rsvp': m.last_rsvp.isoformat() if m.last_rsvp else None
                 } for m in member_stats
             ],
-            'section_stats': [
-                {
-                    'section_name': s.section_name,
-                    'member_count': s.member_count,
-                    'avg_participation': round(s.avg_participation or 0, 1)
-                } for s in section_stats
-            ],
+            'section_stats': section_stats,
             'top_participants': [
                 {
                     'name': m.name,
@@ -164,16 +176,31 @@ class AnalyticsService:
             Event.date >= start_date
         ).group_by(Event.id).order_by(desc(Event.date)).all()
         
-        # Event type performance
+        # Event type performance - simplified approach
         type_stats = db.session.query(
             Event.event_type,
             func.count(Event.id).label('event_count'),
-            func.avg(func.count(case((RSVP.status == 'Yes', 1)))).label('avg_attendance'),
-            func.avg(func.count(RSVP.id)).label('avg_responses')
+            func.count(case((RSVP.status == 'Yes', 1))).label('total_attendance'),
+            func.count(RSVP.id).label('total_responses')
         ).select_from(Event).outerjoin(RSVP).filter(
             Event.organization_id == org_id,
             Event.date >= start_date
         ).group_by(Event.event_type).all()
+        
+        # Calculate averages manually
+        type_performance = []
+        for event_type in type_stats:
+            avg_attendance = (event_type.total_attendance / event_type.event_count) if event_type.event_count > 0 else 0
+            avg_responses = (event_type.total_responses / event_type.event_count) if event_type.event_count > 0 else 0
+            
+            type_performance.append({
+                'event_type': event_type.event_type,
+                'event_count': event_type.event_count,
+                'avg_attendance': round(avg_attendance, 1),
+                'avg_responses': round(avg_responses, 1)
+            })
+        
+        type_stats = type_performance
         
         # Monthly trends
         monthly_stats = db.session.query(
@@ -199,14 +226,7 @@ class AnalyticsService:
                     'attendance_rate': round((e.yes_count / e.total_responses * 100) if e.total_responses > 0 else 0, 1)
                 } for e in event_stats
             ],
-            'type_stats': [
-                {
-                    'event_type': t.event_type,
-                    'event_count': t.event_count,
-                    'avg_attendance': round(t.avg_attendance or 0, 1),
-                    'avg_responses': round(t.avg_responses or 0, 1)
-                } for t in type_stats
-            ],
+            'type_stats': type_stats,
             'monthly_trends': [
                 {
                     'month': m.month.strftime('%Y-%m') if m.month else None,
