@@ -166,7 +166,7 @@ class AnalyticsService:
             Event.id,
             Event.title,
             Event.date,
-            Event.event_type,
+            Event.type,
             func.count(RSVP.id).label('total_responses'),
             func.count(case((RSVP.status == 'Yes', 1))).label('yes_count'),
             func.count(case((RSVP.status == 'No', 1))).label('no_count'),
@@ -178,14 +178,14 @@ class AnalyticsService:
         
         # Event type performance - simplified approach
         type_stats = db.session.query(
-            Event.event_type,
+            Event.type,
             func.count(Event.id).label('event_count'),
             func.count(case((RSVP.status == 'Yes', 1))).label('total_attendance'),
             func.count(RSVP.id).label('total_responses')
         ).select_from(Event).outerjoin(RSVP, RSVP.event_id == Event.id).filter(
             Event.organization_id == org_id,
             Event.date >= start_date
-        ).group_by(Event.event_type).all()
+        ).group_by(Event.type).all()
         
         # Calculate averages manually
         type_performance = []
@@ -194,7 +194,7 @@ class AnalyticsService:
             avg_responses = (event_type.total_responses / event_type.event_count) if event_type.event_count > 0 else 0
             
             type_performance.append({
-                'event_type': event_type.event_type,
+                'event_type': event_type.type,
                 'event_count': event_type.event_count,
                 'avg_attendance': round(avg_attendance, 1),
                 'avg_responses': round(avg_responses, 1)
@@ -218,7 +218,7 @@ class AnalyticsService:
                     'id': e.id,
                     'title': e.title,
                     'date': e.date.isoformat(),
-                    'event_type': e.event_type,
+                    'event_type': e.type,
                     'total_responses': e.total_responses,
                     'yes_count': e.yes_count,
                     'no_count': e.no_count,
