@@ -1,6 +1,24 @@
 """
 Analytics Service for BandSync
-Provides comprehensive analytics and insights for administrators
+        # Engagement rate
+        total_possible_rsvps = db.session.query(func.count()).select_from(
+            db.session.query(Event.id, User.id)
+            .filter(Event.organization_id == org_id)
+            .filter(User.organization_id == org_id)
+            .filter(Event.date >= start_date)
+            .subquery()
+        ).scalar()
+        
+        engagement_rate = (recent_rsvps / total_possible_rsvps * 100) if total_possible_rsvps > 0 else 0
+        
+        return {
+            'total_members': total_members,
+            'total_events': total_events,
+            'recent_events': recent_events,
+            'recent_rsvps': recent_rsvps,
+            'engagement_rate': round(engagement_rate, 1),
+            'activity_score': min(100, (recent_events * 10) + (recent_rsvps * 2))
+        }ive analytics and insights for administrators
 """
 
 from datetime import datetime, timedelta
@@ -67,9 +85,9 @@ class AnalyticsService:
             User.email,
             User.section_id,
             func.count(RSVP.id).label('total_rsvps'),
-            func.count(case((RSVP.response == 'yes', 1))).label('yes_rsvps'),
-            func.count(case((RSVP.response == 'no', 1))).label('no_rsvps'),
-            func.count(case((RSVP.response == 'maybe', 1))).label('maybe_rsvps'),
+            func.count(case((RSVP.status == 'Yes', 1))).label('yes_rsvps'),
+            func.count(case((RSVP.status == 'No', 1))).label('no_rsvps'),
+            func.count(case((RSVP.status == 'Maybe', 1))).label('maybe_rsvps'),
             func.max(RSVP.created_at).label('last_rsvp')
         ).outerjoin(RSVP).outerjoin(Event, Event.id == RSVP.event_id).filter(
             User.organization_id == org_id,
@@ -142,9 +160,9 @@ class AnalyticsService:
             Event.date,
             Event.event_type,
             func.count(RSVP.id).label('total_responses'),
-            func.count(case((RSVP.response == 'yes', 1))).label('yes_count'),
-            func.count(case((RSVP.response == 'no', 1))).label('no_count'),
-            func.count(case((RSVP.response == 'maybe', 1))).label('maybe_count')
+            func.count(case((RSVP.status == 'Yes', 1))).label('yes_count'),
+            func.count(case((RSVP.status == 'No', 1))).label('no_count'),
+            func.count(case((RSVP.status == 'Maybe', 1))).label('maybe_count')
         ).outerjoin(RSVP).filter(
             Event.organization_id == org_id,
             Event.date >= start_date
@@ -154,7 +172,7 @@ class AnalyticsService:
         type_stats = db.session.query(
             Event.event_type,
             func.count(Event.id).label('event_count'),
-            func.avg(func.count(case((RSVP.response == 'yes', 1)))).label('avg_attendance'),
+            func.avg(func.count(case((RSVP.status == 'Yes', 1)))).label('avg_attendance'),
             func.avg(func.count(RSVP.id)).label('avg_responses')
         ).outerjoin(RSVP).filter(
             Event.organization_id == org_id,
@@ -165,7 +183,7 @@ class AnalyticsService:
         monthly_stats = db.session.query(
             func.date_trunc('month', Event.date).label('month'),
             func.count(Event.id).label('event_count'),
-            func.count(case((RSVP.response == 'yes', 1))).label('total_attendance')
+            func.count(case((RSVP.status == 'Yes', 1))).label('total_attendance')
         ).outerjoin(RSVP).filter(
             Event.organization_id == org_id,
             Event.date >= start_date
