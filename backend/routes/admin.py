@@ -491,7 +491,13 @@ def create_user():
         )
         
         # Set password (either provided or generate temporary)
-        password = data.get('password', f"temp_{data['username']}123")
+        provided_password = data.get('password', '').strip()
+        if provided_password:
+            password = provided_password
+        else:
+            # Generate temporary password if none provided or empty
+            password = f"temp_{data['username']}123"
+        
         new_user.set_password(password)
         
         db.session.add(new_user)
@@ -528,7 +534,7 @@ def create_user():
                 'name': new_user.name,
                 'role': new_user.role
             },
-            'temporary_password': password if not data.get('password') else None
+            'temporary_password': password if not provided_password else None
         }), 201
         
     except Exception as e:
