@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required
-from models import RSVP, User
+from models import RSVP, User, UserOrganization
 
 rsvps_bp = Blueprint('rsvps', __name__)
 
@@ -19,21 +19,26 @@ def get_event_rsvps(event_id):
     summary = {'Yes': [], 'No': [], 'Maybe': []}
     for r in rsvps:
         user = User.query.get(r.user_id)
-        if user and user.organization_id == org_id:
-            # Return both username and full name for better display
-            user_info = {
-                'username': user.username,
-                'name': user.name or user.username,  # Fallback to username if name is empty
-                'display_name': user.name or user.username,  # Convenient display name
-                'section_id': user.section_id,
-                'section_name': user.section.name if user.section else None
-            }
-            # Normalize the status to proper case to handle any legacy data
-            status = r.status
-            if status in ['yes', 'no', 'maybe']:
-                status = status.capitalize()
-            elif status not in ['Yes', 'No', 'Maybe']:
-                status = 'No'  # Default fallback
+        if user:
+            # Check if user belongs to the organization (legacy field OR UserOrganization table)
+            user_in_org = (user.organization_id == org_id) or \
+                         UserOrganization.query.filter_by(user_id=user.id, organization_id=org_id, is_active=True).first()
             
-            summary[status].append(user_info)
+            if user_in_org:
+                # Return both username and full name for better display
+                user_info = {
+                    'username': user.username,
+                    'name': user.name or user.username,  # Fallback to username if name is empty
+                    'display_name': user.name or user.username,  # Convenient display name
+                    'section_id': user.section_id,
+                    'section_name': user.section.name if user.section else None
+                }
+                # Normalize the status to proper case to handle any legacy data
+                status = r.status
+                if status in ['yes', 'no', 'maybe']:
+                    status = status.capitalize()
+                elif status not in ['Yes', 'No', 'Maybe']:
+                    status = 'No'  # Default fallback
+                
+                summary[status].append(user_info)
     return jsonify(summary)
