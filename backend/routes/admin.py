@@ -22,15 +22,18 @@ def get_users():
         return jsonify({'msg': 'Admins only'}), 403
     org_id = claims.get('organization_id')
     
+    users_data = []
+    
     # Get users through UserOrganization relationship for multi-organization support
     user_orgs = UserOrganization.query.filter_by(
         organization_id=org_id,
         is_active=True
     ).all()
     
-    users_data = []
+    user_ids_from_org_table = set()
     for user_org in user_orgs:
         user = user_org.user
+        user_ids_from_org_table.add(user.id)
         users_data.append({
             'id': user.id, 
             'username': user.username, 
@@ -40,6 +43,20 @@ def get_users():
             'section_id': user_org.section_id,
             'section_name': user_org.section.name if user_org.section else None
         })
+    
+    # Also get legacy users (those with organization_id field set but not in UserOrganization)
+    legacy_users = User.query.filter_by(organization_id=org_id).all()
+    for user in legacy_users:
+        if user.id not in user_ids_from_org_table:  # Don't duplicate users
+            users_data.append({
+                'id': user.id, 
+                'username': user.username, 
+                'email': user.email, 
+                'name': user.name,
+                'role': user.role,  # Use role from User model for legacy users
+                'section_id': user.section_id,
+                'section_name': user.section.name if user.section else None
+            })
     
     return jsonify(users_data)
 
