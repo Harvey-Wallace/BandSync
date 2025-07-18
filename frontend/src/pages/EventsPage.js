@@ -329,10 +329,14 @@ function EventsPage() {
 
     setTemplateLoading(true);
     try {
-      const response = await api.post(`/events/from-template/${selectedTemplate.id}`, {
+      const response = await axios.post(`${getApiUrl()}/events/from-template/${selectedTemplate.id}`, {
         date: templateDate,
         location_address: templateLocation,
         title: selectedTemplate.template_name || selectedTemplate.title
+      }, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
       });
 
       setToast({ show: true, message: 'Event created successfully from template!', type: 'success' });
