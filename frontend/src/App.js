@@ -8,6 +8,7 @@ import IOSErrorBoundary from './components/IOSErrorBoundary';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PasswordResetPage from './pages/PasswordResetPage';
+import ChangePasswordPage from './pages/ChangePasswordPage';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import EventsPage from './pages/EventsPage';
@@ -45,6 +46,7 @@ function App() {
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/reset-password" element={<PasswordResetPage />} />
+                    <Route path="/change-password" element={<ChangePasswordPage />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/events" element={<EventsPage />} />

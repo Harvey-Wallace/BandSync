@@ -198,12 +198,16 @@ def login():
         )
         refresh_token = create_refresh_token(identity=str(user.id))
         
+        # Check if user is using a temporary password (pattern: temp_username123)
+        is_temp_password = data['password'] == f"temp_{user.username}123"
+        
         return jsonify({
             'access_token': access_token,
             'refresh_token': refresh_token,
             'role': selected_role,
             'organization_id': selected_org.id if selected_org else None,
-            'organization': selected_org.name if selected_org else None
+            'organization': selected_org.name if selected_org else None,
+            'requires_password_change': is_temp_password
         })
     
     return jsonify({'msg': 'Invalid credentials'}), 401

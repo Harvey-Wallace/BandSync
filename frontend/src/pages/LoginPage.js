@@ -47,7 +47,13 @@ function LoginPage() {
       window.dispatchEvent(new CustomEvent('userLogin'));
       
       setLoading(false);
-      window.location.href = res.data.role === 'Admin' ? '/admin' : '/dashboard';
+      
+      // Check if user needs to change password (temporary password)
+      if (res.data.requires_password_change) {
+        window.location.href = '/change-password';
+      } else {
+        window.location.href = res.data.role === 'Admin' ? '/admin' : '/dashboard';
+      }
     } catch (err) {
       console.error('Login error:', err);
       console.error('Error response:', err.response?.data);
