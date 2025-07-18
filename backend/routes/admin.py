@@ -11,16 +11,28 @@ import cloudinary.uploader
 import os
 from werkzeug.utils import secure_filename
 from services.calendar_service import calendar_service
+from utils.admin_utils import is_super_admin, can_access_organization
 
 admin_bp = Blueprint('admin', __name__)
 
 @admin_bp.route('/users', methods=['GET'])
 @jwt_required()
 def get_users():
+    user_id = get_jwt_identity()
     claims = get_jwt()
-    if claims.get('role') != 'Admin':
-        return jsonify({'msg': 'Admins only'}), 403
     org_id = claims.get('organization_id')
+    
+    # Check if user has admin access or is Super Admin
+    if not is_super_admin(user_id) and claims.get('role') != 'Admin':
+        return jsonify({'msg': 'Admins only'}), 403
+    
+    # If Super Admin, allow access to any organization
+    if is_super_admin(user_id):
+        # Super Admin can specify organization_id in query params
+        org_id = request.args.get('organization_id', org_id)
+    
+    if not org_id:
+        return jsonify({'msg': 'Organization ID required'}), 400
     
     users_data = []
     

@@ -193,7 +193,8 @@ def login():
             additional_claims={
                 'role': selected_role,
                 'organization_id': selected_org.id if selected_org else None,
-                'organization': selected_org.name if selected_org else None
+                'organization': selected_org.name if selected_org else None,
+                'super_admin': user.super_admin
             }
         )
         refresh_token = create_refresh_token(identity=str(user.id))
@@ -207,6 +208,7 @@ def login():
             'role': selected_role,
             'organization_id': selected_org.id if selected_org else None,
             'organization': selected_org.name if selected_org else None,
+            'super_admin': user.super_admin,
             'requires_password_change': is_temp_password
         })
     

@@ -40,6 +40,7 @@ function LoginPage() {
       localStorage.setItem('refreshToken', res.data.refresh_token);
       localStorage.setItem('username', username);
       localStorage.setItem('role', res.data.role);
+      localStorage.setItem('super_admin', res.data.super_admin ? 'true' : 'false');
       if (res.data.organization_id) localStorage.setItem('organization_id', res.data.organization_id);
       if (res.data.organization) localStorage.setItem('organization', res.data.organization);
       

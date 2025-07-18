@@ -96,6 +96,7 @@ class User(db.Model):
     address = db.Column(db.Text, nullable=True)  # Address
     password_hash = db.Column(db.String(256), nullable=False)
     role = db.Column(db.String(20), default='Member')  # Kept for backward compatibility
+    super_admin = db.Column(db.Boolean, default=False)  # Super Admin flag for app oversight
     
     # Multi-organization support
     organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=True)  # Legacy field

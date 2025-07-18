@@ -34,6 +34,9 @@ export const OrganizationProvider = ({ children }) => {
         localStorage.setItem('organization', data.organization.name);
         localStorage.setItem('organization_id', data.organization.id);
         localStorage.setItem('role', data.role);
+        if (data.super_admin !== undefined) {
+          localStorage.setItem('super_admin', data.super_admin ? 'true' : 'false');
+        }
       } else {
         // Fallback to localStorage
         const orgName = localStorage.getItem('organization');
@@ -99,6 +102,7 @@ export const OrganizationProvider = ({ children }) => {
         localStorage.setItem('organization', data.organization.name);
         localStorage.setItem('organization_id', data.organization.id);
         localStorage.setItem('role', data.role);
+        localStorage.setItem('super_admin', data.super_admin ? 'true' : 'false');
         
         // Update state
         setCurrentOrganization(data.organization);

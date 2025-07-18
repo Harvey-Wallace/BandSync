@@ -11,6 +11,7 @@ import PasswordResetPage from './pages/PasswordResetPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import SuperAdminPage from './pages/SuperAdminPage';
 import EventsPage from './pages/EventsPage';
 import ProfilePage from './pages/ProfilePage';
 import EmailPreferencesPage from './pages/EmailPreferencesPage';
@@ -49,6 +50,7 @@ function App() {
                     <Route path="/change-password" element={<ChangePasswordPage />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/super-admin" element={<SuperAdminPage />} />
                     <Route path="/events" element={<EventsPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/email-preferences" element={<EmailPreferencesPage />} />
@@ -81,6 +83,7 @@ function App() {
               <Route path="/reset-password" element={<PasswordResetPage />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/super-admin" element={<SuperAdminPage />} />
               <Route path="/events" element={<EventsPage />} />
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/email-preferences" element={<EmailPreferencesPage />} />

@@ -119,6 +119,70 @@ def auto_migrate_organization():
         print(f"❌ Organization migration failed: {e}")
         return False
 
+def auto_migrate_super_admin():
+    """Automatically add super_admin field and assign to Harvey258"""
+    
+    # Only run in production
+    if os.getenv('ENVIRONMENT') != 'production':
+        return True
+    
+    database_url = os.getenv('DATABASE_URL')
+    if not database_url:
+        print("DATABASE_URL not found - skipping super admin migration")
+        return False
+    
+    try:
+        from sqlalchemy import create_engine, text
+        engine = create_engine(database_url)
+        
+        with engine.connect() as conn:
+            print("🚀 Starting Super Admin migration...")
+            
+            # Check if super_admin column exists
+            result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'users' 
+                AND column_name = 'super_admin'
+            """))
+            
+            existing = [row[0] for row in result.fetchall()]
+            
+            # Add super_admin column if it doesn't exist
+            if 'super_admin' not in existing:
+                conn.execute(text('ALTER TABLE users ADD COLUMN super_admin BOOLEAN DEFAULT FALSE'))
+                print("✅ Added super_admin column to users table")
+            else:
+                print("✅ super_admin column already exists")
+            
+            # Set Harvey258 as Super Admin
+            result = conn.execute(text("UPDATE users SET super_admin = TRUE WHERE username = 'Harvey258'"))
+            if result.rowcount > 0:
+                print("✅ Harvey258 set as Super Admin")
+            else:
+                print("⚠️  Harvey258 user not found or already Super Admin")
+            
+            # Add Harvey258 to all organizations with Super Admin role
+            conn.execute(text("""
+                INSERT INTO user_organization (user_id, organization_id, role, is_active)
+                SELECT u.id, o.id, 'Super Admin', TRUE
+                FROM users u, "organization" o
+                WHERE u.username = 'Harvey258'
+                AND NOT EXISTS (
+                    SELECT 1 FROM user_organization uo
+                    WHERE uo.user_id = u.id AND uo.organization_id = o.id
+                )
+            """))
+            
+            conn.commit()
+            print("🎉 Super Admin migration completed!")
+            
+            return True
+            
+    except Exception as e:
+        print(f"❌ Super Admin migration failed: {e}")
+        return False
+
 # Disable Flask's default static file serving to use our custom route
 app = Flask(__name__, static_folder=None)
 app.config.from_object(Config)
@@ -148,6 +212,7 @@ from routes.substitutes import substitutes_bp
 from routes.bulk_ops import bulk_ops_bp
 from routes.quick_polls import quick_polls_bp
 from routes.analytics import analytics_bp
+from routes.super_admin import super_admin_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(events_bp, url_prefix='/api/events')
@@ -166,6 +231,7 @@ app.register_blueprint(substitutes_bp, url_prefix='/api/substitutes')
 app.register_blueprint(bulk_ops_bp, url_prefix='/api/bulk-ops')
 app.register_blueprint(quick_polls_bp, url_prefix='/api/quick-polls')
 app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+app.register_blueprint(super_admin_bp, url_prefix='/api/super-admin')
 
 # JWT error handlers
 @jwt.unauthorized_loader
@@ -351,6 +417,7 @@ print(f"Index.html exists: {os.path.exists('static/index.html')}")
 # Run auto-migration on startup
 auto_migrate_password_reset()
 auto_migrate_organization()
+auto_migrate_super_admin()
 
 if __name__ == '__main__':
     # Railway sets the PORT environment variable
