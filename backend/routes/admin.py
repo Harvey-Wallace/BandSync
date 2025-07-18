@@ -1116,12 +1116,15 @@ def get_all_users():
     claims = get_jwt()
     org_id = claims.get('organization_id')
     
-    # Get users through UserOrganization table
-    user_orgs = UserOrganization.query.filter_by(organization_id=org_id, is_active=True).all()
     users_data = []
+    
+    # Get users through UserOrganization table (multi-org users)
+    user_orgs = UserOrganization.query.filter_by(organization_id=org_id, is_active=True).all()
+    user_ids_from_org_table = set()
     
     for user_org in user_orgs:
         u = user_org.user
+        user_ids_from_org_table.add(u.id)
         user_data = {
             'id': u.id,
             'username': u.username,
@@ -1131,6 +1134,20 @@ def get_all_users():
             'section_name': u.section.name if u.section else None
         }
         users_data.append(user_data)
+    
+    # Also get legacy users (those with organization_id field set but not in UserOrganization)
+    legacy_users = User.query.filter_by(organization_id=org_id).all()
+    for u in legacy_users:
+        if u.id not in user_ids_from_org_table:  # Don't duplicate users
+            user_data = {
+                'id': u.id,
+                'username': u.username,
+                'name': u.name or u.username,
+                'display_name': u.name or u.username,
+                'section_id': u.section_id,
+                'section_name': u.section.name if u.section else None
+            }
+            users_data.append(user_data)
     
     return jsonify(users_data)
 
