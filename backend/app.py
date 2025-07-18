@@ -142,7 +142,7 @@ def auto_migrate_super_admin():
             result = conn.execute(text("""
                 SELECT column_name 
                 FROM information_schema.columns 
-                WHERE table_name = 'users' 
+                WHERE table_name = 'user' 
                 AND column_name = 'super_admin'
             """))
             
@@ -150,13 +150,13 @@ def auto_migrate_super_admin():
             
             # Add super_admin column if it doesn't exist
             if 'super_admin' not in existing:
-                conn.execute(text('ALTER TABLE users ADD COLUMN super_admin BOOLEAN DEFAULT FALSE'))
-                print("✅ Added super_admin column to users table")
+                conn.execute(text('ALTER TABLE "user" ADD COLUMN super_admin BOOLEAN DEFAULT FALSE'))
+                print("✅ Added super_admin column to user table")
             else:
                 print("✅ super_admin column already exists")
             
             # Set Harvey258 as Super Admin
-            result = conn.execute(text("UPDATE users SET super_admin = TRUE WHERE username = 'Harvey258'"))
+            result = conn.execute(text('UPDATE "user" SET super_admin = TRUE WHERE username = \'Harvey258\''))
             if result.rowcount > 0:
                 print("✅ Harvey258 set as Super Admin")
             else:
@@ -164,12 +164,12 @@ def auto_migrate_super_admin():
             
             # Add Harvey258 to all organizations with Super Admin role
             conn.execute(text("""
-                INSERT INTO user_organization (user_id, organization_id, role, is_active)
+                INSERT INTO user_organizations (user_id, organization_id, role, is_active)
                 SELECT u.id, o.id, 'Super Admin', TRUE
-                FROM users u, "organization" o
+                FROM "user" u, "organization" o
                 WHERE u.username = 'Harvey258'
                 AND NOT EXISTS (
-                    SELECT 1 FROM user_organization uo
+                    SELECT 1 FROM user_organizations uo
                     WHERE uo.user_id = u.id AND uo.organization_id = o.id
                 )
             """))
