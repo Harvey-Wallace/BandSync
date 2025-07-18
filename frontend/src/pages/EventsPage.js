@@ -35,6 +35,13 @@ function EventsPage() {
   const [cancellationReason, setCancellationReason] = useState('');
   const [sendCancellationNotification, setSendCancellationNotification] = useState(true);
   const [cancelLoading, setCancelLoading] = useState(false);
+  
+  // Template usage state
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [templateDate, setTemplateDate] = useState('');
+  const [templateLocation, setTemplateLocation] = useState('');
+  const [templateLoading, setTemplateLoading] = useState(false);
 
   useEffect(() => {
     fetchEvents();
@@ -297,6 +304,50 @@ function EventsPage() {
     setEventToCancel(null);
     setCancellationReason('');
     setSendCancellationNotification(true);
+  };
+
+  // Template modal functions
+  const openTemplateModal = (template) => {
+    setSelectedTemplate(template);
+    setTemplateDate('');
+    setTemplateLocation('');
+    setShowTemplateModal(true);
+  };
+
+  const closeTemplateModal = () => {
+    setShowTemplateModal(false);
+    setSelectedTemplate(null);
+    setTemplateDate('');
+    setTemplateLocation('');
+  };
+
+  const createEventFromTemplate = async () => {
+    if (!selectedTemplate || !templateDate) {
+      setToast({ show: true, message: 'Please select a date for the event', type: 'error' });
+      return;
+    }
+
+    setTemplateLoading(true);
+    try {
+      const response = await api.post(`/events/from-template/${selectedTemplate.id}`, {
+        date: templateDate,
+        location_address: templateLocation,
+        title: selectedTemplate.template_name || selectedTemplate.title
+      });
+
+      setToast({ show: true, message: 'Event created successfully from template!', type: 'success' });
+      closeTemplateModal();
+      fetchEvents(); // Refresh events list
+    } catch (error) {
+      console.error('Error creating event from template:', error);
+      setToast({ 
+        show: true, 
+        message: error.response?.data?.error || 'Failed to create event from template', 
+        type: 'error' 
+      });
+    } finally {
+      setTemplateLoading(false);
+    }
   };
 
   const downloadEventRSVPPDF = async (event) => {
@@ -584,10 +635,7 @@ function EventsPage() {
                           <span className="badge bg-secondary me-2">{template.category || 'No category'}</span>
                           <button 
                             className="btn btn-sm btn-primary"
-                            onClick={() => {
-                              // TODO: Open template form with date/location selection
-                              setToast({ show: true, message: 'Template creation coming soon!', type: 'info' });
-                            }}
+                            onClick={() => openTemplateModal(template)}
                           >
                             Use Template
                           </button>
@@ -948,6 +996,105 @@ function EventsPage() {
         </div>
       )}
       {showCancelModal && <div className="modal-backdrop fade show"></div>}
+
+      {/* Template Usage Modal */}
+      {showTemplateModal && (
+        <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">
+                  <i className="bi bi-calendar-plus me-2"></i>
+                  Create Event from Template
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={closeTemplateModal}
+                ></button>
+              </div>
+              <div className="modal-body">
+                {selectedTemplate && (
+                  <>
+                    <div className="mb-3">
+                      <h6 className="fw-bold">{selectedTemplate.template_name || selectedTemplate.title}</h6>
+                      <p className="text-muted small mb-0">{selectedTemplate.description}</p>
+                      {selectedTemplate.category && (
+                        <span className="badge bg-secondary mt-1">{selectedTemplate.category}</span>
+                      )}
+                    </div>
+                    
+                    <div className="mb-3">
+                      <label htmlFor="template-date" className="form-label">
+                        <i className="bi bi-calendar me-1"></i>
+                        Event Date & Time *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        className="form-control"
+                        id="template-date"
+                        value={templateDate}
+                        onChange={(e) => setTemplateDate(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label htmlFor="template-location" className="form-label">
+                        <i className="bi bi-geo-alt me-1"></i>
+                        Location (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="template-location"
+                        value={templateLocation}
+                        onChange={(e) => setTemplateLocation(e.target.value)}
+                        placeholder="Enter event location"
+                      />
+                    </div>
+
+                    <div className="alert alert-info">
+                      <i className="bi bi-info-circle me-2"></i>
+                      <strong>Note:</strong> This will create a new event using the template's settings. 
+                      You can modify the event details after creation.
+                    </div>
+                  </>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={closeTemplateModal}
+                  disabled={templateLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={createEventFromTemplate}
+                  disabled={templateLoading || !templateDate}
+                >
+                  {templateLoading ? (
+                    <>
+                      <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <i className="bi bi-plus-circle me-1"></i>
+                      Create Event
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+      {showTemplateModal && <div className="modal-backdrop fade show"></div>}
 
       <Toast 
         show={toast.show}
