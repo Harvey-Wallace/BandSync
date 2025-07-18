@@ -18,7 +18,8 @@ class CalendarService:
     
     def __init__(self):
         self.base_url = os.environ.get('BASE_URL', 'http://localhost:3000')
-        self.calendar_url = os.environ.get('CALENDAR_URL', 'http://localhost:5001')
+        # Calendar URLs should use the same base URL as the main application
+        self.calendar_url = os.environ.get('CALENDAR_URL', self.base_url)
     
     def generate_organization_calendar(self, organization_id: int, include_templates: bool = False) -> bytes:
         """
