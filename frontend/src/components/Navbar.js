@@ -252,12 +252,14 @@ function Navbar() {
                 <span>Events</span>
               </Link>
             </li>
-            <li className="nav-item">
-              <Link className="nav-link text-white px-2" to="/admin">
-                <i className="bi bi-gear me-1"></i>
-                <span>Admin</span>
-              </Link>
-            </li>
+            {role === 'Admin' && (
+              <li className="nav-item">
+                <Link className="nav-link text-white px-2" to="/admin">
+                  <i className="bi bi-gear me-1"></i>
+                  <span>Admin</span>
+                </Link>
+              </li>
+            )}
           </ul>
           
           <div className="d-flex align-items-center gap-2">
