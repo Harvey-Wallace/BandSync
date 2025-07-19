@@ -10,7 +10,7 @@ function Navbar() {
   const role = localStorage.getItem('role');
   const username = localStorage.getItem('username');
   const isSuperAdmin = localStorage.getItem('super_admin') === 'true';
-  console.log('Navbar Debug - Role:', role, 'Username:', username, 'Super Admin:', isSuperAdmin); // Debug log
+  
   const { isDark, toggleTheme, orgThemeColor, updateOrgThemeColor } = useTheme();
   const { currentOrganization } = useOrganization();
   const [orgLogo, setOrgLogo] = useState('');

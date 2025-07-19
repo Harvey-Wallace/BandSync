@@ -5,6 +5,7 @@ import { OrganizationProvider } from './contexts/OrganizationContext';
 import SessionTimeout from './components/SessionTimeout';
 import IOSDebugger from './components/IOSDebugger';
 import IOSErrorBoundary from './components/IOSErrorBoundary';
+import './utils/superAdminHelper'; // Import super admin helper for global access
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PasswordResetPage from './pages/PasswordResetPage';
