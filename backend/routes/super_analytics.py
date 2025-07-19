@@ -58,12 +58,18 @@ def get_analytics_overview():
         ).count()
         
         # Active users (users who created events or RSVP'd recently)
-        active_users_30d = db.session.query(User.id).outerjoin(Event).outerjoin(RSVP).filter(
-            db.or_(
-                Event.date >= last_30_days,
-                RSVP.created_at >= last_30_days if hasattr(RSVP, 'created_at') else False
-            )
-        ).distinct().count()
+        active_users_from_events = db.session.query(User.id).join(Event, User.id == Event.organizer_id).filter(
+            Event.date >= last_30_days
+        ).distinct()
+        
+        active_users_from_rsvps = db.session.query(User.id).join(RSVP, User.id == RSVP.user_id).join(
+            Event, RSVP.event_id == Event.id
+        ).filter(
+            Event.date >= last_30_days
+        ).distinct()
+        
+        # Combine both queries using union
+        active_users_30d = active_users_from_events.union(active_users_from_rsvps).count()
         
         # Platform health metrics
         avg_events_per_org = db.session.query(
