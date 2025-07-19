@@ -1,8 +1,12 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import jwt_required, get_jwt_identity
-from models import User, Organization, Event, UserOrganization, db
+from flask_jwt_extended import jwt_required, get_jwt_identity, create_access_token
+from models import User, Organization, Event, UserOrganization, EmailLog, db
 from utils.admin_utils import is_super_admin, get_admin_context
-from sqlalchemy import func
+from sqlalchemy import func, text
+from werkzeug.security import generate_password_hash
+import secrets
+import string
+from datetime import datetime, timedelta
 
 super_admin_bp = Blueprint('super_admin', __name__)
 
@@ -250,3 +254,344 @@ def troubleshoot_user(target_user_id):
         
     except Exception as e:
         return jsonify({'msg': f'Error troubleshooting user: {str(e)}'}), 500
+
+@super_admin_bp.route('/user/<int:target_user_id>/reset-password', methods=['POST'])
+@jwt_required()
+def reset_user_password(target_user_id):
+    user_id = get_jwt_identity()
+    
+    if not is_super_admin(user_id):
+        return jsonify({'msg': 'Super Admin access required'}), 403
+    
+    try:
+        user = User.query.get(target_user_id)
+        if not user:
+            return jsonify({'msg': 'User not found'}), 404
+        
+        data = request.get_json() or {}
+        new_password = data.get('new_password')
+        
+        if not new_password:
+            # Generate a temporary password
+            new_password = f"temp_{user.username}123"
+        
+        # Update password
+        user.password_hash = generate_password_hash(new_password)
+        db.session.commit()
+        
+        return jsonify({
+            'msg': 'Password reset successfully',
+            'new_password': new_password,
+            'is_temporary': not data.get('new_password')
+        })
+        
+    except Exception as e:
+        return jsonify({'msg': f'Error resetting password: {str(e)}'}), 500
+
+@super_admin_bp.route('/user/<int:target_user_id>/impersonate', methods=['POST'])
+@jwt_required()
+def impersonate_user(target_user_id):
+    user_id = get_jwt_identity()
+    
+    if not is_super_admin(user_id):
+        return jsonify({'msg': 'Super Admin access required'}), 403
+    
+    try:
+        user = User.query.get(target_user_id)
+        if not user:
+            return jsonify({'msg': 'User not found'}), 404
+        
+        data = request.get_json() or {}
+        organization_id = data.get('organization_id')
+        
+        # Get user's organization context
+        if organization_id:
+            # Check if user belongs to this organization
+            user_org = UserOrganization.query.filter_by(
+                user_id=user.id,
+                organization_id=organization_id
+            ).first()
+            
+            if user_org:
+                selected_org = user_org.organization
+                selected_role = user_org.role
+            else:
+                # Fallback to legacy organization
+                if user.organization_id == organization_id:
+                    selected_org = Organization.query.get(organization_id)
+                    selected_role = user.role
+                else:
+                    return jsonify({'msg': 'User does not belong to specified organization'}), 400
+        else:
+            # Get user's primary organization
+            user_orgs = UserOrganization.query.filter_by(user_id=user.id).all()
+            if user_orgs:
+                user_org = user_orgs[0]
+                selected_org = user_org.organization
+                selected_role = user_org.role
+            else:
+                # Fallback to legacy
+                selected_org = Organization.query.get(user.organization_id) if user.organization_id else None
+                selected_role = user.role
+        
+        if not selected_org:
+            return jsonify({'msg': 'User has no organization context'}), 400
+        
+        # Create impersonation token
+        impersonation_token = create_access_token(
+            identity=str(user.id),
+            additional_claims={
+                'role': selected_role,
+                'organization_id': selected_org.id,
+                'organization': selected_org.name,
+                'super_admin': getattr(user, 'super_admin', False),
+                'impersonated_by': user_id
+            }
+        )
+        
+        return jsonify({
+            'msg': f'Impersonating user {user.username}',
+            'impersonation_token': impersonation_token,
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'name': user.name,
+                'email': user.email
+            },
+            'organization': {
+                'id': selected_org.id,
+                'name': selected_org.name
+            },
+            'role': selected_role
+        })
+        
+    except Exception as e:
+        return jsonify({'msg': f'Error impersonating user: {str(e)}'}), 500
+
+@super_admin_bp.route('/users/bulk-operations', methods=['POST'])
+@jwt_required()
+def bulk_user_operations():
+    user_id = get_jwt_identity()
+    
+    if not is_super_admin(user_id):
+        return jsonify({'msg': 'Super Admin access required'}), 403
+    
+    try:
+        data = request.get_json()
+        operation = data.get('operation')
+        user_ids = data.get('user_ids', [])
+        
+        if not operation or not user_ids:
+            return jsonify({'msg': 'Operation and user_ids required'}), 400
+        
+        users = User.query.filter(User.id.in_(user_ids)).all()
+        
+        if len(users) != len(user_ids):
+            return jsonify({'msg': 'Some users not found'}), 404
+        
+        results = []
+        
+        if operation == 'disable':
+            for user in users:
+                user.is_active = False
+                results.append(f"Disabled user: {user.username}")
+                
+        elif operation == 'enable':
+            for user in users:
+                user.is_active = True
+                results.append(f"Enabled user: {user.username}")
+                
+        elif operation == 'reset_passwords':
+            for user in users:
+                temp_password = f"temp_{user.username}123"
+                user.password_hash = generate_password_hash(temp_password)
+                results.append(f"Reset password for: {user.username} -> {temp_password}")
+                
+        elif operation == 'delete':
+            # Soft delete by setting a deleted flag or moving to deleted table
+            for user in users:
+                user.is_active = False
+                # Add a note that it was deleted by Super Admin
+                user.notes = f"Deleted by Super Admin on {db.func.now()}"
+                results.append(f"Deleted user: {user.username}")
+                
+        else:
+            return jsonify({'msg': f'Unknown operation: {operation}'}), 400
+        
+        db.session.commit()
+        
+        return jsonify({
+            'msg': f'Bulk operation {operation} completed',
+            'affected_users': len(users),
+            'results': results
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'msg': f'Error performing bulk operation: {str(e)}'}), 500
+
+@super_admin_bp.route('/system/health', methods=['GET'])
+@jwt_required()
+def get_system_health():
+    user_id = get_jwt_identity()
+    
+    if not is_super_admin(user_id):
+        return jsonify({'msg': 'Super Admin access required'}), 403
+    
+    try:
+        import psutil
+        import time
+        from datetime import datetime, timedelta
+        
+        # Database health
+        db_health = True
+        db_response_time = None
+        try:
+            start_time = time.time()
+            db.session.execute(db.text('SELECT 1'))
+            db_response_time = time.time() - start_time
+        except Exception as e:
+            db_health = False
+            db_response_time = None
+        
+        # System metrics
+        system_metrics = {
+            'cpu_percent': psutil.cpu_percent(interval=1),
+            'memory_percent': psutil.virtual_memory().percent,
+            'disk_percent': psutil.disk_usage('/').percent,
+            'load_average': psutil.getloadavg() if hasattr(psutil, 'getloadavg') else None
+        }
+        
+        # Recent activity
+        recent_logins = User.query.filter(
+            User.last_login > datetime.utcnow() - timedelta(hours=24)
+        ).count()
+        
+        recent_events = Event.query.filter(
+            Event.created_at > datetime.utcnow() - timedelta(hours=24)
+        ).count()
+        
+        return jsonify({
+            'status': 'healthy' if db_health else 'unhealthy',
+            'timestamp': datetime.utcnow().isoformat(),
+            'database': {
+                'status': 'connected' if db_health else 'disconnected',
+                'response_time_ms': round(db_response_time * 1000, 2) if db_response_time else None
+            },
+            'system': system_metrics,
+            'activity': {
+                'recent_logins_24h': recent_logins,
+                'recent_events_24h': recent_events
+            }
+        })
+        
+    except ImportError:
+        # psutil not available, return basic health
+        return jsonify({
+            'status': 'limited',
+            'message': 'Full system monitoring not available (psutil not installed)',
+            'timestamp': datetime.utcnow().isoformat(),
+            'database': {
+                'status': 'connected' if db_health else 'disconnected',
+                'response_time_ms': round(db_response_time * 1000, 2) if db_response_time else None
+            }
+        })
+    except Exception as e:
+        return jsonify({'msg': f'Error getting system health: {str(e)}'}), 500
+
+@super_admin_bp.route('/system/logs', methods=['GET'])
+@jwt_required()
+def get_system_logs():
+    user_id = get_jwt_identity()
+    
+    if not is_super_admin(user_id):
+        return jsonify({'msg': 'Super Admin access required'}), 403
+    
+    try:
+        from datetime import datetime, timedelta
+        
+        # Get recent email logs as a proxy for system activity
+        recent_logs = db.session.query(
+            EmailLog.id,
+            EmailLog.recipient_email,
+            EmailLog.subject,
+            EmailLog.status,
+            EmailLog.created_at,
+            EmailLog.error_message
+        ).filter(
+            EmailLog.created_at > datetime.utcnow() - timedelta(hours=24)
+        ).order_by(EmailLog.created_at.desc()).limit(100).all()
+        
+        logs = []
+        for log in recent_logs:
+            logs.append({
+                'id': log[0],
+                'type': 'email',
+                'level': 'error' if log[3] == 'failed' else 'info',
+                'message': f"Email to {log[1]}: {log[2]}",
+                'status': log[3],
+                'timestamp': log[4].isoformat() if log[4] else None,
+                'error': log[5] if log[5] else None
+            })
+        
+        return jsonify({
+            'logs': logs,
+            'total_count': len(logs),
+            'timeframe': '24 hours'
+        })
+        
+    except Exception as e:
+        return jsonify({'msg': f'Error getting system logs: {str(e)}'}), 500
+
+@super_admin_bp.route('/system/performance', methods=['GET'])
+@jwt_required()
+def get_system_performance():
+    user_id = get_jwt_identity()
+    
+    if not is_super_admin(user_id):
+        return jsonify({'msg': 'Super Admin access required'}), 403
+    
+    try:
+        from datetime import datetime, timedelta
+        
+        # Database performance metrics
+        slow_queries = []  # Would need query logging to populate this
+        
+        # User activity patterns
+        hourly_activity = db.session.execute(db.text("""
+            SELECT 
+                EXTRACT(hour FROM last_login) as hour,
+                COUNT(*) as login_count
+            FROM "user" 
+            WHERE last_login > NOW() - INTERVAL '7 days'
+            GROUP BY EXTRACT(hour FROM last_login)
+            ORDER BY hour
+        """)).fetchall()
+        
+        activity_data = [{'hour': int(row[0]) if row[0] else 0, 'logins': row[1]} for row in hourly_activity]
+        
+        # Organization growth
+        org_growth = db.session.execute(db.text("""
+            SELECT 
+                DATE(created_at) as date,
+                COUNT(*) as new_orgs
+            FROM "organization" 
+            WHERE created_at > NOW() - INTERVAL '30 days'
+            GROUP BY DATE(created_at)
+            ORDER BY date
+        """)).fetchall()
+        
+        growth_data = [{'date': row[0].isoformat() if row[0] else None, 'count': row[1]} for row in org_growth]
+        
+        return jsonify({
+            'performance_metrics': {
+                'avg_response_time': None,  # Would need instrumentation
+                'error_rate': None,         # Would need error tracking
+                'throughput': None          # Would need request tracking
+            },
+            'user_activity': activity_data,
+            'organization_growth': growth_data
+        })
+        
+    except Exception as e:
+        return jsonify({'msg': f'Error getting performance metrics: {str(e)}'}), 500
