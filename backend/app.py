@@ -218,7 +218,7 @@ print("🚀 Phase 2 Super Admin Analytics module loading...")
 from routes.super_analytics import super_analytics_bp
 # Phase 3 Security & Compliance - Audit trails and data privacy
 print("🔐 Phase 3 Security & Compliance module loading...")
-from routes.security import security_bp
+from routes.security_simple import security_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(events_bp, url_prefix='/api/events')
