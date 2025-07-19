@@ -438,21 +438,22 @@ def get_system_health():
     if not is_super_admin(user_id):
         return jsonify({'msg': 'Super Admin access required'}), 403
     
+    # Initialize variables
+    db_health = True
+    db_response_time = None
+    
+    # Database health check
+    try:
+        import time
+        start_time = time.time()
+        db.session.execute(db.text('SELECT 1'))
+        db_response_time = time.time() - start_time
+    except Exception as e:
+        db_health = False
+        db_response_time = None
+    
     try:
         import psutil
-        import time
-        from datetime import datetime, timedelta
-        
-        # Database health
-        db_health = True
-        db_response_time = None
-        try:
-            start_time = time.time()
-            db.session.execute(db.text('SELECT 1'))
-            db_response_time = time.time() - start_time
-        except Exception as e:
-            db_health = False
-            db_response_time = None
         
         # System metrics
         system_metrics = {
@@ -497,7 +498,15 @@ def get_system_health():
             }
         })
     except Exception as e:
-        return jsonify({'msg': f'Error getting system health: {str(e)}'}), 500
+        return jsonify({
+            'status': 'error',
+            'message': f'Error getting system health: {str(e)}',
+            'timestamp': datetime.utcnow().isoformat(),
+            'database': {
+                'status': 'connected' if db_health else 'disconnected',
+                'response_time_ms': round(db_response_time * 1000, 2) if db_response_time else None
+            }
+        }), 500
 
 @super_admin_bp.route('/system/logs', methods=['GET'])
 @jwt_required()
