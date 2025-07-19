@@ -112,7 +112,7 @@ function SuperAdminPage() {
       
       if (response.ok) {
         const data = await response.json();
-        console.log(`${key} data:`, data);
+        console.log(`${key} data loaded successfully:`, data);
         
         if (successMessage) {
           showSuccessMessage(successMessage);
@@ -120,14 +120,24 @@ function SuperAdminPage() {
         
         return data;
       } else {
-        const errorData = await response.text();
-        console.error(`${key} error:`, response.status, errorData);
-        setErrorState(key, `HTTP ${response.status}`);
+        let errorMessage = `Failed to load ${key}`;
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorData.error || `HTTP ${response.status}`;
+        } catch {
+          errorMessage = `HTTP ${response.status} - ${response.statusText}`;
+        }
+        
+        console.error(`${key} error:`, response.status, errorMessage);
+        setErrorState(key, errorMessage);
+        showErrorMessage(`Failed to load ${key}: ${errorMessage}`);
         return null;
       }
     } catch (err) {
       console.error(`Error loading ${key}:`, err);
-      setErrorState(key, err.message);
+      const errorMessage = err.message || 'Network error';
+      setErrorState(key, errorMessage);
+      showErrorMessage(`Failed to load ${key}: ${errorMessage}`);
       return null;
     } finally {
       setLoadingState(key, false);
@@ -175,7 +185,7 @@ function SuperAdminPage() {
 
   const loadAnalytics = async () => {
     const data = await enhancedApiCall(
-      `${getApiUrl()}/super-admin/analytics`,
+      `${getApiUrl()}/super-admin/analytics/overview`,
       'analytics'
     );
     if (data) {
