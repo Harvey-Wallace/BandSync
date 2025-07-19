@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { getApiUrl } from '../utils/apiUrl';
 import { useNavigate } from 'react-router-dom';
+import Navbar from '../components/Navbar';
 
 function SuperAdminPage() {
   const [overview, setOverview] = useState(null);
@@ -274,13 +275,15 @@ function SuperAdminPage() {
   }
 
   return (
-    <div className="container mt-4">
-      <div className="row">
-        <div className="col-12">
-          <h2 className="mb-4">
-            <i className="bi bi-shield-check me-2"></i>
-            Super Admin Dashboard
-          </h2>
+    <>
+      <Navbar />
+      <div className="container mt-4">
+        <div className="row">
+          <div className="col-12">
+            <h2 className="mb-4">
+              <i className="bi bi-shield-check me-2"></i>
+              Super Admin Dashboard
+            </h2>
 
           {/* Navigation Tabs */}
           <ul className="nav nav-tabs mb-4">
@@ -746,7 +749,8 @@ function SuperAdminPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 }
 
