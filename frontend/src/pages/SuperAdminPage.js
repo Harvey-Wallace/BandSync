@@ -18,6 +18,9 @@ function SuperAdminPage() {
   const [analyticsData, setAnalyticsData] = useState(null);
   const [trendsData, setTrendsData] = useState(null);
   const [orgPerformance, setOrgPerformance] = useState(null);
+  const [securityData, setSecurityData] = useState(null);
+  const [auditLogs, setAuditLogs] = useState(null);
+  const [securityEvents, setSecurityEvents] = useState(null);
   const navigate = useNavigate();
 
   const isSuperAdmin = localStorage.getItem('super_admin') === 'true';
@@ -105,6 +108,79 @@ function SuperAdminPage() {
       }
     } catch (err) {
       console.error('Error loading trends:', err);
+    }
+  };
+
+  // Phase 3 Security & Compliance Functions
+  const loadSecurity = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Load security summary
+      const summaryResponse = await fetch(`${getApiUrl()}/super-admin/security/audit-summary`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (summaryResponse.ok) {
+        const data = await summaryResponse.json();
+        console.log('Security summary data:', data);
+        setSecurityData(data);
+      } else {
+        console.error('Security summary error:', summaryResponse.status);
+      }
+      
+    } catch (err) {
+      console.error('Error loading security data:', err);
+    }
+  };
+
+  const loadAuditLogs = async (page = 1, filters = {}) => {
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({
+        page: page.toString(),
+        per_page: '10',
+        ...filters
+      });
+      
+      const response = await fetch(`${getApiUrl()}/super-admin/security/audit-log?${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Audit logs data:', data);
+        setAuditLogs(data);
+      } else {
+        console.error('Audit logs error:', response.status);
+      }
+    } catch (err) {
+      console.error('Error loading audit logs:', err);
+    }
+  };
+
+  const loadSecurityEvents = async (page = 1, filters = {}) => {
+    try {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({
+        page: page.toString(),
+        per_page: '10',
+        ...filters
+      });
+      
+      const response = await fetch(`${getApiUrl()}/super-admin/security/security-events?${params}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Security events data:', data);
+        setSecurityEvents(data);
+      } else {
+        console.error('Security events error:', response.status);
+      }
+    } catch (err) {
+      console.error('Error loading security events:', err);
     }
   };
 
@@ -404,6 +480,20 @@ function SuperAdminPage() {
               >
                 <i className="bi bi-cpu me-1"></i>
                 System Health
+              </button>
+            </li>
+            <li className="nav-item">
+              <button 
+                className={`nav-link ${activeTab === 'security' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('security');
+                  if (!securityData) loadSecurity();
+                  if (!auditLogs) loadAuditLogs();
+                  if (!securityEvents) loadSecurityEvents();
+                }}
+              >
+                <i className="bi bi-shield-check me-1"></i>
+                Security
               </button>
             </li>
           </ul>
@@ -1079,6 +1169,279 @@ function SuperAdminPage() {
                     <i className="bi bi-box-arrow-right me-2"></i>
                     Emergency Logout
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Security Tab - Phase 3 Security & Compliance */}
+      {activeTab === 'security' && (
+        <div className="row">
+          <div className="col-12">
+            <div className="card mb-4">
+              <div className="card-header">
+                <h5 className="mb-0">
+                  <i className="bi bi-shield-check me-2"></i>
+                  Security & Compliance Dashboard
+                  <span className="badge bg-success ms-2">Phase 3</span>
+                </h5>
+              </div>
+              <div className="card-body">
+                {securityData ? (
+                  <div className="row">
+                    <div className="col-md-3">
+                      <div className="card text-center">
+                        <div className="card-body">
+                          <h6 className="card-title">Audit Entries</h6>
+                          <h4 className="text-primary">{securityData.audit_statistics?.total_entries || 0}</h4>
+                          <small className="text-muted">
+                            {securityData.audit_statistics?.entries_24h || 0} in 24h
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="card text-center">
+                        <div className="card-body">
+                          <h6 className="card-title">Security Events</h6>
+                          <h4 className="text-warning">{securityData.security_statistics?.total_events || 0}</h4>
+                          <small className="text-muted">
+                            {securityData.security_statistics?.unresolved_events || 0} unresolved
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="card text-center">
+                        <div className="card-body">
+                          <h6 className="card-title">Resolution Rate</h6>
+                          <h4 className="text-success">{securityData.security_statistics?.resolution_rate || 0}%</h4>
+                          <small className="text-muted">Security events resolved</small>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="col-md-3">
+                      <div className="card text-center">
+                        <div className="card-body">
+                          <h6 className="card-title">Growth Rate</h6>
+                          <h4 className="text-info">{securityData.audit_statistics?.growth_rate_24h || 0}%</h4>
+                          <small className="text-muted">24h activity growth</small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-3">
+                    <div className="spinner-border" role="status">
+                      <span className="visually-hidden">Loading security data...</span>
+                    </div>
+                    <div className="mt-2">Loading security dashboard...</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-6">
+            <div className="card">
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h6 className="mb-0">
+                  <i className="bi bi-list-ul me-2"></i>
+                  Recent Audit Logs
+                </h6>
+                <button 
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => loadAuditLogs()}
+                >
+                  <i className="bi bi-arrow-clockwise"></i>
+                </button>
+              </div>
+              <div className="card-body">
+                {auditLogs ? (
+                  <>
+                    <div className="table-responsive" style={{maxHeight: '400px', overflowY: 'auto'}}>
+                      <table className="table table-sm">
+                        <thead>
+                          <tr>
+                            <th>User</th>
+                            <th>Action</th>
+                            <th>Resource</th>
+                            <th>Time</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {auditLogs.audit_logs?.slice(0, 10).map(log => (
+                            <tr key={log.id}>
+                              <td>
+                                <small>{log.username || 'System'}</small>
+                              </td>
+                              <td>
+                                <span className="badge bg-secondary">{log.action_type}</span>
+                              </td>
+                              <td>
+                                <small>{log.resource_type}</small>
+                              </td>
+                              <td>
+                                <small>{new Date(log.timestamp).toLocaleString()}</small>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="mt-2">
+                      <small className="text-muted">
+                        Showing {auditLogs.audit_logs?.length || 0} of {auditLogs.summary?.total_entries || 0} entries
+                      </small>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-3">
+                    <div className="spinner-border spinner-border-sm" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <div className="mt-2">Loading audit logs...</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="col-md-6">
+            <div className="card">
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h6 className="mb-0">
+                  <i className="bi bi-exclamation-triangle me-2"></i>
+                  Security Events
+                </h6>
+                <button 
+                  className="btn btn-sm btn-outline-primary"
+                  onClick={() => loadSecurityEvents()}
+                >
+                  <i className="bi bi-arrow-clockwise"></i>
+                </button>
+              </div>
+              <div className="card-body">
+                {securityEvents ? (
+                  <>
+                    <div className="table-responsive" style={{maxHeight: '400px', overflowY: 'auto'}}>
+                      <table className="table table-sm">
+                        <thead>
+                          <tr>
+                            <th>Event</th>
+                            <th>Severity</th>
+                            <th>Status</th>
+                            <th>Time</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {securityEvents.security_events?.slice(0, 10).map(event => (
+                            <tr key={event.id}>
+                              <td>
+                                <small>{event.event_type}</small>
+                              </td>
+                              <td>
+                                <span className={`badge ${
+                                  event.severity === 'critical' ? 'bg-danger' :
+                                  event.severity === 'high' ? 'bg-warning' :
+                                  event.severity === 'medium' ? 'bg-info' : 'bg-secondary'
+                                }`}>
+                                  {event.severity}
+                                </span>
+                              </td>
+                              <td>
+                                <span className={`badge ${event.resolved ? 'bg-success' : 'bg-warning'}`}>
+                                  {event.resolved ? 'Resolved' : 'Open'}
+                                </span>
+                              </td>
+                              <td>
+                                <small>{new Date(event.timestamp).toLocaleString()}</small>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    <div className="mt-2">
+                      <small className="text-muted">
+                        Showing {securityEvents.security_events?.length || 0} of {securityEvents.summary?.total_events || 0} events
+                      </small>
+                    </div>
+                  </>
+                ) : (
+                  <div className="text-center py-3">
+                    <div className="spinner-border spinner-border-sm" role="status">
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <div className="mt-2">Loading security events...</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="col-12 mt-4">
+            <div className="card">
+              <div className="card-header">
+                <h6 className="mb-0">
+                  <i className="bi bi-tools me-2"></i>
+                  Security Management Tools
+                </h6>
+              </div>
+              <div className="card-body">
+                <div className="row">
+                  <div className="col-md-4">
+                    <div className="d-grid gap-2">
+                      <button 
+                        className="btn btn-outline-primary"
+                        onClick={() => {
+                          loadSecurity();
+                          loadAuditLogs();
+                          loadSecurityEvents();
+                        }}
+                      >
+                        <i className="bi bi-arrow-clockwise me-2"></i>
+                        Refresh Security Data
+                      </button>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="d-grid gap-2">
+                      <button 
+                        className="btn btn-outline-info"
+                        onClick={() => window.open('/api/super-admin/security/audit-log?per_page=100', '_blank')}
+                      >
+                        <i className="bi bi-download me-2"></i>
+                        Export Audit Logs
+                      </button>
+                    </div>
+                  </div>
+                  <div className="col-md-4">
+                    <div className="d-grid gap-2">
+                      <button 
+                        className="btn btn-outline-success"
+                        onClick={() => {
+                          fetch(`${getApiUrl()}/super-admin/security/status`, {
+                            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+                          }).then(r => r.json()).then(data => {
+                            alert(`Security Status: ${data.phase3_status}\nFeatures: ${Object.entries(data.security_features).map(([k,v]) => `${k}: ${v}`).join(', ')}`);
+                          });
+                        }}
+                      >
+                        <i className="bi bi-info-circle me-2"></i>
+                        Security Status
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <div className="alert alert-info">
+                    <i className="bi bi-info-circle me-2"></i>
+                    <strong>Phase 3 Security & Compliance:</strong> Advanced audit trails, security monitoring, and data privacy features are now operational. 
+                    This dashboard provides real-time insights into system security and compliance metrics.
+                  </div>
                 </div>
               </div>
             </div>
