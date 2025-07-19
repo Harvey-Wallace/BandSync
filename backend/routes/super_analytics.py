@@ -58,7 +58,7 @@ def get_analytics_overview():
         ).count()
         
         # Active users (users who created events or RSVP'd recently)
-        active_users_from_events = db.session.query(User.id).join(Event, User.id == Event.organizer_id).filter(
+        active_users_from_events = db.session.query(User.id).join(Event, User.id == Event.created_by).filter(
             Event.date >= last_30_days
         ).distinct()
         
