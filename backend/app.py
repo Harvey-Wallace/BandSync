@@ -213,6 +213,8 @@ from routes.bulk_ops import bulk_ops_bp
 from routes.quick_polls import quick_polls_bp
 from routes.analytics import analytics_bp
 from routes.super_admin import super_admin_bp
+# Phase 2 Super Admin Analytics - Advanced system insights
+print("🚀 Phase 2 Super Admin Analytics module loading...")
 from routes.super_analytics import super_analytics_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
