@@ -504,19 +504,19 @@ function SuperAdminPage() {
                         stats={[
                           {
                             label: 'Total Users',
-                            value: overview.total_users?.toLocaleString() || 0,
+                            value: overview.stats?.total_users?.toLocaleString() || 0,
                             subtitle: `${overview.active_users || 0} active`,
                             icon: 'people'
                           },
                           {
                             label: 'Organizations',
-                            value: overview.total_organizations?.toLocaleString() || 0,
+                            value: overview.stats?.total_organizations?.toLocaleString() || 0,
                             subtitle: `${overview.active_organizations || 0} active`,
                             icon: 'building'
                           },
                           {
                             label: 'Total Events',
-                            value: overview.total_events?.toLocaleString() || 0,
+                            value: overview.stats?.total_events?.toLocaleString() || 0,
                             subtitle: `${overview.upcoming_events || 0} upcoming`,
                             icon: 'calendar-event'
                           },
