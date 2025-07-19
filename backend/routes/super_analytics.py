@@ -71,14 +71,26 @@ def get_analytics_overview():
         # Combine both queries using union
         active_users_30d = active_users_from_events.union(active_users_from_rsvps).count()
         
-        # Platform health metrics
+        # Platform health metrics using subqueries to avoid nested aggregates
+        # Average events per organization
+        events_per_org_subquery = db.session.query(
+            Organization.id.label('org_id'),
+            func.count(Event.id).label('event_count')
+        ).outerjoin(Event).group_by(Organization.id).subquery()
+        
         avg_events_per_org = db.session.query(
-            func.avg(func.count(Event.id))
-        ).select_from(Event).join(Organization).group_by(Organization.id).scalar() or 0
+            func.avg(events_per_org_subquery.c.event_count)
+        ).scalar() or 0
+        
+        # Average users per organization  
+        users_per_org_subquery = db.session.query(
+            UserOrganization.organization_id.label('org_id'),
+            func.count(UserOrganization.user_id).label('user_count')
+        ).group_by(UserOrganization.organization_id).subquery()
         
         avg_users_per_org = db.session.query(
-            func.avg(func.count(UserOrganization.user_id))
-        ).select_from(UserOrganization).group_by(UserOrganization.organization_id).scalar() or 0
+            func.avg(users_per_org_subquery.c.user_count)
+        ).scalar() or 0
         
         return jsonify({
             'overview': {
