@@ -15,5 +15,5 @@ class Config:
     SQLALCHEMY_DATABASE_URI = database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'jwt-secret')
-    # Set JWT token to expire after 20 minutes
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(minutes=20)
+    # Set JWT token to expire after 8 hours for better user experience
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=8)
