@@ -181,6 +181,7 @@ function SuperAdminPage() {
 
     try {
       const token = localStorage.getItem('token');
+      console.log('Attempting to impersonate user:', userId, username);
       const response = await fetch(`${getApiUrl()}/super-admin/user/${userId}/impersonate`, {
         method: 'POST',
         headers: { 
@@ -191,6 +192,7 @@ function SuperAdminPage() {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('Impersonation successful:', data);
         
         // Store the impersonation token
         localStorage.setItem('token', data.impersonation_token);
@@ -203,11 +205,13 @@ function SuperAdminPage() {
         alert(`Now impersonating ${username}. You can return to Super Admin mode by logging out and back in.`);
         window.location.href = '/dashboard';
       } else {
-        setError('Failed to impersonate user');
+        const errorData = await response.text();
+        console.error('Impersonation error:', response.status, errorData);
+        setError(`Failed to impersonate user: ${response.status} - ${errorData}`);
       }
     } catch (err) {
-      setError('Error impersonating user');
-      console.error(err);
+      console.error('Error impersonating user:', err);
+      setError(`Error impersonating user: ${err.message}`);
     }
   };
 
