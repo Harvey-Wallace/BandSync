@@ -216,6 +216,9 @@ from routes.super_admin import super_admin_bp
 # Phase 2 Super Admin Analytics - Advanced system insights
 print("🚀 Phase 2 Super Admin Analytics module loading...")
 from routes.super_analytics import super_analytics_bp
+# Phase 3 Security & Compliance - Audit trails and data privacy
+print("🔐 Phase 3 Security & Compliance module loading...")
+from routes.security import security_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(events_bp, url_prefix='/api/events')
@@ -236,6 +239,7 @@ app.register_blueprint(quick_polls_bp, url_prefix='/api/quick-polls')
 app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 app.register_blueprint(super_admin_bp, url_prefix='/api/super-admin')
 app.register_blueprint(super_analytics_bp, url_prefix='/api/super-admin/analytics')
+app.register_blueprint(security_bp, url_prefix='/api/super-admin/security')
 
 # JWT error handlers
 @jwt.unauthorized_loader

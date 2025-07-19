@@ -683,3 +683,176 @@ class PollResponse(db.Model):
     
     # Unique constraint: one response per user per poll (if not anonymous)
     __table_args__ = (db.UniqueConstraint('poll_id', 'user_id'),)
+
+
+# =============================================================================
+# PHASE 3 MODELS - Security & Compliance, Audit Trails, Data Privacy
+# =============================================================================
+
+class AuditLog(db.Model):
+    """Comprehensive audit trail for all system actions"""
+    __tablename__ = 'audit_log'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    action_type = db.Column(db.String(50), nullable=False, index=True)
+    resource_type = db.Column(db.String(50), nullable=False, index=True)
+    resource_id = db.Column(db.Integer, nullable=True, index=True)
+    details = db.Column(db.JSON, nullable=True)
+    ip_address = db.Column(db.String(45), nullable=True, index=True)
+    user_agent = db.Column(db.Text, nullable=True)
+    session_id = db.Column(db.String(255), nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=True)
+    
+    # Relationships
+    user = db.relationship('User', backref='audit_logs')
+    organization = db.relationship('Organization', backref='audit_logs')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'username': self.user.username if self.user else None,
+            'action_type': self.action_type,
+            'resource_type': self.resource_type,
+            'resource_id': self.resource_id,
+            'details': self.details,
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None,
+            'organization_id': self.organization_id,
+            'organization_name': self.organization.name if self.organization else None
+        }
+
+
+class SecurityEvent(db.Model):
+    """Security events and threats tracking"""
+    __tablename__ = 'security_event'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    event_type = db.Column(db.String(50), nullable=False, index=True)
+    severity = db.Column(db.String(20), nullable=False, index=True)  # low, medium, high, critical
+    source_ip = db.Column(db.String(45), nullable=True, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    details = db.Column(db.JSON, nullable=True)
+    resolved = db.Column(db.Boolean, default=False, index=True)
+    resolved_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    resolved_at = db.Column(db.DateTime, nullable=True)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id], backref='security_events')
+    resolver = db.relationship('User', foreign_keys=[resolved_by])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'event_type': self.event_type,
+            'severity': self.severity,
+            'source_ip': self.source_ip,
+            'user_id': self.user_id,
+            'username': self.user.username if self.user else None,
+            'details': self.details,
+            'resolved': self.resolved,
+            'resolved_by': self.resolved_by,
+            'resolved_at': self.resolved_at.isoformat() if self.resolved_at else None,
+            'timestamp': self.timestamp.isoformat() if self.timestamp else None
+        }
+
+
+class DataPrivacyRequest(db.Model):
+    """GDPR and data privacy request tracking"""
+    __tablename__ = 'data_privacy_request'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    request_type = db.Column(db.String(20), nullable=False, index=True)  # export, delete, modify
+    status = db.Column(db.String(20), default='pending', index=True)  # pending, processing, completed, failed
+    requested_at = db.Column(db.DateTime, default=datetime.utcnow, index=True)
+    completed_at = db.Column(db.DateTime, nullable=True)
+    file_path = db.Column(db.String(255), nullable=True)
+    processed_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    notes = db.Column(db.Text, nullable=True)
+    
+    # Relationships
+    user = db.relationship('User', foreign_keys=[user_id], backref='privacy_requests')
+    processor = db.relationship('User', foreign_keys=[processed_by])
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'username': self.user.username if self.user else None,
+            'request_type': self.request_type,
+            'status': self.status,
+            'requested_at': self.requested_at.isoformat() if self.requested_at else None,
+            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
+            'processed_by': self.processed_by,
+            'notes': self.notes
+        }
+
+
+class UserSession(db.Model):
+    """Active user sessions for security monitoring"""
+    __tablename__ = 'user_session'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    session_token = db.Column(db.String(255), nullable=False, unique=True, index=True)
+    ip_address = db.Column(db.String(45), nullable=True)
+    user_agent = db.Column(db.Text, nullable=True)
+    device_fingerprint = db.Column(db.String(255), nullable=True)
+    location_info = db.Column(db.JSON, nullable=True)  # City, country, timezone
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    last_activity = db.Column(db.DateTime, default=datetime.utcnow)
+    expires_at = db.Column(db.DateTime, nullable=True)
+    is_active = db.Column(db.Boolean, default=True)
+    logout_reason = db.Column(db.String(50), nullable=True)  # 'user_logout', 'timeout', 'force_logout', 'security'
+    
+    # Relationships
+    user = db.relationship('User', backref='active_sessions')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent[:100] + '...' if self.user_agent and len(self.user_agent) > 100 else self.user_agent,
+            'location_info': self.location_info,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'last_activity': self.last_activity.isoformat() if self.last_activity else None,
+            'is_active': self.is_active,
+            'logout_reason': self.logout_reason
+        }
+
+
+class SecurityPolicy(db.Model):
+    """Security policies and configurations"""
+    __tablename__ = 'security_policy'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=True)  # Null for global policies
+    policy_name = db.Column(db.String(100), nullable=False)
+    policy_type = db.Column(db.String(50), nullable=False)  # 'password', 'session', 'access', 'data_retention'
+    policy_config = db.Column(db.JSON, nullable=False)
+    is_active = db.Column(db.Boolean, default=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    
+    # Relationships
+    organization = db.relationship('Organization', backref='security_policies')
+    creator = db.relationship('User', backref='created_security_policies')
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'organization_id': self.organization_id,
+            'policy_name': self.policy_name,
+            'policy_type': self.policy_type,
+            'policy_config': self.policy_config,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
