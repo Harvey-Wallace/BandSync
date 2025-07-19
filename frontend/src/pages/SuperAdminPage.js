@@ -15,6 +15,9 @@ function SuperAdminPage() {
   const [activeTab, setActiveTab] = useState('overview');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [trendsData, setTrendsData] = useState(null);
+  const [orgPerformance, setOrgPerformance] = useState(null);
   const navigate = useNavigate();
 
   const isSuperAdmin = localStorage.getItem('super_admin') === 'true';
@@ -26,6 +29,7 @@ function SuperAdminPage() {
     }
     loadOverview();
     loadSystemHealth();
+    loadAnalytics();
   }, [isSuperAdmin, navigate]);
 
   const loadSystemHealth = async () => {
@@ -47,6 +51,60 @@ function SuperAdminPage() {
     } catch (err) {
       console.error('Error loading system health:', err);
       setError(`Error loading system health: ${err.message}`);
+    }
+  };
+
+  const loadAnalytics = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Load analytics overview
+      const analyticsResponse = await fetch(`${getApiUrl()}/super-admin/analytics/overview`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (analyticsResponse.ok) {
+        const data = await analyticsResponse.json();
+        console.log('Analytics data:', data);
+        setAnalyticsData(data);
+      } else {
+        console.error('Analytics error:', analyticsResponse.status);
+      }
+      
+      // Load organization performance
+      const perfResponse = await fetch(`${getApiUrl()}/super-admin/analytics/organizations/performance`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (perfResponse.ok) {
+        const perfData = await perfResponse.json();
+        console.log('Organization performance data:', perfData);
+        setOrgPerformance(perfData);
+      } else {
+        console.error('Organization performance error:', perfResponse.status);
+      }
+      
+    } catch (err) {
+      console.error('Error loading analytics:', err);
+    }
+  };
+
+  const loadTrends = async (period = '30d', metric = 'users') => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${getApiUrl()}/super-admin/analytics/trends?period=${period}&metric=${metric}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Trends data:', data);
+        setTrendsData(data);
+      } else {
+        console.error('Trends error:', response.status);
+      }
+    } catch (err) {
+      console.error('Error loading trends:', err);
     }
   };
 
@@ -320,6 +378,18 @@ function SuperAdminPage() {
             </li>
             <li className="nav-item">
               <button 
+                className={`nav-link ${activeTab === 'analytics' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('analytics');
+                  if (!analyticsData) loadAnalytics();
+                }}
+              >
+                <i className="bi bi-bar-chart me-1"></i>
+                Analytics
+              </button>
+            </li>
+            <li className="nav-item">
+              <button 
                 className={`nav-link ${activeTab === 'users' ? 'active' : ''}`}
                 onClick={() => setActiveTab('users')}
               >
@@ -442,6 +512,321 @@ function SuperAdminPage() {
               </div>
             </div>
           </div>
+        </>
+      )}
+
+      {/* Analytics Tab */}
+      {activeTab === 'analytics' && (
+        <>
+          {analyticsData && (
+            <>
+              {/* Advanced Analytics Overview */}
+              <div className="row mb-4">
+                <div className="col-12">
+                  <div className="card">
+                    <div className="card-header">
+                      <h5 className="mb-0">
+                        <i className="bi bi-graph-up me-2"></i>
+                        Platform Analytics
+                      </h5>
+                    </div>
+                    <div className="card-body">
+                      <div className="row">
+                        <div className="col-md-3">
+                          <div className="text-center p-3">
+                            <h6 className="text-muted">User Growth (30d)</h6>
+                            <h3 className="text-success">+{analyticsData.overview.users.new_30d}</h3>
+                            <small className="text-muted">
+                              {analyticsData.overview.users.growth_rate_30d}% growth rate
+                            </small>
+                          </div>
+                        </div>
+                        <div className="col-md-3">
+                          <div className="text-center p-3">
+                            <h6 className="text-muted">Active Users (30d)</h6>
+                            <h3 className="text-info">{analyticsData.overview.users.active_30d}</h3>
+                            <small className="text-muted">
+                              {Math.round((analyticsData.overview.users.active_30d / analyticsData.overview.users.total) * 100)}% of total
+                            </small>
+                          </div>
+                        </div>
+                        <div className="col-md-3">
+                          <div className="text-center p-3">
+                            <h6 className="text-muted">Org Activity Rate</h6>
+                            <h3 className="text-warning">{analyticsData.overview.organizations.activity_rate}%</h3>
+                            <small className="text-muted">
+                              {analyticsData.overview.organizations.active_30d} of {analyticsData.overview.organizations.total} active
+                            </small>
+                          </div>
+                        </div>
+                        <div className="col-md-3">
+                          <div className="text-center p-3">
+                            <h6 className="text-muted">Engagement Rate</h6>
+                            <h3 className="text-primary">{analyticsData.overview.engagement.rsvp_rate}%</h3>
+                            <small className="text-muted">
+                              {analyticsData.overview.events.rsvps_30d} RSVPs in 30d
+                            </small>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Platform Health Metrics */}
+              <div className="row mb-4">
+                <div className="col-md-6">
+                  <div className="card">
+                    <div className="card-header">
+                      <h6 className="mb-0">Platform Health Indicators</h6>
+                    </div>
+                    <div className="card-body">
+                      <div className="mb-3">
+                        <div className="d-flex justify-content-between">
+                          <span>Events per User</span>
+                          <strong>{analyticsData.overview.engagement.events_per_user}</strong>
+                        </div>
+                        <div className="progress" style={{height: '6px'}}>
+                          <div 
+                            className="progress-bar bg-success" 
+                            style={{width: `${Math.min(analyticsData.overview.engagement.events_per_user * 20, 100)}%`}}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <div className="d-flex justify-content-between">
+                          <span>Avg RSVPs per Event</span>
+                          <strong>{analyticsData.overview.engagement.avg_rsvps_per_event}</strong>
+                        </div>
+                        <div className="progress" style={{height: '6px'}}>
+                          <div 
+                            className="progress-bar bg-info" 
+                            style={{width: `${Math.min(analyticsData.overview.engagement.avg_rsvps_per_event * 10, 100)}%`}}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className="mb-3">
+                        <div className="d-flex justify-content-between">
+                          <span>Avg Users per Org</span>
+                          <strong>{analyticsData.overview.organizations.avg_users_per_org}</strong>
+                        </div>
+                        <div className="progress" style={{height: '6px'}}>
+                          <div 
+                            className="progress-bar bg-warning" 
+                            style={{width: `${Math.min(analyticsData.overview.organizations.avg_users_per_org * 5, 100)}%`}}
+                          ></div>
+                        </div>
+                      </div>
+                      <div className="mb-0">
+                        <div className="d-flex justify-content-between">
+                          <span>Avg Events per Org</span>
+                          <strong>{analyticsData.overview.events.avg_per_org}</strong>
+                        </div>
+                        <div className="progress" style={{height: '6px'}}>
+                          <div 
+                            className="progress-bar bg-primary" 
+                            style={{width: `${Math.min(analyticsData.overview.events.avg_per_org * 5, 100)}%`}}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-6">
+                  <div className="card">
+                    <div className="card-header">
+                      <h6 className="mb-0">Quick Actions</h6>
+                    </div>
+                    <div className="card-body">
+                      <div className="d-grid gap-2">
+                        <button 
+                          className="btn btn-outline-primary"
+                          onClick={() => loadTrends('30d', 'users')}
+                        >
+                          <i className="bi bi-graph-up me-2"></i>
+                          Load User Trends
+                        </button>
+                        <button 
+                          className="btn btn-outline-success"
+                          onClick={() => loadTrends('30d', 'events')}
+                        >
+                          <i className="bi bi-calendar-event me-2"></i>
+                          Load Event Trends
+                        </button>
+                        <button 
+                          className="btn btn-outline-info"
+                          onClick={() => loadAnalytics()}
+                        >
+                          <i className="bi bi-arrow-clockwise me-2"></i>
+                          Refresh Analytics
+                        </button>
+                        <button 
+                          className="btn btn-outline-secondary"
+                          onClick={() => window.open(`${getApiUrl()}/super-admin/analytics/export/system_overview`, '_blank')}
+                        >
+                          <i className="bi bi-download me-2"></i>
+                          Export Report
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Organization Performance Rankings */}
+              {orgPerformance && (
+                <div className="row mb-4">
+                  <div className="col-12">
+                    <div className="card">
+                      <div className="card-header">
+                        <h6 className="mb-0">
+                          <i className="bi bi-trophy me-2"></i>
+                          Organization Performance Rankings
+                        </h6>
+                      </div>
+                      <div className="card-body">
+                        <div className="row mb-3">
+                          <div className="col-md-3">
+                            <div className="text-center">
+                              <h6 className="text-success">Excellent Health</h6>
+                              <h4>{orgPerformance.summary.excellent_health}</h4>
+                            </div>
+                          </div>
+                          <div className="col-md-3">
+                            <div className="text-center">
+                              <h6 className="text-info">Good Health</h6>
+                              <h4>{orgPerformance.summary.good_health}</h4>
+                            </div>
+                          </div>
+                          <div className="col-md-3">
+                            <div className="text-center">
+                              <h6 className="text-warning">Needs Attention</h6>
+                              <h4>{orgPerformance.summary.needs_attention}</h4>
+                            </div>
+                          </div>
+                          <div className="col-md-3">
+                            <div className="text-center">
+                              <h6 className="text-muted">Avg Score</h6>
+                              <h4>{orgPerformance.summary.avg_engagement_score}</h4>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="table-responsive">
+                          <table className="table table-sm">
+                            <thead>
+                              <tr>
+                                <th>Rank</th>
+                                <th>Organization</th>
+                                <th>Engagement Score</th>
+                                <th>Users</th>
+                                <th>Events (30d)</th>
+                                <th>RSVPs (30d)</th>
+                                <th>Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {orgPerformance.organizations.slice(0, 10).map((org, index) => (
+                                <tr key={org.id}>
+                                  <td>
+                                    <span className={`badge ${index < 3 ? 'bg-warning' : 'bg-secondary'}`}>
+                                      #{index + 1}
+                                    </span>
+                                  </td>
+                                  <td><strong>{org.name}</strong></td>
+                                  <td>
+                                    <div className="d-flex align-items-center">
+                                      <div className="progress me-2" style={{width: '60px', height: '6px'}}>
+                                        <div 
+                                          className="progress-bar bg-success" 
+                                          style={{width: `${org.metrics.engagement_score}%`}}
+                                        ></div>
+                                      </div>
+                                      <small>{org.metrics.engagement_score}</small>
+                                    </div>
+                                  </td>
+                                  <td>{org.metrics.user_count}</td>
+                                  <td>{org.metrics.recent_events_30d}</td>
+                                  <td>{org.metrics.recent_rsvps_30d}</td>
+                                  <td>
+                                    <span className={`badge ${
+                                      org.metrics.health_status === 'excellent' ? 'bg-success' :
+                                      org.metrics.health_status === 'good' ? 'bg-info' :
+                                      org.metrics.health_status === 'fair' ? 'bg-warning' :
+                                      'bg-danger'
+                                    }`}>
+                                      {org.metrics.health_status.replace('_', ' ')}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Trends Data Display */}
+              {trendsData && (
+                <div className="row mb-4">
+                  <div className="col-12">
+                    <div className="card">
+                      <div className="card-header">
+                        <h6 className="mb-0">
+                          <i className="bi bi-graph-up me-2"></i>
+                          Trends: {trendsData.metric} ({trendsData.period})
+                        </h6>
+                      </div>
+                      <div className="card-body">
+                        <div className="mb-3">
+                          <small className="text-muted">
+                            Data from {new Date(trendsData.start_date).toLocaleDateString()} to {new Date(trendsData.end_date).toLocaleDateString()}
+                          </small>
+                        </div>
+                        {trendsData.trends.length > 0 ? (
+                          <div className="table-responsive">
+                            <table className="table table-sm">
+                              <thead>
+                                <tr>
+                                  <th>Date</th>
+                                  <th>Value</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {trendsData.trends.slice(-10).map((trend, index) => (
+                                  <tr key={index}>
+                                    <td>{new Date(trend.date).toLocaleDateString()}</td>
+                                    <td><strong>{trend.value}</strong></td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div className="text-center text-muted py-3">
+                            No trend data available for the selected period.
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+          
+          {!analyticsData && (
+            <div className="text-center py-5">
+              <div className="spinner-border" role="status">
+                <span className="visually-hidden">Loading analytics...</span>
+              </div>
+              <div className="mt-2">Loading advanced analytics...</div>
+            </div>
+          )}
         </>
       )}
 

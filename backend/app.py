@@ -213,6 +213,7 @@ from routes.bulk_ops import bulk_ops_bp
 from routes.quick_polls import quick_polls_bp
 from routes.analytics import analytics_bp
 from routes.super_admin import super_admin_bp
+from routes.super_analytics import super_analytics_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(events_bp, url_prefix='/api/events')
@@ -232,6 +233,7 @@ app.register_blueprint(bulk_ops_bp, url_prefix='/api/bulk-ops')
 app.register_blueprint(quick_polls_bp, url_prefix='/api/quick-polls')
 app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 app.register_blueprint(super_admin_bp, url_prefix='/api/super-admin')
+app.register_blueprint(super_analytics_bp, url_prefix='/api')
 
 # JWT error handlers
 @jwt.unauthorized_loader

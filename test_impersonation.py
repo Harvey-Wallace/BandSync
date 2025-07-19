@@ -137,7 +137,7 @@ def test_impersonation():
                 'Authorization': f'Bearer {token}',
                 'Content-Type': 'application/json'
             },
-            json={},  # Empty body, let backend choose organization
+            json={},  # Send empty JSON object instead of no body
             timeout=10
         )
         
