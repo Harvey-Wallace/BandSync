@@ -13,7 +13,7 @@ import calendar
 from models import db, User, Organization, Event, UserOrganization, RSVP
 from routes.super_admin import is_super_admin
 
-super_analytics_bp = Blueprint('super_analytics', __name__, url_prefix='/super-admin/analytics')
+super_analytics_bp = Blueprint('super_analytics', __name__)
 
 @super_analytics_bp.route('/overview', methods=['GET'])
 @jwt_required()

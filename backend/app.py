@@ -235,7 +235,7 @@ app.register_blueprint(bulk_ops_bp, url_prefix='/api/bulk-ops')
 app.register_blueprint(quick_polls_bp, url_prefix='/api/quick-polls')
 app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 app.register_blueprint(super_admin_bp, url_prefix='/api/super-admin')
-app.register_blueprint(super_analytics_bp, url_prefix='/api')
+app.register_blueprint(super_analytics_bp, url_prefix='/api/super-admin/analytics')
 
 # JWT error handlers
 @jwt.unauthorized_loader
