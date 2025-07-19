@@ -1,8 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
-import Spinner from '../components/Spinner';
-import Toast from '../components/Toast';
+import NotificationSystem from '../components/NotificationSystem';
+import { 
+  LoadingSpinner, 
+  DataLoadingState, 
+  ErrorState, 
+  EmptyState 
+} from '../components/LoadingComponents';
+import { 
+  ResponsiveStatsGrid, 
+  ResponsiveCardGrid,
+  ResponsiveActionBar,
+  ResponsiveButtonGroup 
+} from '../components/ResponsiveComponents';
 import UserAvatar from '../components/UserAvatar';
 import { useTheme } from '../contexts/ThemeContext';
 import { getGoogleMapsApiKey } from '../config/constants';
@@ -17,11 +28,23 @@ function Dashboard() {
   const [allUsers, setAllUsers] = useState([]); // Store all users with section info
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [filter, setFilter] = useState('upcoming'); // Default to 'upcoming', can be changed to 'all' or 'past'
   const [expandedEvents, setExpandedEvents] = useState({}); // Track which events are expanded
   const { orgThemeColor } = useTheme();
   const role = localStorage.getItem('role'); // Assuming role is stored in localStorage
+
+  // Enhanced notification functions
+  const showSuccessMessage = (message) => {
+    if (window.showSuccess) window.showSuccess(message);
+  };
+
+  const showErrorMessage = (message) => {
+    if (window.showError) window.showError(message);
+  };
+
+  const showInfoMessage = (message) => {
+    if (window.showInfo) window.showInfo(message);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -102,7 +125,7 @@ function Dashboard() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setRsvps({ ...rsvps, [eventId]: capitalizedStatus });
-      setToast({ show: true, message: `RSVP updated to "${capitalizedStatus}"`, type: 'success' });
+      showSuccessMessage(`RSVP updated to "${capitalizedStatus}"`);
       
       // Refresh the RSVP data to get updated member responses
       const res = await axios.get(`${apiUrl}/events/${eventId}/rsvps`, {
@@ -110,7 +133,7 @@ function Dashboard() {
       });
       setAllRsvps(prev => ({ ...prev, [eventId]: res.data }));
     } catch (error) {
-      setToast({ show: true, message: 'Failed to update RSVP', type: 'danger' });
+      showErrorMessage('Failed to update RSVP');
     }
   };
 
@@ -261,9 +284,9 @@ function Dashboard() {
     return (
       <>
         <Navbar />
-        <div className="container mt-4 text-center">
-          <Spinner size={40} />
-          <div className="mt-3 text-muted">Loading events...</div>
+        <NotificationSystem />
+        <div className="container-fluid mt-4 px-3">
+          <DataLoadingState type="skeleton" message="Loading your events..." />
         </div>
       </>
     );
@@ -273,11 +296,12 @@ function Dashboard() {
     return (
       <>
         <Navbar />
-        <div className="container mt-4">
-          <div className="alert alert-danger">
-            <i className="bi bi-exclamation-triangle me-2"></i>
-            {error}
-          </div>
+        <NotificationSystem />
+        <div className="container-fluid mt-4 px-3">
+          <ErrorState 
+            message={error} 
+            onRetry={() => window.location.reload()} 
+          />
         </div>
       </>
     );
@@ -286,120 +310,125 @@ function Dashboard() {
   return (
     <>
       <Navbar />
-      <div className="container mt-4">
-        {/* Header */}
-        <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4">
-          <div>
-            <h2 className="mb-1">
-              <i className="bi bi-calendar-event me-2" style={{ color: orgThemeColor }}></i>
-              My Events
-            </h2>
-            <p className="text-muted mb-0">Manage your event attendance and stay updated</p>
-          </div>
-          
-          {/* Event Stats */}
-          <div className="d-flex gap-2 mt-3 mt-md-0">
-            <div className="text-center">
-              <div className="fw-bold" style={{ color: orgThemeColor }}>{upcomingCount}</div>
-              <div className="small text-muted">Upcoming</div>
-            </div>
-            <div className="vr"></div>
-            <div className="text-center">
-              <div className="fw-bold text-muted">{pastCount}</div>
-              <div className="small text-muted">Past</div>
-            </div>
+      <NotificationSystem />
+      <div className="container-fluid mt-4 px-3">
+        <ResponsiveActionBar
+          title="My Events"
+          subtitle="Manage your event attendance and stay updated"
+          icon="calendar-event"
+          actions={[
+            {
+              label: 'View All Events',
+              shortLabel: 'All',
+              icon: 'calendar3',
+              variant: filter === 'all' ? 'btn-primary' : 'btn-outline-primary',
+              onClick: () => setFilter('all')
+            },
+            {
+              label: 'Upcoming Only',
+              shortLabel: 'Upcoming',
+              icon: 'clock',
+              variant: filter === 'upcoming' ? 'btn-primary' : 'btn-outline-primary',
+              onClick: () => setFilter('upcoming')
+            },
+            {
+              label: 'Past Events',
+              shortLabel: 'Past',
+              icon: 'calendar-check',
+              variant: filter === 'past' ? 'btn-primary' : 'btn-outline-primary',
+              onClick: () => setFilter('past')
+            }
+          ]}
+        />
+
+        {/* Enhanced Event Stats */}
+        <ResponsiveStatsGrid
+          stats={[
+            {
+              label: 'Upcoming Events',
+              value: upcomingCount,
+              subtitle: 'Events to attend',
+              icon: 'calendar-plus'
+            },
+            {
+              label: 'Past Events',
+              value: pastCount,
+              subtitle: 'Previously attended',
+              icon: 'calendar-check'
+            },
+            {
+              label: 'My RSVPs',
+              value: Object.keys(rsvps).length,
+              subtitle: 'Total responses',
+              icon: 'check2-circle'
+            },
+            {
+              label: 'Status',
+              value: events.length > 0 ? 'Active' : 'No Events',
+              subtitle: role === 'Admin' ? 'Admin access' : 'Member access',
+              icon: role === 'Admin' ? 'shield-check' : 'person-check'
+            }
+          ]}
+          className="mb-4"
+        />
+
+        {/* Quick Actions */}
+        <div className="card card-enhanced mb-4">
+          <div className="card-body">
+            <h6 className="card-title mb-3">
+              <i className="bi bi-lightning me-2"></i>
+              Quick Actions
+            </h6>
+            <ResponsiveButtonGroup
+              buttons={[
+                {
+                  label: 'Messages',
+                  icon: 'chat-dots',
+                  variant: 'btn-outline-primary',
+                  href: '/messaging'
+                },
+                {
+                  label: 'Find Substitute',
+                  icon: 'person-plus',
+                  variant: 'btn-outline-success',
+                  href: '/substitution'
+                },
+                {
+                  label: 'Quick Polls',
+                  icon: 'bar-chart',
+                  variant: 'btn-outline-info',
+                  href: '/polls'
+                },
+                ...(role === 'Admin' ? [{
+                  label: 'Admin Panel',
+                  icon: 'gear',
+                  variant: 'btn-outline-warning',
+                  href: '/admin'
+                }] : [])
+              ]}
+            />
           </div>
         </div>
-
-        {/* Quick Actions - Phase 2 Features */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <div className="card border-0 shadow-sm">
-              <div className="card-body">
-                <h6 className="card-title mb-3">
-                  <i className="bi bi-lightning me-2" style={{ color: orgThemeColor }}></i>
-                  Quick Actions
-                </h6>
-                <div className="row g-2">
-                  <div className="col-md-3">
-                    <Link to="/messaging" className="btn btn-outline-primary w-100">
-                      <i className="bi bi-chat-dots me-2"></i>
-                      Messages
-                    </Link>
-                  </div>
-                  <div className="col-md-3">
-                    <Link to="/substitution" className="btn btn-outline-success w-100">
-                      <i className="bi bi-person-plus me-2"></i>
-                      Find Substitute
-                    </Link>
-                  </div>
-                  <div className="col-md-3">
-                    <Link to="/polls" className="btn btn-outline-info w-100">
-                      <i className="bi bi-bar-chart me-2"></i>
-                      Quick Polls
-                    </Link>
-                  </div>
-                  {role === 'Admin' && (
-                    <div className="col-md-3">
-                      <Link to="/bulk-operations" className="btn btn-outline-warning w-100">
-                        <i className="bi bi-stack me-2"></i>
-                        Bulk Operations
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <ul className="nav nav-pills mb-4" role="tablist">
-          <li className="nav-item" role="presentation">
-            <button 
-              className={`nav-link ${filter === 'all' ? 'active' : ''}`}
-              onClick={() => setFilter('all')}
-              type="button"
-            >
-              All Events
-              <span className="badge bg-light text-dark ms-2">{events.length}</span>
-            </button>
-          </li>
-          <li className="nav-item" role="presentation">
-            <button 
-              className={`nav-link ${filter === 'upcoming' ? 'active' : ''}`}
-              onClick={() => setFilter('upcoming')}
-              type="button"
-            >
-              Upcoming
-              <span className="badge bg-light text-dark ms-2">{upcomingCount}</span>
-            </button>
-          </li>
-          <li className="nav-item" role="presentation">
-            <button 
-              className={`nav-link ${filter === 'past' ? 'active' : ''}`}
-              onClick={() => setFilter('past')}
-              type="button"
-            >
-              Past
-              <span className="badge bg-light text-dark ms-2">{pastCount}</span>
-            </button>
-          </li>
-        </ul>
 
         {/* Events List */}
         <div className="row">
           {filteredEvents.length === 0 ? (
             <div className="col-12">
-              <div className="text-center py-5">
-                <i className="bi bi-calendar-x" style={{ fontSize: '3rem', color: orgThemeColor }}></i>
-                <h4 className="mt-3 text-muted">No events found</h4>
-                <p className="text-muted">
-                  {filter === 'upcoming' ? 'No upcoming events scheduled' : 
-                   filter === 'past' ? 'No past events to show' : 
-                   'No events available'}
-                </p>
-              </div>
+              <EmptyState
+                icon="calendar-x"
+                title="No events found"
+                message={
+                  filter === 'upcoming' 
+                    ? 'No upcoming events scheduled' 
+                    : filter === 'past' 
+                    ? 'No past events to display'
+                    : 'No events available'
+                }
+                action={{
+                  label: 'View All Events',
+                  onClick: () => setFilter('all')
+                }}
+              />
             </div>
           ) : (
             filteredEvents.map(event => {
@@ -746,13 +775,6 @@ function Dashboard() {
             })
           )}
         </div>
-
-        <Toast 
-          show={toast.show} 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(prev => ({ ...prev, show: false }))} 
-        />
       </div>
     </>
   );

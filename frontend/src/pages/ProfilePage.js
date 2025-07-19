@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import NotificationSystem from '../components/NotificationSystem';
 import UserAvatar from '../components/UserAvatar';
 import PWAStatus from '../components/PWAStatus';
-import Toast from '../components/Toast';
-import Spinner from '../components/Spinner';
+import { 
+  LoadingSpinner, 
+  DataLoadingState, 
+  ErrorState, 
+  EmptyState 
+} from '../components/LoadingComponents';
+import { 
+  ResponsiveStatsGrid, 
+  ResponsiveActionBar,
+  ResponsiveButtonGroup,
+  ResponsiveCardGrid 
+} from '../components/ResponsiveComponents';
 import apiClient from '../utils/api';
 import axios from 'axios';
 import { getApiUrl } from '../utils/apiUrl';
@@ -30,8 +41,24 @@ function ProfilePage() {
   const [avatarFile, setAvatarFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [activeTab, setActiveTab] = useState('profile');
+
+  // Enhanced notification functions
+  const showSuccessMessage = (message) => {
+    if (window.showSuccess) window.showSuccess(message);
+  };
+
+  const showErrorMessage = (message) => {
+    if (window.showError) window.showError(message);
+  };
+
+  const showInfoMessage = (message) => {
+    if (window.showInfo) window.showInfo(message);
+  };
+
+  const showWarningMessage = (message) => {
+    if (window.showWarning) window.showWarning(message);
+  };
 
   useEffect(() => {
     loadUserProfile();
@@ -52,7 +79,7 @@ function ProfilePage() {
         avatar_url: userData.avatar_url || ''
       }));
     } catch (error) {
-      setToast({ show: true, message: 'Failed to load profile', type: 'danger' });
+      showErrorMessage('Failed to load profile');
     } finally {
       setLoading(false);
     }
@@ -69,13 +96,13 @@ function ProfilePage() {
       // Validate file type
       const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        setToast({ show: true, message: 'Invalid file type. Only PNG, JPG, JPEG, GIF, and WebP are allowed', type: 'danger' });
+        showErrorMessage('Invalid file type. Only PNG, JPG, JPEG, GIF, and WebP are allowed');
         return;
       }
       
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        setToast({ show: true, message: 'File size too large. Maximum size is 5MB', type: 'danger' });
+        showErrorMessage('File size too large. Maximum size is 5MB');
         return;
       }
       
@@ -147,9 +174,9 @@ function ProfilePage() {
         }
       }));
 
-      setToast({ show: true, message: 'Profile updated successfully!', type: 'success' });
+      showSuccessMessage('Profile updated successfully!');
     } catch (error) {
-      setToast({ show: true, message: 'Failed to update profile', type: 'danger' });
+      showErrorMessage('Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -159,12 +186,12 @@ function ProfilePage() {
     e.preventDefault();
     
     if (formData.newPassword !== formData.confirmPassword) {
-      setToast({ show: true, message: 'New passwords do not match', type: 'danger' });
+      showErrorMessage('New passwords do not match');
       return;
     }
 
     if (formData.newPassword.length < 6) {
-      setToast({ show: true, message: 'Password must be at least 6 characters long', type: 'danger' });
+      showErrorMessage('Password must be at least 6 characters long');
       return;
     }
 
@@ -187,10 +214,10 @@ function ProfilePage() {
         confirmPassword: ''
       }));
 
-      setToast({ show: true, message: 'Password updated successfully!', type: 'success' });
+      showSuccessMessage('Password updated successfully!');
     } catch (error) {
       const message = error.response?.data?.message || 'Failed to update password';
-      setToast({ show: true, message, type: 'danger' });
+      showErrorMessage(message);
     } finally {
       setLoading(false);
     }
@@ -404,7 +431,7 @@ function ProfilePage() {
                           className="btn btn-primary"
                           disabled={loading || uploading}
                         >
-                          {loading || uploading ? <Spinner size={16} /> : 'Update Profile'}
+                          {loading || uploading ? <LoadingSpinner size="sm" /> : 'Update Profile'}
                           {uploading && ' Uploading...'}
                         </button>
                       </div>
@@ -477,7 +504,7 @@ function ProfilePage() {
                               className="btn btn-primary"
                               disabled={loading}
                             >
-                              {loading ? <Spinner size={16} /> : 'Update Password'}
+                              {loading ? <LoadingSpinner size="sm" /> : 'Update Password'}
                             </button>
                           </div>
                         </div>
@@ -495,12 +522,7 @@ function ProfilePage() {
           </div>
         </div>
 
-        <Toast 
-          show={toast.show} 
-          message={toast.message} 
-          type={toast.type} 
-          onClose={() => setToast(prev => ({ ...prev, show: false }))} 
-        />
+        <NotificationSystem />
       </div>
     </>
   );

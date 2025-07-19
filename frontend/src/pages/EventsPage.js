@@ -1,8 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
+import NotificationSystem from '../components/NotificationSystem';
 import EventForm from '../components/EventForm';
-import Spinner from '../components/Spinner';
-import Toast from '../components/Toast';
+import { 
+  LoadingSpinner, 
+  DataLoadingState, 
+  ErrorState, 
+  EmptyState 
+} from '../components/LoadingComponents';
+import { 
+  ResponsiveStatsGrid, 
+  ResponsiveActionBar,
+  ResponsiveButtonGroup,
+  ResponsiveCardGrid 
+} from '../components/ResponsiveComponents';
 import axios from 'axios';
 import { offlineManager, networkManager } from '../utils/offline';
 import { getApiUrl } from '../utils/apiUrl';
@@ -17,9 +28,25 @@ function EventsPage() {
   const [rsvpLoading, setRsvpLoading] = useState(false);
   const [rsvpError, setRsvpError] = useState(null);
   const [openSummary, setOpenSummary] = useState({});
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [loading, setLoading] = useState(true);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
+  
+  // Enhanced notification functions
+  const showSuccessMessage = (message) => {
+    if (window.showSuccess) window.showSuccess(message);
+  };
+
+  const showErrorMessage = (message) => {
+    if (window.showError) window.showError(message);
+  };
+
+  const showInfoMessage = (message) => {
+    if (window.showInfo) window.showInfo(message);
+  };
+
+  const showWarningMessage = (message) => {
+    if (window.showWarning) window.showWarning(message);
+  };
   
   // New state for enhanced features
   const [categories, setCategories] = useState([]);
@@ -139,7 +166,7 @@ function EventsPage() {
       }
       setStatus(statusMap);
     } catch (error) {
-      setToast({ show: true, message: 'Failed to load events', type: 'danger' });
+      showErrorMessage('Failed to load events');
     } finally {
       setLoading(false);
     }
@@ -175,29 +202,21 @@ function EventsPage() {
           headers: { Authorization: `Bearer ${token}` }
         });
         setStatus({ ...status, [eventId]: rsvpStatus });
-        setToast({ show: true, message: `RSVP set to ${rsvpStatus}`, type: 'success' });
+        showSuccessMessage(`RSVP set to ${rsvpStatus}`);
         if (role === 'Admin') fetchRsvpSummary();
       } else {
         // Offline: save RSVP locally
         const saved = await offlineManager.saveOfflineRSVP(eventId, userId, rsvpStatus);
         if (saved) {
           setStatus({ ...status, [eventId]: rsvpStatus });
-          setToast({ 
-            show: true, 
-            message: `RSVP set to ${rsvpStatus} (will sync when online)`, 
-            type: 'warning' 
-          });
+          showWarningMessage(`RSVP set to ${rsvpStatus} (will sync when online)`);
         } else {
-          setToast({ 
-            show: true, 
-            message: 'Failed to save RSVP offline', 
-            type: 'danger' 
-          });
+          showErrorMessage('Failed to save RSVP offline');
         }
       }
     } catch (error) {
       console.error('RSVP error:', error);
-      setToast({ show: true, message: 'Failed to RSVP', type: 'danger' });
+      showErrorMessage('Failed to RSVP');
     }
   };
 
@@ -207,12 +226,12 @@ function EventsPage() {
       await axios.post(`${getApiUrl()}/events/`, data, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setToast({ show: true, message: 'Event created successfully', type: 'success' });
+      showSuccessMessage('Event created successfully');
       fetchEvents();
       setShowForm(false);
       if (role === 'Admin') fetchRsvpSummary();
     } catch {
-      setToast({ show: true, message: 'Failed to create event', type: 'danger' });
+      showErrorMessage('Failed to create event');
     }
   };
 
@@ -222,13 +241,13 @@ function EventsPage() {
       await axios.put(`${getApiUrl()}/events/${editEvent.id}`, data, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setToast({ show: true, message: 'Event updated successfully', type: 'success' });
+      showSuccessMessage('Event updated successfully');
       fetchEvents();
       setEditEvent(null);
       setShowForm(false);
       if (role === 'Admin') fetchRsvpSummary();
     } catch {
-      setToast({ show: true, message: 'Failed to update event', type: 'danger' });
+      showErrorMessage('Failed to update event');
     }
   };
 
@@ -239,18 +258,18 @@ function EventsPage() {
         await axios.delete(`${getApiUrl()}/events/${eventId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setToast({ show: true, message: 'Event deleted successfully', type: 'success' });
+        showSuccessMessage('Event deleted successfully');
         fetchEvents();
         if (role === 'Admin') fetchRsvpSummary();
       } catch {
-        setToast({ show: true, message: 'Failed to delete event', type: 'danger' });
+        showErrorMessage('Failed to delete event');
       }
     }
   };
 
   const handleCancelEvent = async () => {
     if (!eventToCancel || !cancellationReason.trim()) {
-      setToast({ show: true, message: 'Please provide a reason for cancellation', type: 'danger' });
+      showErrorMessage('Please provide a reason for cancellation');
       return;
     }
 
@@ -272,7 +291,7 @@ function EventsPage() {
         successMessage += ` - ${notifications_count} notification(s) sent`;
       }
       
-      setToast({ show: true, message: successMessage, type: 'success' });
+      showSuccessMessage(successMessage);
       
       // Reset modal state
       setShowCancelModal(false);
@@ -286,7 +305,7 @@ function EventsPage() {
       
     } catch (error) {
       const errorMessage = error.response?.data?.msg || 'Failed to cancel event';
-      setToast({ show: true, message: errorMessage, type: 'danger' });
+      showErrorMessage(errorMessage);
     } finally {
       setCancelLoading(false);
     }
@@ -323,7 +342,7 @@ function EventsPage() {
 
   const createEventFromTemplate = async () => {
     if (!selectedTemplate || !templateDate) {
-      setToast({ show: true, message: 'Please select a date for the event', type: 'error' });
+      showErrorMessage('Please select a date for the event');
       return;
     }
 
@@ -339,16 +358,12 @@ function EventsPage() {
         }
       });
 
-      setToast({ show: true, message: 'Event created successfully from template!', type: 'success' });
+      showSuccessMessage('Event created successfully from template!');
       closeTemplateModal();
       fetchEvents(); // Refresh events list
     } catch (error) {
       console.error('Error creating event from template:', error);
-      setToast({ 
-        show: true, 
-        message: error.response?.data?.error || 'Failed to create event from template', 
-        type: 'error' 
-      });
+      showErrorMessage(error.response?.data?.error || 'Failed to create event from template');
     } finally {
       setTemplateLoading(false);
     }
@@ -380,10 +395,10 @@ function EventsPage() {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      setToast({ show: true, message: 'PDF report downloaded successfully', type: 'success' });
+      showSuccessMessage('PDF report downloaded successfully');
     } catch (error) {
       const errorMessage = error.response?.data?.msg || 'Failed to download PDF report';
-      setToast({ show: true, message: errorMessage, type: 'danger' });
+      showErrorMessage(errorMessage);
     }
   };
 
@@ -401,12 +416,12 @@ function EventsPage() {
   //     await axios.post(`${getApiUrl()}/events/from-template/${templateId}`, eventData, {
   //       headers: { Authorization: `Bearer ${token}` }
   //     });
-  //     setToast({ show: true, message: 'Event created from template successfully', type: 'success' });
+  //     showSuccessMessage('Event created from template successfully');
   //     fetchEvents();
   //     setShowTemplateForm(false);
   //     if (role === 'Admin') fetchRsvpSummary();
   //   } catch (error) {
-  //     setToast({ show: true, message: 'Failed to create event from template', type: 'danger' });
+  //     showErrorMessage('Failed to create event from template');
   //   }
   // };
 
@@ -428,9 +443,9 @@ function EventsPage() {
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      setToast({ show: true, message: `RSVPs exported as ${format.toUpperCase()}`, type: 'success' });
+      showSuccessMessage(`RSVPs exported as ${format.toUpperCase()}`);
     } catch (error) {
-      setToast({ show: true, message: 'Failed to export RSVPs', type: 'danger' });
+      showErrorMessage('Failed to export RSVPs');
     }
   };
 
@@ -442,10 +457,10 @@ function EventsPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setSubstituteRequests({ ...substituteRequests, [eventId]: true });
-      setToast({ show: true, message: 'Substitute request sent', type: 'success' });
+      showSuccessMessage('Substitute request sent');
     } catch (error) {
       console.error('Substitute request error:', error);
-      setToast({ show: true, message: 'Failed to request substitute', type: 'danger' });
+      showErrorMessage('Failed to request substitute');
     }
   };
 
@@ -544,7 +559,7 @@ function EventsPage() {
       <div>
         <Navbar />
         <div className="d-flex justify-content-center mt-5">
-          <Spinner size={50} />
+          <LoadingSpinner size="md" />
         </div>
       </div>
     );
@@ -877,7 +892,7 @@ function EventsPage() {
                         <div className="mt-3">
                           <h6>RSVP Summary:</h6>
                           {rsvpLoading ? (
-                            <Spinner size={20} />
+                            <LoadingSpinner size="sm" />
                           ) : rsvpError ? (
                             <p className="text-danger">{rsvpError}</p>
                           ) : (
@@ -1099,13 +1114,6 @@ function EventsPage() {
         </div>
       )}
       {showTemplateModal && <div className="modal-backdrop fade show"></div>}
-
-      <Toast 
-        show={toast.show}
-        message={toast.message}
-        type={toast.type}
-        onClose={() => setToast({ ...toast, show: false })}
-      />
     </div>
   );
 }

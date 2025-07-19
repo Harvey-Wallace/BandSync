@@ -1,5 +1,17 @@
 import React, { useState } from 'react';
-import Spinner from '../components/Spinner';
+import NotificationSystem from '../components/NotificationSystem';
+import { 
+  LoadingSpinner, 
+  DataLoadingState, 
+  ErrorState, 
+  EmptyState 
+} from '../components/LoadingComponents';
+import { 
+  ResponsiveStatsGrid, 
+  ResponsiveActionBar,
+  ResponsiveButtonGroup,
+  ResponsiveCardGrid 
+} from '../components/ResponsiveComponents';
 import axios from 'axios';
 import { getApiUrl } from '../utils/apiUrl';
 
@@ -14,6 +26,23 @@ function LoginPage() {
   const [resetEmail, setResetEmail] = useState('');
   const [resetMessage, setResetMessage] = useState('');
   const [resetLoading, setResetLoading] = useState(false);
+
+  // Enhanced notification functions
+  const showSuccessMessage = (message) => {
+    if (window.showSuccess) window.showSuccess(message);
+  };
+
+  const showErrorMessage = (message) => {
+    if (window.showError) window.showError(message);
+  };
+
+  const showInfoMessage = (message) => {
+    if (window.showInfo) window.showInfo(message);
+  };
+
+  const showWarningMessage = (message) => {
+    if (window.showWarning) window.showWarning(message);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -135,7 +164,7 @@ function LoginPage() {
                   {resetMessage && <div className="alert alert-success">{resetMessage}</div>}
                   <div className="d-grid gap-2">
                     <button className="btn btn-primary" type="submit" disabled={resetLoading}>
-                      {resetLoading ? <Spinner size={20} /> : 'Send Reset Link'}
+                      {resetLoading ? <LoadingSpinner size="sm" /> : 'Send Reset Link'}
                     </button>
                     <button 
                       type="button" 
@@ -173,7 +202,7 @@ function LoginPage() {
                   {error && <div className="alert alert-danger">{error}</div>}
                   <div className="d-grid">
                     <button className="btn btn-primary" type="submit" disabled={loading}>
-                      {loading ? <Spinner size={20} /> : 'Login'}
+                      {loading ? <LoadingSpinner size="sm" /> : 'Login'}
                     </button>
                   </div>
                 </form>
@@ -204,7 +233,7 @@ function LoginPage() {
                     {error && <div className="alert alert-danger">{error}</div>}
                     <div className="d-grid gap-2">
                       <button className="btn btn-primary" type="submit" disabled={loading || !selectedOrgId}>
-                        {loading ? <Spinner size={20} /> : 'Continue'}
+                        {loading ? <LoadingSpinner size="sm" /> : 'Continue'}
                       </button>
                       <button 
                         type="button" 
@@ -257,7 +286,7 @@ function LoginPage() {
                     {resetMessage && <div className="alert alert-success">{resetMessage}</div>}
                     <div className="d-grid gap-2">
                       <button className="btn btn-primary" type="submit" disabled={resetLoading}>
-                        {resetLoading ? <Spinner size={20} /> : 'Send Reset Link'}
+                        {resetLoading ? <LoadingSpinner size="sm" /> : 'Send Reset Link'}
                       </button>
                       <button 
                         type="button" 
@@ -275,6 +304,7 @@ function LoginPage() {
           </div>
         </div>
       </div>
+      <NotificationSystem />
     </div>
   );
 }

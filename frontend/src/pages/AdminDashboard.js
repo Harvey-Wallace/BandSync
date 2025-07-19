@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
-import Spinner from '../components/Spinner';
-import Toast from '../components/Toast';
+import NotificationSystem from '../components/NotificationSystem';
+import { 
+  LoadingSpinner, 
+  DataLoadingState, 
+  ErrorState 
+} from '../components/LoadingComponents';
 import UserAvatar from '../components/UserAvatar';
 import GroupEmailManager from '../components/GroupEmailManager';
 import BulkOperations from '../components/BulkOperations';
@@ -81,7 +85,6 @@ function AdminDashboard() {
     description: ''
   });
   const [createSectionLoading, setCreateSectionLoading] = useState(false);
-  const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
   const [activeTab, setActiveTab] = useState('organization');
   
   // Email management state
@@ -99,8 +102,40 @@ function AdminDashboard() {
 
   const API_BASE_URL = getApiUrl();
 
-  const showToast = (message, type = 'success') => {
-    setToast({ show: true, message, type });
+  // Enhanced notification functions
+  const showSuccessMessage = (message) => {
+    if (window.showSuccess) window.showSuccess(message);
+  };
+
+  const showErrorMessage = (message) => {
+    if (window.showError) window.showError(message);
+  };
+
+  const showInfoMessage = (message) => {
+    if (window.showInfo) window.showInfo(message);
+  };
+
+  const showWarningMessage = (message) => {
+    if (window.showWarning) window.showWarning(message);
+  };
+
+  // Notifications object for child components
+  const notifications = {
+    showToast: (message, type = 'success') => {
+      if (type === 'danger' || type === 'error') {
+        showErrorMessage(message);
+      } else if (type === 'warning') {
+        showWarningMessage(message);
+      } else if (type === 'info') {
+        showInfoMessage(message);
+      } else {
+        showSuccessMessage(message);
+      }
+    },
+    showSuccess: showSuccessMessage,
+    showError: showErrorMessage,
+    showInfo: showInfoMessage,
+    showWarning: showWarningMessage
   };
 
   const fetchOrg = async () => {
@@ -132,11 +167,11 @@ function AdminDashboard() {
       } else {
         const errorData = await response.json();
         console.error('Failed to fetch organization data:', errorData);
-        showToast('Failed to fetch organization data', 'danger');
+        showErrorMessage('Failed to fetch organization data');
       }
     } catch (error) {
       console.error('Error fetching organization:', error);
-      showToast('Error fetching organization data', 'danger');
+      showErrorMessage('Error fetching organization data');
     }
     setOrgLoading(false);
   };
@@ -156,11 +191,11 @@ function AdminDashboard() {
         const data = await response.json();
         setUsers(data);
       } else {
-        showToast('Failed to fetch users', 'danger');
+        showErrorMessage('Failed to fetch users');
       }
     } catch (error) {
       console.error('Error fetching users:', error);
-      showToast('Error fetching users', 'danger');
+      showErrorMessage('Error fetching users');
     }
     setUsersLoading(false);
   };
@@ -180,11 +215,11 @@ function AdminDashboard() {
         const data = await response.json();
         setSections(data);
       } else {
-        showToast('Failed to fetch sections', 'danger');
+        showErrorMessage('Failed to fetch sections');
       }
     } catch (error) {
       console.error('Error fetching sections:', error);
-      showToast('Error fetching sections', 'danger');
+      showErrorMessage('Error fetching sections');
     }
     setSectionsLoading(false);
   };
@@ -204,11 +239,11 @@ function AdminDashboard() {
         const data = await response.json();
         setEmailStats(data);
       } else {
-        showToast('Failed to fetch email statistics', 'danger');
+        showErrorMessage('Failed to fetch email statistics');
       }
     } catch (error) {
       console.error('Error fetching email stats:', error);
-      showToast('Error fetching email statistics', 'danger');
+      showErrorMessage('Error fetching email statistics');
     }
     setEmailLoading(false);
   };
@@ -228,11 +263,11 @@ function AdminDashboard() {
         const data = await response.json();
         setEmailLogs(data.logs || []);
       } else {
-        showToast('Failed to fetch email logs', 'danger');
+        showErrorMessage('Failed to fetch email logs');
       }
     } catch (error) {
       console.error('Error fetching email logs:', error);
-      showToast('Error fetching email logs', 'danger');
+      showErrorMessage('Error fetching email logs');
     }
     setEmailLogsLoading(false);
   };
@@ -252,11 +287,11 @@ function AdminDashboard() {
         const data = await response.json();
         setScheduledJobs(data.jobs || []);
       } else {
-        showToast('Failed to fetch scheduled jobs', 'danger');
+        showErrorMessage('Failed to fetch scheduled jobs');
       }
     } catch (error) {
       console.error('Error fetching scheduled jobs:', error);
-      showToast('Error fetching scheduled jobs', 'danger');
+      showErrorMessage('Error fetching scheduled jobs');
     }
     setJobsLoading(false);
   };
@@ -277,11 +312,11 @@ function AdminDashboard() {
         setCalendarStats(data);
         setCalendarInfo(data.calendar_info || {});
       } else {
-        showToast('Failed to fetch calendar statistics', 'danger');
+        showErrorMessage('Failed to fetch calendar statistics');
       }
     } catch (error) {
       console.error('Error fetching calendar stats:', error);
-      showToast('Error fetching calendar statistics', 'danger');
+      showErrorMessage('Error fetching calendar statistics');
     }
     setCalendarLoading(false);
   };
@@ -299,14 +334,14 @@ function AdminDashboard() {
       });
 
       if (response.ok) {
-        showToast('Test email sent successfully');
+        showSuccessMessage('Test email sent successfully');
         fetchEmailStats(); // Refresh stats
       } else {
-        showToast('Failed to send test email', 'danger');
+        showErrorMessage('Failed to send test email');
       }
     } catch (error) {
       console.error('Error sending test email:', error);
-      showToast('Error sending test email', 'danger');
+      showErrorMessage('Error sending test email');
     }
     setEmailLoading(false);
   };
@@ -324,14 +359,14 @@ function AdminDashboard() {
       });
 
       if (response.ok) {
-        showToast('Calendar feed test successful');
+        showSuccessMessage('Calendar feed test successful');
         fetchCalendarStats(); // Refresh stats
       } else {
-        showToast('Calendar feed test failed', 'danger');
+        showErrorMessage('Calendar feed test failed');
       }
     } catch (error) {
       console.error('Error testing calendar feed:', error);
-      showToast('Error testing calendar feed', 'danger');
+      showErrorMessage('Error testing calendar feed');
     }
     setCalendarLoading(false);
   };
@@ -368,7 +403,7 @@ function AdminDashboard() {
           twitter_url: data.twitter_url,
           tiktok_url: data.tiktok_url
         }));
-        showToast('Organization settings updated successfully');
+        showSuccessMessage('Organization settings updated successfully');
         // Update localStorage organization name if it changed
         if (data.name) {
           localStorage.setItem('organization', data.name);
@@ -381,11 +416,11 @@ function AdminDashboard() {
       } else {
         const errorData = await response.json();
         console.error('Failed to update organization settings:', errorData);
-        showToast(`Failed to update organization settings: ${errorData.msg || 'Unknown error'}`, 'danger');
+        showErrorMessage(`Failed to update organization settings: ${errorData.msg || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error updating organization:', error);
-      showToast('Error updating organization settings', 'danger');
+      showErrorMessage('Error updating organization settings');
     }
     setOrgLoading(false);
   };
@@ -397,13 +432,13 @@ function AdminDashboard() {
     // Validate file type
     const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
-      showToast('Invalid file type. Only PNG, JPG, JPEG, GIF, and WebP are allowed', 'danger');
+      showErrorMessage('Invalid file type. Only PNG, JPG, JPEG, GIF, and WebP are allowed');
       return;
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      showToast('File size too large. Maximum size is 5MB', 'danger');
+      showErrorMessage('File size too large. Maximum size is 5MB');
       return;
     }
 
@@ -424,7 +459,7 @@ function AdminDashboard() {
       if (response.ok) {
         const data = await response.json();
         setOrg(prev => ({ ...prev, logo_url: data.logo_url }));
-        showToast('Logo uploaded successfully');
+        showSuccessMessage('Logo uploaded successfully');
         
         // Refresh navbar logo immediately
         window.dispatchEvent(new CustomEvent('organizationUpdated', {
@@ -432,11 +467,11 @@ function AdminDashboard() {
         }));
       } else {
         const errorData = await response.json();
-        showToast(errorData.error || 'Failed to upload logo', 'danger');
+        showErrorMessage(errorData.error || 'Failed to upload logo');
       }
     } catch (error) {
       console.error('Error uploading logo:', error);
-      showToast('Error uploading logo', 'danger');
+      showErrorMessage('Error uploading logo');
     }
     setLogoLoading(false);
     // Reset file input
@@ -459,13 +494,13 @@ function AdminDashboard() {
         setUsers(prev => prev.map(user => 
           user.id === userId ? { ...user, role: newRole } : user
         ));
-        showToast('User role updated successfully');
+        showSuccessMessage('User role updated successfully');
       } else {
-        showToast('Failed to update user role', 'danger');
+        showErrorMessage('Failed to update user role');
       }
     } catch (error) {
       console.error('Error updating user role:', error);
-      showToast('Error updating user role', 'danger');
+      showErrorMessage('Error updating user role');
     }
   };
 
@@ -484,14 +519,14 @@ function AdminDashboard() {
 
       if (response.ok) {
         setUsers(prev => prev.filter(user => user.id !== userId));
-        showToast('User deleted successfully');
+        showSuccessMessage('User deleted successfully');
       } else {
         const errorData = await response.json();
-        showToast(errorData.error || 'Failed to delete user', 'danger');
+        showErrorMessage(errorData.error || 'Failed to delete user');
       }
     } catch (error) {
       console.error('Error deleting user:', error);
-      showToast('Error deleting user', 'danger');
+      showErrorMessage('Error deleting user');
     }
   };
 
@@ -533,15 +568,15 @@ function AdminDashboard() {
           message += '. Invitation email sent.';
         }
         
-        showToast(message);
+        showSuccessMessage(message);
         fetchUsers(); // Refresh the list
       } else {
         const errorData = await response.json();
-        showToast(errorData.error || 'Failed to create user', 'danger');
+        showErrorMessage(errorData.error || 'Failed to create user');
       }
     } catch (error) {
       console.error('Error creating user:', error);
-      showToast('Error creating user', 'danger');
+      showErrorMessage('Error creating user');
     }
     
     setCreateUserLoading(false);
@@ -578,15 +613,15 @@ function AdminDashboard() {
           message += '. Invitation email sent.';
         }
         
-        showToast(message);
+        showSuccessMessage(message);
         fetchUsers(); // Refresh the list
       } else {
         const errorData = await response.json();
-        showToast(errorData.error || 'Failed to add user', 'danger');
+        showErrorMessage(errorData.error || 'Failed to add user');
       }
     } catch (error) {
       console.error('Error adding existing user:', error);
-      showToast('Error adding existing user', 'danger');
+      showErrorMessage('Error adding existing user');
     }
     
     setAddExistingUserLoading(false);
@@ -604,13 +639,13 @@ function AdminDashboard() {
       });
 
       if (response.ok) {
-        showToast('Invitation sent successfully');
+        showSuccessMessage('Invitation sent successfully');
       } else {
-        showToast('Failed to send invitation', 'danger');
+        showErrorMessage('Failed to send invitation');
       }
     } catch (error) {
       console.error('Error sending invitation:', error);
-      showToast('Error sending invitation', 'danger');
+      showErrorMessage('Error sending invitation');
     }
   };
 
@@ -658,15 +693,15 @@ function AdminDashboard() {
           user.id === editUser.id ? { ...user, ...data } : user
         ));
         setShowEditUser(false);
-        showToast('User updated successfully');
+        showSuccessMessage('User updated successfully');
         fetchUsers(); // Refresh the list
       } else {
         const errorData = await response.json();
-        showToast(errorData.error || 'Failed to update user', 'danger');
+        showErrorMessage(errorData.error || 'Failed to update user');
       }
     } catch (error) {
       console.error('Error updating user:', error);
-      showToast('Error updating user', 'danger');
+      showErrorMessage('Error updating user');
     }
     
     setEditUserLoading(false);
@@ -695,15 +730,15 @@ function AdminDashboard() {
           name: '',
           description: ''
         });
-        showToast('Section created successfully');
+        showSuccessMessage('Section created successfully');
         fetchSections(); // Refresh the list
       } else {
         const errorData = await response.json();
-        showToast(errorData.error || 'Failed to create section', 'danger');
+        showErrorMessage(errorData.error || 'Failed to create section');
       }
     } catch (error) {
       console.error('Error creating section:', error);
-      showToast('Error creating section', 'danger');
+      showErrorMessage('Error creating section');
     }
     
     setCreateSectionLoading(false);
@@ -724,13 +759,13 @@ function AdminDashboard() {
 
       if (response.ok) {
         setSections(prev => prev.filter(section => section.id !== sectionId));
-        showToast('Section deleted successfully');
+        showSuccessMessage('Section deleted successfully');
       } else {
-        showToast('Failed to delete section', 'danger');
+        showErrorMessage('Failed to delete section');
       }
     } catch (error) {
       console.error('Error deleting section:', error);
-      showToast('Error deleting section', 'danger');
+      showErrorMessage('Error deleting section');
     }
   };
 
@@ -758,10 +793,14 @@ function AdminDashboard() {
   return (
     <div>
       <Navbar />
+      <NotificationSystem />
       <div className="container-fluid mt-4">
         <div className="row">
           <div className="col-12">
-            <h2>Admin Dashboard</h2>
+            <h2 className="fade-in">
+              <i className="bi bi-gear me-2"></i>
+              Admin Dashboard
+            </h2>
           </div>
         </div>
 
@@ -881,7 +920,7 @@ function AdminDashboard() {
                       />
                     </div>
                     <button type="submit" className="btn btn-primary" disabled={orgLoading}>
-                      {orgLoading ? <Spinner size={20} /> : 'Save Changes'}
+                      {orgLoading ? <LoadingSpinner /> : 'Save Changes'}
                     </button>
                   </form>
                 </div>
@@ -918,7 +957,7 @@ function AdminDashboard() {
                   </div>
                   {logoLoading && (
                     <div className="text-center">
-                      <Spinner size={30} />
+                      <LoadingSpinner />
                       <div className="mt-2">Uploading...</div>
                     </div>
                   )}
@@ -969,7 +1008,7 @@ function AdminDashboard() {
                       />
                     </div>
                     <button type="submit" className="btn btn-primary" disabled={orgLoading}>
-                      {orgLoading ? <Spinner size={20} /> : 'Save Changes'}
+                      {orgLoading ? <LoadingSpinner /> : 'Save Changes'}
                     </button>
                   </form>
                 </div>
@@ -1031,7 +1070,7 @@ function AdminDashboard() {
                       />
                     </div>
                     <button type="submit" className="btn btn-primary" disabled={orgLoading}>
-                      {orgLoading ? <Spinner size={20} /> : 'Save Changes'}
+                      {orgLoading ? <LoadingSpinner /> : 'Save Changes'}
                     </button>
                   </form>
                 </div>
@@ -1065,7 +1104,7 @@ function AdminDashboard() {
                 <div className="card-body">
                   {usersLoading ? (
                     <div className="text-center">
-                      <Spinner size={50} />
+                      <LoadingSpinner />
                     </div>
                   ) : (
                     <div className="table-responsive">
@@ -1152,7 +1191,7 @@ function AdminDashboard() {
                 <div className="card-body">
                   {sectionsLoading ? (
                     <div className="text-center">
-                      <Spinner size={50} />
+                      <LoadingSpinner />
                     </div>
                   ) : (
                     <div className="table-responsive">
@@ -1207,7 +1246,7 @@ function AdminDashboard() {
                     <h6>Email Statistics</h6>
                     {emailLoading ? (
                       <div className="text-center">
-                        <Spinner size={20} />
+                        <LoadingSpinner />
                       </div>
                     ) : (
                       <div className="row">
@@ -1244,7 +1283,7 @@ function AdminDashboard() {
                     <h6>Recent Email Logs</h6>
                     {emailLogsLoading ? (
                       <div className="text-center">
-                        <Spinner size={20} />
+                        <LoadingSpinner />
                       </div>
                     ) : emailLogs.length === 0 ? (
                       <p>No email logs found.</p>
@@ -1285,7 +1324,7 @@ function AdminDashboard() {
                     <h6>Scheduled Email Jobs</h6>
                     {jobsLoading ? (
                       <div className="text-center">
-                        <Spinner size={20} />
+                        <LoadingSpinner />
                       </div>
                     ) : scheduledJobs.length === 0 ? (
                       <p>No scheduled jobs found.</p>
@@ -1327,7 +1366,7 @@ function AdminDashboard() {
                       onClick={sendTestEmail}
                       disabled={emailLoading}
                     >
-                      {emailLoading ? <Spinner size={20} /> : 'Send Test Email'}
+                      {emailLoading ? <LoadingSpinner /> : 'Send Test Email'}
                     </button>
                   </div>
                 </div>
@@ -1350,7 +1389,7 @@ function AdminDashboard() {
                     <h6>Calendar Statistics</h6>
                     {calendarLoading ? (
                       <div className="text-center">
-                        <Spinner size={20} />
+                        <LoadingSpinner />
                       </div>
                     ) : (
                       <div className="row">
@@ -1459,7 +1498,7 @@ function AdminDashboard() {
                       onClick={testCalendarFeed}
                       disabled={calendarLoading}
                     >
-                      {calendarLoading ? <Spinner size={20} /> : 'Test Calendar Feed'}
+                      {calendarLoading ? <LoadingSpinner /> : 'Test Calendar Feed'}
                     </button>
                   </div>
                 </div>
@@ -1472,7 +1511,7 @@ function AdminDashboard() {
         {activeTab === 'groupemail' && (
           <div className="row">
             <div className="col-12">
-              <GroupEmailManager showToast={showToast} />
+              <GroupEmailManager showToast={notifications.showToast} />
             </div>
           </div>
         )}
@@ -1481,7 +1520,7 @@ function AdminDashboard() {
         {activeTab === 'analytics' && (
           <div className="row">
             <div className="col-12">
-              <AnalyticsDashboard showToast={showToast} />
+              <AnalyticsDashboard showToast={notifications.showToast} />
             </div>
           </div>
         )}
@@ -1490,7 +1529,7 @@ function AdminDashboard() {
         {activeTab === 'bulkops' && (
           <div className="row">
             <div className="col-12">
-              <BulkOperations showToast={showToast} />
+              <BulkOperations showToast={notifications.showToast} />
             </div>
           </div>
         )}
@@ -1602,7 +1641,7 @@ function AdminDashboard() {
                       className="btn btn-primary"
                       disabled={addExistingUserLoading || (!addExistingUser.username && !addExistingUser.email)}
                     >
-                      {addExistingUserLoading ? <Spinner size={20} /> : 'Add User'}
+                      {addExistingUserLoading ? <LoadingSpinner /> : 'Add User'}
                     </button>
                   </div>
                 </form>
@@ -1725,7 +1764,7 @@ function AdminDashboard() {
                       className="btn btn-primary"
                       disabled={createUserLoading}
                     >
-                      {createUserLoading ? <Spinner size={20} /> : 'Create User'}
+                      {createUserLoading ? <LoadingSpinner /> : 'Create User'}
                     </button>
                   </div>
                 </form>
@@ -1835,7 +1874,7 @@ function AdminDashboard() {
                       className="btn btn-primary"
                       disabled={editUserLoading}
                     >
-                      {editUserLoading ? <Spinner size={20} /> : 'Save Changes'}
+                      {editUserLoading ? <LoadingSpinner /> : 'Save Changes'}
                     </button>
                   </div>
                 </form>
@@ -1892,7 +1931,7 @@ function AdminDashboard() {
                       className="btn btn-primary"
                       disabled={createSectionLoading}
                     >
-                      {createSectionLoading ? <Spinner size={20} /> : 'Create Section'}
+                      {createSectionLoading ? <LoadingSpinner /> : 'Create Section'}
                     </button>
                   </div>
                 </form>
@@ -1900,13 +1939,6 @@ function AdminDashboard() {
             </div>
           </div>
         )}
-
-        <Toast 
-          show={toast.show}
-          message={toast.message}
-          type={toast.type}
-          onClose={() => setToast({ ...toast, show: false })}
-        />
       </div>
     </div>
   );
