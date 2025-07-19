@@ -529,98 +529,71 @@ function SuperAdminPage() {
                         ]}
                         className="mb-4"
                       />
-              <div className="card text-center">
-                <div className="card-body">
-                  <h5 className="card-title">Total Organizations</h5>
-                  <h3 className="text-primary">{overview.stats.total_organizations}</h3>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card text-center">
-                <div className="card-body">
-                  <h5 className="card-title">Total Users</h5>
-                  <h3 className="text-success">{overview.stats.total_users}</h3>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card text-center">
-                <div className="card-body">
-                  <h5 className="card-title">Total Events</h5>
-                  <h3 className="text-info">{overview.stats.total_events}</h3>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="card text-center">
-                <div className="card-body">
-                  <h5 className="card-title">System Status</h5>
-                  <h3 className={`${systemHealth?.status === 'healthy' ? 'text-success' : 'text-warning'}`}>
-                    {systemHealth?.status === 'healthy' ? '✅ Healthy' : '⚠️ Limited'}
-                  </h3>
-                </div>
-              </div>
-            </div>
-          </div>
 
-          {/* Organizations Overview */}
-          <div className="row">
-            <div className="col-12">
-              <div className="card">
-                <div className="card-header">
-                  <h5 className="mb-0">
-                    <i className="bi bi-building me-2"></i>
-                    Organizations Overview
-                  </h5>
+                      {/* Organizations Overview */}
+                      <div className="row">
+                        <div className="col-12">
+                          <div className="card">
+                            <div className="card-header">
+                              <h5 className="mb-0">
+                                <i className="bi bi-building me-2"></i>
+                                Organizations Overview
+                              </h5>
+                            </div>
+                            <div className="card-body">
+                              <div className="table-responsive">
+                                <table className="table table-hover">
+                                  <thead>
+                                    <tr>
+                                      <th>Organization</th>
+                                      <th>Users</th>
+                                      <th>Events</th>
+                                      <th>Created</th>
+                                      <th>Actions</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody>
+                                    {overview.organizations.map(org => (
+                                      <tr key={org.id}>
+                                        <td>
+                                          <strong>{org.name}</strong>
+                                        </td>
+                                        <td>
+                                          <span className="badge bg-primary">{org.user_count}</span>
+                                        </td>
+                                        <td>
+                                          <span className="badge bg-info">{org.event_count}</span>
+                                        </td>
+                                        <td>
+                                          {org.created_at ? new Date(org.created_at).toLocaleDateString() : 'N/A'}
+                                        </td>
+                                        <td>
+                                          <button 
+                                            className="btn btn-sm btn-outline-primary"
+                                            onClick={() => loadOrgDetails(org.id)}
+                                          >
+                                            <i className="bi bi-eye me-1"></i>
+                                            View Details
+                                          </button>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <ErrorState 
+                      message="Failed to load overview data" 
+                      onRetry={() => loadOverview()} 
+                    />
+                  )}
                 </div>
-                <div className="card-body">
-                  <div className="table-responsive">
-                    <table className="table table-hover">
-                      <thead>
-                        <tr>
-                          <th>Organization</th>
-                          <th>Users</th>
-                          <th>Events</th>
-                          <th>Created</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {overview.organizations.map(org => (
-                          <tr key={org.id}>
-                            <td>
-                              <strong>{org.name}</strong>
-                            </td>
-                            <td>
-                              <span className="badge bg-primary">{org.user_count}</span>
-                            </td>
-                            <td>
-                              <span className="badge bg-info">{org.event_count}</span>
-                            </td>
-                            <td>
-                              {org.created_at ? new Date(org.created_at).toLocaleDateString() : 'N/A'}
-                            </td>
-                            <td>
-                              <button 
-                                className="btn btn-sm btn-outline-primary"
-                                onClick={() => loadOrgDetails(org.id)}
-                              >
-                                <i className="bi bi-eye me-1"></i>
-                                View Details
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+              )}
 
       {/* Analytics Tab */}
       {activeTab === 'analytics' && (
@@ -1547,6 +1520,9 @@ function SuperAdminPage() {
           </div>
         </div>
       )}
+    </div>
+          </div>
+        </div>
       </div>
     </>
   );
