@@ -37,10 +37,16 @@ function SuperAdminPage() {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('System health data:', data);
         setSystemHealth(data);
+      } else {
+        const errorData = await response.text();
+        console.error('System health error:', response.status, errorData);
+        setError(`Failed to load system health: ${response.status}`);
       }
     } catch (err) {
       console.error('Error loading system health:', err);
+      setError(`Error loading system health: ${err.message}`);
     }
   };
 
@@ -53,13 +59,16 @@ function SuperAdminPage() {
       
       if (response.ok) {
         const data = await response.json();
+        console.log('Overview data:', data);
         setOverview(data);
       } else {
-        setError('Failed to load overview');
+        const errorData = await response.text();
+        console.error('Overview error:', response.status, errorData);
+        setError(`Failed to load overview: ${response.status}`);
       }
     } catch (err) {
-      setError('Error loading overview');
-      console.error(err);
+      console.error('Error loading overview:', err);
+      setError(`Error loading overview: ${err.message}`);
     } finally {
       setLoading(false);
     }
@@ -68,20 +77,24 @@ function SuperAdminPage() {
   const loadOrgDetails = async (orgId) => {
     try {
       const token = localStorage.getItem('token');
+      console.log('Loading org details for ID:', orgId);
       const response = await fetch(`${getApiUrl()}/super-admin/organization/${orgId}/details`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       if (response.ok) {
         const data = await response.json();
+        console.log('Organization details data:', data);
         setOrgDetails(data);
         setSelectedOrg(orgId);
       } else {
-        setError('Failed to load organization details');
+        const errorData = await response.text();
+        console.error('Organization details error:', response.status, errorData);
+        setError(`Failed to load organization details: ${response.status} - ${errorData}`);
       }
     } catch (err) {
-      setError('Error loading organization details');
-      console.error(err);
+      console.error('Error loading organization details:', err);
+      setError(`Error loading organization details: ${err.message}`);
     }
   };
 
@@ -93,19 +106,23 @@ function SuperAdminPage() {
 
     try {
       const token = localStorage.getItem('token');
+      console.log('Searching users with term:', searchTerm);
       const response = await fetch(`${getApiUrl()}/super-admin/users/search?q=${encodeURIComponent(searchTerm)}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       if (response.ok) {
         const data = await response.json();
-        setSearchResults(data.users);
+        console.log('User search results:', data);
+        setSearchResults(data.users || []);
       } else {
-        setError('Failed to search users');
+        const errorData = await response.text();
+        console.error('User search error:', response.status, errorData);
+        setError(`Failed to search users: ${response.status} - ${errorData}`);
       }
     } catch (err) {
-      setError('Error searching users');
-      console.error(err);
+      console.error('Error searching users:', err);
+      setError(`Error searching users: ${err.message}`);
     }
   };
 
@@ -569,7 +586,7 @@ function SuperAdminPage() {
       )}
 
       {/* System Health Tab */}
-      {activeTab === 'system' && systemHealth && (
+      {activeTab === 'system' && (
         <div className="row">
           <div className="col-md-6">
             <div className="card">
@@ -580,45 +597,56 @@ function SuperAdminPage() {
                 </h5>
               </div>
               <div className="card-body">
-                <div className="mb-3">
-                  <strong>Overall Status:</strong>
-                  <span className={`ms-2 badge ${systemHealth.status === 'healthy' ? 'bg-success' : 'bg-warning'}`}>
-                    {systemHealth.status}
-                  </span>
-                </div>
-                
-                <div className="mb-3">
-                  <strong>Database:</strong>
-                  <div className="ms-3">
-                    <div>Status: <span className="badge bg-success">{systemHealth.database.status}</span></div>
-                    {systemHealth.database.response_time_ms && (
-                      <div>Response Time: {systemHealth.database.response_time_ms}ms</div>
-                    )}
-                  </div>
-                </div>
-
-                {systemHealth.system && (
-                  <div className="mb-3">
-                    <strong>System Metrics:</strong>
-                    <div className="ms-3">
-                      <div>CPU: {systemHealth.system.cpu_percent}%</div>
-                      <div>Memory: {systemHealth.system.memory_percent}%</div>
-                      <div>Disk: {systemHealth.system.disk_percent}%</div>
+                {systemHealth ? (
+                  <>
+                    <div className="mb-3">
+                      <strong>Overall Status:</strong>
+                      <span className={`ms-2 badge ${systemHealth.status === 'healthy' ? 'bg-success' : 'bg-warning'}`}>
+                        {systemHealth.status}
+                      </span>
                     </div>
+                    
+                    <div className="mb-3">
+                      <strong>Database:</strong>
+                      <div className="ms-3">
+                        <div>Status: <span className="badge bg-success">{systemHealth.database?.status || 'Unknown'}</span></div>
+                        {systemHealth.database?.response_time_ms && (
+                          <div>Response Time: {systemHealth.database.response_time_ms}ms</div>
+                        )}
+                      </div>
+                    </div>
+
+                    {systemHealth.system && (
+                      <div className="mb-3">
+                        <strong>System Metrics:</strong>
+                        <div className="ms-3">
+                          <div>CPU: {systemHealth.system.cpu_percent}%</div>
+                          <div>Memory: {systemHealth.system.memory_percent}%</div>
+                          <div>Disk: {systemHealth.system.disk_percent}%</div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mb-3">
+                      <strong>Recent Activity (24h):</strong>
+                      <div className="ms-3">
+                        <div>Logins: {systemHealth.activity?.recent_logins_24h || 0}</div>
+                        <div>Events Created: {systemHealth.activity?.recent_events_24h || 0}</div>
+                      </div>
+                    </div>
+
+                    <small className="text-muted">
+                      Last updated: {new Date(systemHealth.timestamp).toLocaleString()}
+                    </small>
+                  </>
+                ) : (
+                  <div className="text-center py-3">
+                    <div className="spinner-border" role="status">
+                      <span className="visually-hidden">Loading system health...</span>
+                    </div>
+                    <div className="mt-2">Loading system health data...</div>
                   </div>
                 )}
-
-                <div className="mb-3">
-                  <strong>Recent Activity (24h):</strong>
-                  <div className="ms-3">
-                    <div>Logins: {systemHealth.activity?.recent_logins_24h || 0}</div>
-                    <div>Events Created: {systemHealth.activity?.recent_events_24h || 0}</div>
-                  </div>
-                </div>
-
-                <small className="text-muted">
-                  Last updated: {new Date(systemHealth.timestamp).toLocaleString()}
-                </small>
               </div>
             </div>
           </div>
