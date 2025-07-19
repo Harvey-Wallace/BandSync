@@ -103,8 +103,8 @@ def get_organization_details(org_id):
                 'name': user.name,
                 'email': user.email,
                 'role': role,
-                'created_at': user.created_at.isoformat() if user.created_at else None,
-                'last_active': user.last_active.isoformat() if user.last_active else None
+                'created_at': getattr(user, 'created_at', None).isoformat() if hasattr(user, 'created_at') and getattr(user, 'created_at') else None,
+                'last_active': getattr(user, 'last_active', None).isoformat() if hasattr(user, 'last_active') and getattr(user, 'last_active') else None
             })
         
         # Get events in this organization
@@ -464,13 +464,15 @@ def get_system_health():
         }
         
         # Recent activity
-        recent_logins = User.query.filter(
-            User.last_login > datetime.utcnow() - timedelta(hours=24)
-        ).count()
+        recent_logins = 0
+        if hasattr(User, 'last_login'):
+            recent_logins = User.query.filter(
+                User.last_login > datetime.utcnow() - timedelta(hours=24)
+            ).count()
         
         recent_events = Event.query.filter(
             Event.created_at > datetime.utcnow() - timedelta(hours=24)
-        ).count()
+        ).count() if hasattr(Event, 'created_at') else Event.query.count()
         
         return jsonify({
             'status': 'healthy' if db_health else 'unhealthy',
