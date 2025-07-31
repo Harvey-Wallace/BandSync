@@ -99,14 +99,25 @@ export const ResponsiveCardGrid = ({ children, className = '' }) => {
 export const ResponsiveStatsGrid = ({ stats = [], className = '' }) => {
   return (
     <div className={`row ${className}`}>
-      {stats.map((stat, index) => (
+      {stats.filter(stat => 
+        stat && typeof stat === 'object' && stat.label
+      ).map((stat, index) => (
         <div key={index} className="col-6 col-md-3 mb-3">
           <div className="card card-stats stats-card-mobile text-center hover-lift">
             <div className="card-body">
-              <h6 className="card-title text-white-50">{stat.label}</h6>
-              <h4 className="text-white">{stat.value}</h4>
+              <h6 className="card-title text-white-50">
+                {typeof stat.label === 'string' ? stat.label : JSON.stringify(stat.label)}
+              </h6>
+              <h4 className="text-white">
+                {typeof stat.value === 'string' || typeof stat.value === 'number' ? 
+                  stat.value : 
+                  JSON.stringify(stat.value)
+                }
+              </h4>
               {stat.subtitle && (
-                <small className="text-white-50">{stat.subtitle}</small>
+                <small className="text-white-50">
+                  {typeof stat.subtitle === 'string' ? stat.subtitle : JSON.stringify(stat.subtitle)}
+                </small>
               )}
               {stat.icon && (
                 <div className="mt-2">
@@ -125,18 +136,30 @@ export const ResponsiveStatsGrid = ({ stats = [], className = '' }) => {
 export const ResponsiveTabNav = ({ tabs = [], activeTab, onTabChange, className = '' }) => {
   return (
     <ul className={`nav nav-tabs nav-tabs-enhanced ${className}`}>
-      {tabs.map((tab) => (
+      {tabs.filter(tab => 
+        tab && typeof tab === 'object' && (tab.label || tab.shortLabel)
+      ).map((tab) => (
         <li key={tab.id} className="nav-item">
           <button
             className={`nav-link ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => onTabChange(tab.id)}
           >
             {tab.icon && <i className={`bi bi-${tab.icon} me-1`}></i>}
-            <span className="d-none d-sm-inline">{tab.label}</span>
-            <span className="d-sm-none">{tab.shortLabel || tab.label}</span>
+            <span className="d-none d-sm-inline">
+              {typeof tab.label === 'string' ? tab.label : JSON.stringify(tab.label)}
+            </span>
+            <span className="d-sm-none">
+              {typeof (tab.shortLabel || tab.label) === 'string' ? 
+                (tab.shortLabel || tab.label) : 
+                JSON.stringify(tab.shortLabel || tab.label)
+              }
+            </span>
             {tab.badge && (
               <span className={`badge bg-${tab.badge.type || 'primary'} ms-2`}>
-                {tab.badge.value}
+                {typeof tab.badge.value === 'string' || typeof tab.badge.value === 'number' ? 
+                  tab.badge.value : 
+                  JSON.stringify(tab.badge.value)
+                }
               </span>
             )}
           </button>
@@ -319,7 +342,13 @@ export const ResponsiveDataTable = ({
             >
               {headers.map((header, colIndex) => (
                 <td key={colIndex} className={header.className || ''}>
-                  {header.render ? header.render(row[header.key], row, index) : row[header.key]}
+                  {header.render ? 
+                    header.render(row[header.key], row, index) : 
+                    (typeof row[header.key] === 'string' || typeof row[header.key] === 'number' || row[header.key] === null || row[header.key] === undefined ? 
+                      row[header.key] : 
+                      JSON.stringify(row[header.key])
+                    )
+                  }
                 </td>
               ))}
             </tr>
