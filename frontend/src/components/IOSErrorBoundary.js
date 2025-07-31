@@ -16,7 +16,10 @@ class IOSErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    // Precise iOS detection - only actual iOS devices, not macOS Safari
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                  !window.MSStream && 
+                  !(/Macintosh|Intel Mac OS X/.test(navigator.userAgent));
     
     this.setState({
       error: error,
@@ -42,7 +45,10 @@ class IOSErrorBoundary extends Component {
   }
 
   componentDidMount() {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    // Precise iOS detection - only actual iOS devices, not macOS Safari
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                  !window.MSStream && 
+                  !(/Macintosh|Intel Mac OS X/.test(navigator.userAgent));
     this.setState({ isIOS });
 
     // Add iOS-specific event listeners

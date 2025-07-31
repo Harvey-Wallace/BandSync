@@ -15,7 +15,10 @@ function IOSDebugger() {
   });
 
   useEffect(() => {
-    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    // Precise iOS detection - only actual iOS devices, not macOS Safari
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                  !window.MSStream && 
+                  !(/Macintosh|Intel Mac OS X/.test(navigator.userAgent));
     const isStandalone = window.navigator.standalone === true;
     
     // Capture console output

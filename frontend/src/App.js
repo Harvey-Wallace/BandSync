@@ -28,8 +28,16 @@ console.log('🎯 App.js loading...');
 function App() {
   console.log('🎯 App component rendering...');
   
-  // iOS detection and simple fallback
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  // Precise iOS detection - only actual iOS devices, not macOS Safari
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 
+                !window.MSStream && 
+                !(/Macintosh|Intel Mac OS X/.test(navigator.userAgent));
+  
+  console.log('🔍 Device detection:', {
+    userAgent: navigator.userAgent,
+    isIOS: isIOS,
+    isMac: /Macintosh|Intel Mac OS X/.test(navigator.userAgent)
+  });
   
   if (isIOS) {
     console.log('📱 iOS detected in App.js');
