@@ -1,7 +1,42 @@
 import React from 'react';
 
 // Mobile-responsive button group
-export const ResponsiveButtonGroup = ({ children, className = '' }) => {
+export const ResponsiveButtonGroup = ({ children, buttons = null, className = '' }) => {
+  // If buttons array is provided, render those instead of children
+  if (buttons && Array.isArray(buttons)) {
+    return (
+      <div className={`btn-group-mobile d-md-flex ${className}`}>
+        {buttons.map((button, index) => {
+          if (button.href) {
+            return (
+              <a
+                key={index}
+                href={button.href}
+                className={`btn ${button.variant || 'btn-primary'} flex-fill mb-2 mb-md-0 me-md-2`}
+              >
+                {button.icon && <i className={`bi bi-${button.icon} me-1`}></i>}
+                {button.label}
+              </a>
+            );
+          } else {
+            return (
+              <button
+                key={index}
+                type="button"
+                className={`btn ${button.variant || 'btn-primary'} flex-fill mb-2 mb-md-0 me-md-2`}
+                onClick={button.onClick}
+              >
+                {button.icon && <i className={`bi bi-${button.icon} me-1`}></i>}
+                {button.label}
+              </button>
+            );
+          }
+        })}
+      </div>
+    );
+  }
+
+  // Fallback to children if no buttons array
   return (
     <div className={`btn-group-mobile d-md-flex ${className}`}>
       {children}
