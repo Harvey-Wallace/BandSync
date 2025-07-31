@@ -4,30 +4,39 @@ import React from 'react';
 export const ResponsiveButtonGroup = ({ children, buttons = null, className = '' }) => {
   // If buttons array is provided, render those instead of children
   if (buttons && Array.isArray(buttons)) {
+    const validButtons = buttons.filter(button => 
+      button && typeof button === 'object' && button.label
+    );
+    
+    if (validButtons.length === 0) {
+      console.warn('No valid buttons provided to ResponsiveButtonGroup');
+      return null;
+    }
+    
     return (
       <div className={`btn-group-mobile d-md-flex ${className}`}>
-        {buttons.map((button, index) => {
+        {validButtons.map((button, index) => {
           if (button.href) {
             return (
               <a
-                key={index}
+                key={`btn-${index}-${button.label}`}
                 href={button.href}
                 className={`btn ${button.variant || 'btn-primary'} flex-fill mb-2 mb-md-0 me-md-2`}
               >
                 {button.icon && <i className={`bi bi-${button.icon} me-1`}></i>}
-                {button.label}
+                {typeof button.label === 'string' ? button.label : JSON.stringify(button.label)}
               </a>
             );
           } else {
             return (
               <button
-                key={index}
+                key={`btn-${index}-${button.label}`}
                 type="button"
                 className={`btn ${button.variant || 'btn-primary'} flex-fill mb-2 mb-md-0 me-md-2`}
                 onClick={button.onClick}
               >
                 {button.icon && <i className={`bi bi-${button.icon} me-1`}></i>}
-                {button.label}
+                {typeof button.label === 'string' ? button.label : JSON.stringify(button.label)}
               </button>
             );
           }
@@ -36,12 +45,30 @@ export const ResponsiveButtonGroup = ({ children, buttons = null, className = ''
     );
   }
 
-  // Fallback to children if no buttons array
-  return (
-    <div className={`btn-group-mobile d-md-flex ${className}`}>
-      {children}
-    </div>
-  );
+  // Fallback to children if no buttons array provided
+  if (children) {
+    // Validate that children are valid React elements, not objects
+    const validChildren = React.Children.toArray(children).filter(child => {
+      if (React.isValidElement(child)) {
+        return true;
+      }
+      // Log warning if invalid child is found
+      if (typeof child === 'object' && child !== null) {
+        console.warn('ResponsiveButtonGroup: Invalid object passed as child. Objects are not valid React children.', child);
+        return false;
+      }
+      return true;
+    });
+    
+    return (
+      <div className={`btn-group-mobile d-md-flex ${className}`}>
+        {validChildren}
+      </div>
+    );
+  }
+  
+  // Return empty div if neither buttons nor children provided
+  return <div className={`btn-group-mobile d-md-flex ${className}`}></div>;
 };
 
 // Mobile-responsive table wrapper
@@ -151,6 +178,8 @@ export const ResponsiveFormGroup = ({
 // Mobile-responsive action bar
 export const ResponsiveActionBar = ({ 
   title, 
+  subtitle = null,
+  icon = null,
   actions = [], 
   searchValue = '', 
   onSearchChange = null,
@@ -159,7 +188,13 @@ export const ResponsiveActionBar = ({
   return (
     <div className={`d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 ${className}`}>
       <div className="mb-2 mb-md-0">
-        <h4 className="mb-0">{title}</h4>
+        <h4 className="mb-0">
+          {icon && <i className={`bi bi-${icon} me-2`}></i>}
+          {title}
+        </h4>
+        {subtitle && (
+          <p className="text-muted mb-0 mt-1">{subtitle}</p>
+        )}
       </div>
       
       <div className="d-flex flex-column flex-md-row gap-2 w-100 w-md-auto">
@@ -182,16 +217,18 @@ export const ResponsiveActionBar = ({
         
         {actions.length > 0 && (
           <div className="btn-group-mobile">
-            {actions.map((action, index) => (
+            {actions.filter(action => 
+              action && typeof action === 'object' && action.label
+            ).map((action, index) => (
               <button
-                key={index}
+                key={`action-${index}-${action.label}`}
                 className={`btn ${action.variant || 'btn-primary'} btn-enhanced`}
                 onClick={action.onClick}
                 disabled={action.disabled}
               >
                 {action.icon && <i className={`bi bi-${action.icon} me-1`}></i>}
-                <span className="d-none d-sm-inline">{action.label}</span>
-                <span className="d-sm-none">{action.shortLabel || action.label}</span>
+                <span className="d-none d-sm-inline">{typeof action.label === 'string' ? action.label : JSON.stringify(action.label)}</span>
+                <span className="d-sm-none">{typeof (action.shortLabel || action.label) === 'string' ? (action.shortLabel || action.label) : JSON.stringify(action.shortLabel || action.label)}</span>
               </button>
             ))}
           </div>

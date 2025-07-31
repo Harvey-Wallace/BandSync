@@ -380,32 +380,40 @@ function Dashboard() {
               Quick Actions
             </h6>
             <ResponsiveButtonGroup
-              buttons={[
-                {
-                  label: 'Messages',
-                  icon: 'chat-dots',
-                  variant: 'btn-outline-primary',
-                  href: '/messaging'
-                },
-                {
-                  label: 'Find Substitute',
-                  icon: 'person-plus',
-                  variant: 'btn-outline-success',
-                  href: '/substitution'
-                },
-                {
-                  label: 'Quick Polls',
-                  icon: 'bar-chart',
-                  variant: 'btn-outline-info',
-                  href: '/polls'
-                },
-                ...(role === 'Admin' ? [{
-                  label: 'Admin Panel',
-                  icon: 'gear',
-                  variant: 'btn-outline-warning',
-                  href: '/admin'
-                }] : [])
-              ]}
+              buttons={(() => {
+                const baseButtons = [
+                  {
+                    label: 'Messages',
+                    icon: 'chat-dots',
+                    variant: 'btn-outline-primary',
+                    href: '/messaging'
+                  },
+                  {
+                    label: 'Find Substitute',
+                    icon: 'person-plus',
+                    variant: 'btn-outline-success',
+                    href: '/substitution'
+                  },
+                  {
+                    label: 'Quick Polls',
+                    icon: 'bar-chart',
+                    variant: 'btn-outline-info',
+                    href: '/polls'
+                  }
+                ];
+                
+                // Add admin panel button if user is admin
+                if (role === 'Admin') {
+                  baseButtons.push({
+                    label: 'Admin Panel',
+                    icon: 'gear',
+                    variant: 'btn-outline-warning',
+                    href: '/admin'
+                  });
+                }
+                
+                return baseButtons;
+              })()}
             />
           </div>
         </div>
