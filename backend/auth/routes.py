@@ -135,6 +135,9 @@ def login():
     if user and user.check_password(data['password']):
         from models import UserOrganization
         
+        # Check if user is using a temporary password FIRST (before org selection)
+        is_temp_password = data['password'] == f"temp_{user.username}123"
+        
         # Get all organizations user belongs to
         user_orgs = UserOrganization.query.filter_by(user_id=user.id).all()
         
@@ -152,8 +155,8 @@ def login():
             user.current_organization_id = requested_org_id
             db.session.commit()
         
-        # If user belongs to multiple organizations and no specific org requested
-        elif len(user_orgs) > 1:
+        # If user belongs to multiple organizations and no specific org requested AND not using temp password
+        elif len(user_orgs) > 1 and not is_temp_password:
             organizations = []
             for user_org in user_orgs:
                 organizations.append({
@@ -167,9 +170,10 @@ def login():
                 'organizations': organizations
             })
         
-        # Single organization or fallback
+        # Single organization or fallback (or temp password with multiple orgs)
         else:
             if user_orgs:
+                # For temp passwords with multiple orgs, use first org to allow password reset
                 user_org = user_orgs[0]
                 selected_org = user_org.organization
                 selected_role = user_org.role
@@ -198,9 +202,6 @@ def login():
             }
         )
         refresh_token = create_refresh_token(identity=str(user.id))
-        
-        # Check if user is using a temporary password (pattern: temp_username123)
-        is_temp_password = data['password'] == f"temp_{user.username}123"
         
         return jsonify({
             'access_token': access_token,

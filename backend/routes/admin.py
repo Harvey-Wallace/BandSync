@@ -1006,8 +1006,20 @@ def send_test_notification():
     org_id = claims.get('organization_id')
     
     try:
-        from services.email_service import EmailService
-        email_service = EmailService()
+        # Use the singleton email service instance
+        from services.email_service import email_service
+        
+        # Check if email service is configured
+        if not email_service.client:
+            return jsonify({
+                'error': 'Email service not configured. Missing RESEND_API_KEY environment variable.',
+                'debug_info': {
+                    'api_key_set': bool(email_service.api_key),
+                    'from_email': email_service.from_email,
+                    'from_name': email_service.from_name,
+                    'base_url': email_service.base_url
+                }
+            }), 500
         
         user = User.query.get(user_id)
         if not user:
@@ -1032,7 +1044,16 @@ def send_test_notification():
         if success:
             return jsonify({'message': 'Test email sent successfully'})
         else:
-            return jsonify({'error': 'Failed to send test email'}), 500
+            return jsonify({
+                'error': 'Failed to send test email - check server logs for details',
+                'debug_info': {
+                    'api_key_set': bool(email_service.api_key),
+                    'from_email': email_service.from_email,
+                    'from_name': email_service.from_name,
+                    'base_url': email_service.base_url,
+                    'user_email': user.email
+                }
+            }), 500
             
     except Exception as e:
         return jsonify({'error': f'Failed to send test email: {str(e)}'}), 500
