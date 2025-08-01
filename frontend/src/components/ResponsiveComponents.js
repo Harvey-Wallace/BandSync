@@ -51,19 +51,15 @@ export const ResponsiveButtonGroup = ({ children, buttons = null, className = ''
 
   // Fallback to children if no buttons array provided
   if (children) {
-    // Validate that children are valid React elements, not objects
-    const validChildren = React.Children.toArray(children).filter(child => {
-      if (React.isValidElement(child)) {
-        return true;
-      }
-      // Log warning if invalid child is found
-      if (typeof child === 'object' && child !== null) {
-        console.warn('ResponsiveButtonGroup: Invalid object passed as child. Objects are not valid React children.', child);
-        return false;
-      }
-      return true;
-    });
-    
+    // Only allow valid React elements, strings, or numbers as children
+    const validChildren = React.Children.toArray(children).filter(child =>
+      React.isValidElement(child) ||
+      typeof child === 'string' ||
+      typeof child === 'number'
+    );
+    if (validChildren.length !== React.Children.count(children)) {
+      console.warn('ResponsiveButtonGroup: Invalid child detected. Only React elements, strings, or numbers are allowed as children.');
+    }
     return (
       <div className={`btn-group-mobile d-md-flex ${className}`}>
         {validChildren}
