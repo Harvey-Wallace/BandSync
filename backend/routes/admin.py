@@ -354,8 +354,9 @@ def delete_user(user_id):
 @admin_bp.route('/organization', methods=['GET', 'PUT'])
 @jwt_required()
 def organization():
+    user_id = get_jwt_identity()
     claims = get_jwt()
-    if claims.get('role') != 'Admin':
+    if not is_super_admin(user_id) and claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     org_id = claims.get('organization_id')
     org = Organization.query.get_or_404(org_id)
@@ -902,8 +903,9 @@ def assign_user_section(user_id):
 @jwt_required()
 def get_email_logs():
     """Get email logs for current organization"""
+    user_id = get_jwt_identity()
     claims = get_jwt()
-    if claims.get('role') != 'Admin':
+    if not is_super_admin(user_id) and claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     
     org_id = claims.get('organization_id')
@@ -951,8 +953,9 @@ def get_email_logs():
 @jwt_required()
 def get_email_stats():
     """Get email statistics for current organization"""
+    user_id = get_jwt_identity()
     claims = get_jwt()
-    if claims.get('role') != 'Admin':
+    if not is_super_admin(user_id) and claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     
     org_id = claims.get('organization_id')
@@ -979,8 +982,9 @@ def get_email_stats():
 @jwt_required()
 def get_scheduled_jobs():
     """Get status of scheduled email jobs"""
+    user_id = get_jwt_identity()
     claims = get_jwt()
-    if claims.get('role') != 'Admin':
+    if not is_super_admin(user_id) and claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     
     try:
@@ -1037,8 +1041,9 @@ def send_test_notification():
 @jwt_required()
 def get_calendar_stats():
     """Get calendar usage statistics for current organization"""
+    user_id = get_jwt_identity()
     claims = get_jwt()
-    if claims.get('role') != 'Admin':
+    if not is_super_admin(user_id) and claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     
     org_id = claims.get('organization_id')
