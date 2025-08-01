@@ -2,10 +2,15 @@ import React from 'react';
 
 // Mobile-responsive table wrapper
 export const ResponsiveTable = ({ children, className = '' }) => {
+  // Filter children to only allow valid React elements, strings, or numbers
+  const validChildren = React.Children.toArray(children).filter(child =>
+    React.isValidElement(child) || typeof child === 'string' || typeof child === 'number'
+  );
+  
   return (
     <div className={`table-responsive table-responsive-mobile ${className}`}>
       <div className="table-enhanced">
-        {children}
+        {validChildren}
       </div>
     </div>
   );
@@ -15,11 +20,18 @@ export const ResponsiveTable = ({ children, className = '' }) => {
 export const ResponsiveCardGrid = ({ children, className = '' }) => {
   return (
     <div className={`row ${className}`}>
-      {React.Children.map(children, (child, index) => (
-        <div key={index} className="col-12 col-md-6 col-lg-4 mb-3">
-          {child}
-        </div>
-      ))}
+      {React.Children.map(children, (child, index) => {
+        // Only render valid React elements, strings, or numbers
+        if (React.isValidElement(child) || typeof child === 'string' || typeof child === 'number') {
+          return (
+            <div key={index} className="col-12 col-md-6 col-lg-4 mb-3">
+              {child}
+            </div>
+          );
+        }
+        // Skip invalid children (objects, null, undefined, etc.)
+        return null;
+      })}
     </div>
   );
 };
@@ -106,6 +118,12 @@ export const ResponsiveFormGroup = ({
   required = false,
   className = '' 
 }) => {
+  // Only proceed if children is a valid React element
+  if (!React.isValidElement(children)) {
+    console.warn('ResponsiveFormGroup: Invalid children provided. Expected a React element.');
+    return null;
+  }
+
   return (
     <div className={`mb-3 ${className}`}>
       <label className="form-label">
