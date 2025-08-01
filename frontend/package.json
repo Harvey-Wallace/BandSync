@@ -1,7 +1,8 @@
 {
   "name": "bandsync-frontend",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
+  "buildTimestamp": "2025-08-01T16:28:00Z",
   "dependencies": {
     "@googlemaps/js-api-loader": "^1.16.10",
     "axios": "^1.6.0",
