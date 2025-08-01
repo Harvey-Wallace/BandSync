@@ -1,7 +1,11 @@
 import React from 'react';
 
-// Mobile-responsive button group
+// Mobile-responsive button group - React Error #31 Fix Applied 
+// Force new build hash to ensure deployment of React error fixes - Build v4
+// Additional debug marker to force webpack rehash: FORCE_HASH_CHANGE_2025
+const REACT_ERROR_FIX_TIMESTAMP = "2025-08-01-16-26-30";
 export const ResponsiveButtonGroup = ({ children, buttons = null, className = '' }) => {
+  // REACT ERROR #31 FIX: Added comprehensive defensive programming
   // If buttons array is provided, render those instead of children
   if (buttons && Array.isArray(buttons)) {
     const validButtons = buttons.filter(button => 
@@ -67,7 +71,7 @@ export const ResponsiveButtonGroup = ({ children, buttons = null, className = ''
     );
   }
   
-  // Return empty div if neither buttons nor children provided
+  // Return empty div if neither buttons nor children provided  
   return <div className={`btn-group-mobile d-md-flex ${className}`}></div>;
 };
 
