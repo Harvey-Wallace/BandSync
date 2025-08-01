@@ -388,7 +388,7 @@ function Dashboard() {
               <a href="/polls" className="btn btn-outline-info flex-fill mb-2 mb-md-0">
                 <i className="bi bi-bar-chart me-1"></i>Quick Polls
               </a>
-              {role === 'Admin' && (
+              {(role === 'Admin' || localStorage.getItem('super_admin') === 'true') && (
                 <a href="/admin" className="btn btn-outline-warning flex-fill mb-2 mb-md-0">
                   <i className="bi bi-gear me-1"></i>Admin Panel
                 </a>

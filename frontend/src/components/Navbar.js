@@ -253,7 +253,7 @@ function Navbar() {
                 <span>Events</span>
               </Link>
             </li>
-            {role === 'Admin' && (
+            {(role === 'Admin' || isSuperAdmin) && (
               <li className="nav-item">
                 <Link className="nav-link text-white px-2" to="/admin">
                   <i className="bi bi-gear me-1"></i>
