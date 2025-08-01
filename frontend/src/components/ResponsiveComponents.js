@@ -1,76 +1,5 @@
 import React from 'react';
 
-// Mobile-responsive button group - React Error #31 Fix Applied 
-// Force new build hash to ensure deployment of React error fixes - Build v4
-// Additional debug marker to force webpack rehash: FORCE_HASH_CHANGE_2025
-const REACT_ERROR_FIX_TIMESTAMP = "2025-08-01-16-26-30";
-export const ResponsiveButtonGroup = ({ children, buttons = null, className = '' }) => {
-  // REACT ERROR #31 FIX: Added comprehensive defensive programming
-  // If buttons array is provided, render those instead of children
-  if (buttons && Array.isArray(buttons)) {
-    const validButtons = buttons.filter(button => 
-      button && typeof button === 'object' && button.label
-    );
-    
-    if (validButtons.length === 0) {
-      console.warn('No valid buttons provided to ResponsiveButtonGroup');
-      return null;
-    }
-    
-    return (
-      <div className={`btn-group-mobile d-md-flex ${className}`}>
-        {validButtons.map((button, index) => {
-          if (button.href) {
-            return (
-              <a
-                key={`btn-${index}-${button.label}`}
-                href={button.href}
-                className={`btn ${button.variant || 'btn-primary'} flex-fill mb-2 mb-md-0 me-md-2`}
-              >
-                {button.icon && <i className={`bi bi-${button.icon} me-1`}></i>}
-                {typeof button.label === 'string' ? button.label : JSON.stringify(button.label)}
-              </a>
-            );
-          } else {
-            return (
-              <button
-                key={`btn-${index}-${button.label}`}
-                type="button"
-                className={`btn ${button.variant || 'btn-primary'} flex-fill mb-2 mb-md-0 me-md-2`}
-                onClick={button.onClick}
-              >
-                {button.icon && <i className={`bi bi-${button.icon} me-1`}></i>}
-                {typeof button.label === 'string' ? button.label : JSON.stringify(button.label)}
-              </button>
-            );
-          }
-        })}
-      </div>
-    );
-  }
-
-  // Fallback to children if no buttons array provided
-  if (children) {
-    // Only allow valid React elements, strings, or numbers as children
-    const validChildren = React.Children.toArray(children).filter(child =>
-      React.isValidElement(child) ||
-      typeof child === 'string' ||
-      typeof child === 'number'
-    );
-    if (validChildren.length !== React.Children.count(children)) {
-      console.warn('ResponsiveButtonGroup: Invalid child detected. Only React elements, strings, or numbers are allowed as children.');
-    }
-    return (
-      <div className={`btn-group-mobile d-md-flex ${className}`}>
-        {validChildren}
-      </div>
-    );
-  }
-  
-  // Return empty div if neither buttons nor children provided  
-  return <div className={`btn-group-mobile d-md-flex ${className}`}></div>;
-};
-
 // Mobile-responsive table wrapper
 export const ResponsiveTable = ({ children, className = '' }) => {
   return (
@@ -414,7 +343,6 @@ export const ResponsivePagination = ({
 };
 
 export default {
-  ResponsiveButtonGroup,
   ResponsiveTable,
   ResponsiveCardGrid,
   ResponsiveStatsGrid,

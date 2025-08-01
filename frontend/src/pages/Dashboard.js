@@ -11,8 +11,7 @@ import {
 import { 
   ResponsiveStatsGrid, 
   ResponsiveCardGrid,
-  ResponsiveActionBar,
-  ResponsiveButtonGroup 
+  ResponsiveActionBar
 } from '../components/ResponsiveComponents';
 import UserAvatar from '../components/UserAvatar';
 import { useTheme } from '../contexts/ThemeContext';
@@ -379,42 +378,22 @@ function Dashboard() {
               <i className="bi bi-lightning me-2"></i>
               Quick Actions
             </h6>
-            <ResponsiveButtonGroup
-              buttons={(() => {
-                const baseButtons = [
-                  {
-                    label: 'Messages',
-                    icon: 'chat-dots',
-                    variant: 'btn-outline-primary',
-                    href: '/messaging'
-                  },
-                  {
-                    label: 'Find Substitute',
-                    icon: 'person-plus',
-                    variant: 'btn-outline-success',
-                    href: '/substitution'
-                  },
-                  {
-                    label: 'Quick Polls',
-                    icon: 'bar-chart',
-                    variant: 'btn-outline-info',
-                    href: '/polls'
-                  }
-                ];
-                
-                // Add admin panel button if user is admin
-                if (role === 'Admin') {
-                  baseButtons.push({
-                    label: 'Admin Panel',
-                    icon: 'gear',
-                    variant: 'btn-outline-warning',
-                    href: '/admin'
-                  });
-                }
-                
-                return baseButtons;
-              })()}
-            />
+            <div className="d-flex flex-column flex-md-row gap-2">
+              <a href="/messaging" className="btn btn-outline-primary flex-fill mb-2 mb-md-0">
+                <i className="bi bi-chat-dots me-1"></i>Messages
+              </a>
+              <a href="/substitution" className="btn btn-outline-success flex-fill mb-2 mb-md-0">
+                <i className="bi bi-person-plus me-1"></i>Find Substitute
+              </a>
+              <a href="/polls" className="btn btn-outline-info flex-fill mb-2 mb-md-0">
+                <i className="bi bi-bar-chart me-1"></i>Quick Polls
+              </a>
+              {role === 'Admin' && (
+                <a href="/admin" className="btn btn-outline-warning flex-fill mb-2 mb-md-0">
+                  <i className="bi bi-gear me-1"></i>Admin Panel
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
