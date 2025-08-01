@@ -8,7 +8,7 @@ COPY frontend/package*.json ./
 RUN npm ci --only=production
 
 COPY frontend/ ./
-RUN npm run build
+RUN BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') && echo "Build triggered at $BUILD_DATE" && npm run build
 
 # Stage 2: Setup backend
 FROM python:3.11-slim AS backend
