@@ -2,6 +2,7 @@
 # Stage 1: Build frontend
 FROM node:18-alpine AS frontend-builder
 
+# Force cache invalidation with a comment
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci --only=production
