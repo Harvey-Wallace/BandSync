@@ -171,7 +171,22 @@ export const EmptyState = ({
       </div>
       <h5 className="text-muted">{title}</h5>
       <p className="text-muted">{description}</p>
-      {action && <div className="mt-3">{action}</div>}
+      {action && (
+        <div className="mt-3">
+          {/* Check if action is an object with label and onClick, or a React element */}
+          {typeof action === 'object' && action.label && action.onClick ? (
+            <button 
+              className={`btn ${action.variant || 'btn-primary'}`}
+              onClick={action.onClick}
+            >
+              {action.icon && <i className={`bi bi-${action.icon} me-1`}></i>}
+              {action.label}
+            </button>
+          ) : (
+            React.isValidElement(action) ? action : null
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -188,7 +203,22 @@ export const SuccessState = ({
         <i className="bi bi-check-circle"></i>
       </div>
       <div className="success-message">{message}</div>
-      {action && <div className="mt-3">{action}</div>}
+      {action && (
+        <div className="mt-3">
+          {/* Check if action is an object with label and onClick, or a React element */}
+          {typeof action === 'object' && action.label && action.onClick ? (
+            <button 
+              className={`btn ${action.variant || 'btn-primary'}`}
+              onClick={action.onClick}
+            >
+              {action.icon && <i className={`bi bi-${action.icon} me-1`}></i>}
+              {action.label}
+            </button>
+          ) : (
+            React.isValidElement(action) ? action : null
+          )}
+        </div>
+      )}
     </div>
   );
 };
