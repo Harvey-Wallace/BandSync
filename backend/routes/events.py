@@ -20,6 +20,24 @@ except ImportError:
 
 events_bp = Blueprint('events', __name__)
 
+def mobile_to_backend_status(mobile_status):
+    """Convert mobile app status format to backend format"""
+    status_map = {
+        'attending': 'Yes',
+        'maybe': 'Maybe', 
+        'not_attending': 'No'
+    }
+    return status_map.get(mobile_status)
+
+def backend_to_mobile_status(backend_status):
+    """Convert backend status format to mobile app format"""
+    status_map = {
+        'Yes': 'attending',
+        'Maybe': 'maybe',
+        'No': 'not_attending'
+    }
+    return status_map.get(backend_status)
+
 @events_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_events():
@@ -378,16 +396,23 @@ def rsvp_event(event_id):
     data = request.get_json()
     status = data.get('status')
     
-    # Normalize status values to proper case
-    valid_statuses = ['Yes', 'No', 'Maybe']
-    if status in valid_statuses:
-        # Already in proper case
-        pass
-    elif status in ['yes', 'no', 'maybe']:
-        # Convert lowercase to proper case
-        status = status.capitalize()
+    # Handle both mobile format (attending/maybe/not_attending) and web format (Yes/No/Maybe)
+    mobile_statuses = ['attending', 'maybe', 'not_attending']
+    web_statuses = ['Yes', 'No', 'Maybe', 'yes', 'no', 'maybe']
+    
+    if status in mobile_statuses:
+        # Convert mobile format to backend format
+        status = mobile_to_backend_status(status)
+    elif status in web_statuses:
+        # Normalize web status values to proper case
+        if status in ['Yes', 'No', 'Maybe']:
+            # Already in proper case
+            pass
+        elif status in ['yes', 'no', 'maybe']:
+            # Convert lowercase to proper case
+            status = status.capitalize()
     else:
-        return jsonify({'msg': 'Invalid RSVP status'}), 400
+        return jsonify({'msg': 'Invalid RSVP status. Use: Yes/No/Maybe or attending/maybe/not_attending'}), 400
     
     # Track previous status for admin notifications
     previous_status = None
@@ -410,6 +435,161 @@ def rsvp_event(event_id):
         print(f"Error tracking RSVP change: {str(e)}")
     
     return jsonify({'msg': 'RSVP updated'})
+
+# New RSVP endpoints for mobile app
+@events_bp.route('/<int:event_id>/rsvp/', methods=['GET'])
+@jwt_required()
+def get_user_rsvp(event_id):
+    """Get the current user's RSVP status for an event"""
+    user_id = get_jwt_identity()
+    claims = get_jwt()
+    org_id = claims.get('organization_id')
+    
+    # Verify event exists and belongs to user's organization
+    event = Event.query.filter_by(id=event_id, organization_id=org_id).first()
+    if not event:
+        return jsonify({'msg': 'Event not found'}), 404
+    
+    # Find user's RSVP
+    rsvp = RSVP.query.filter_by(user_id=user_id, event_id=event_id).first()
+    if not rsvp:
+        return jsonify({'msg': 'RSVP not found'}), 404
+    
+    # Convert backend status to mobile format
+    mobile_status = backend_to_mobile_status(rsvp.status)
+    
+    return jsonify({
+        'status': mobile_status,
+        'event_id': event_id,
+        'user_id': int(user_id),
+        'timestamp': rsvp.created_at.isoformat() if rsvp.created_at else None
+    })
+
+@events_bp.route('/<int:event_id>/rsvp/', methods=['POST'])
+@jwt_required()
+def create_user_rsvp(event_id):
+    """Create a new RSVP for the current user"""
+    user_id = get_jwt_identity()
+    claims = get_jwt()
+    org_id = claims.get('organization_id')
+    data = request.get_json()
+    
+    # Verify event exists and belongs to user's organization
+    event = Event.query.filter_by(id=event_id, organization_id=org_id).first()
+    if not event:
+        return jsonify({'msg': 'Event not found'}), 404
+    
+    # Validate mobile status format
+    mobile_status = data.get('status')
+    if not mobile_status or mobile_status not in ['attending', 'maybe', 'not_attending']:
+        return jsonify({'msg': 'Invalid status. Must be: attending, maybe, or not_attending'}), 400
+    
+    # Check if RSVP already exists
+    existing_rsvp = RSVP.query.filter_by(user_id=user_id, event_id=event_id).first()
+    if existing_rsvp:
+        return jsonify({'msg': 'RSVP already exists. Use PUT to update.'}), 400
+    
+    # Convert mobile status to backend format
+    backend_status = mobile_to_backend_status(mobile_status)
+    
+    # Create new RSVP
+    rsvp = RSVP(user_id=user_id, event_id=event_id, status=backend_status)
+    db.session.add(rsvp)
+    db.session.commit()
+    
+    # Track RSVP change for admin notifications
+    try:
+        from services.admin_attendance_service import AdminAttendanceService
+        AdminAttendanceService.track_rsvp_change(event_id, user_id, None, backend_status)
+    except Exception as e:
+        # Don't fail the RSVP if notification tracking fails
+        print(f"Error tracking RSVP change: {str(e)}")
+    
+    return jsonify({
+        'status': mobile_status,
+        'event_id': event_id,
+        'user_id': int(user_id),
+        'timestamp': rsvp.created_at.isoformat() if rsvp.created_at else None
+    }), 201
+
+@events_bp.route('/<int:event_id>/rsvp/', methods=['PUT'])
+@jwt_required()
+def update_user_rsvp(event_id):
+    """Update the current user's RSVP for an event"""
+    user_id = get_jwt_identity()
+    claims = get_jwt()
+    org_id = claims.get('organization_id')
+    data = request.get_json()
+    
+    # Verify event exists and belongs to user's organization
+    event = Event.query.filter_by(id=event_id, organization_id=org_id).first()
+    if not event:
+        return jsonify({'msg': 'Event not found'}), 404
+    
+    # Validate mobile status format
+    mobile_status = data.get('status')
+    if not mobile_status or mobile_status not in ['attending', 'maybe', 'not_attending']:
+        return jsonify({'msg': 'Invalid status. Must be: attending, maybe, or not_attending'}), 400
+    
+    # Find existing RSVP
+    rsvp = RSVP.query.filter_by(user_id=user_id, event_id=event_id).first()
+    if not rsvp:
+        return jsonify({'msg': 'RSVP not found'}), 404
+    
+    # Convert mobile status to backend format
+    previous_status = rsvp.status
+    backend_status = mobile_to_backend_status(mobile_status)
+    
+    # Update RSVP
+    rsvp.status = backend_status
+    db.session.commit()
+    
+    # Track RSVP change for admin notifications
+    try:
+        from services.admin_attendance_service import AdminAttendanceService
+        AdminAttendanceService.track_rsvp_change(event_id, user_id, previous_status, backend_status)
+    except Exception as e:
+        # Don't fail the RSVP if notification tracking fails
+        print(f"Error tracking RSVP change: {str(e)}")
+    
+    return jsonify({
+        'status': mobile_status,
+        'event_id': event_id,
+        'user_id': int(user_id),
+        'timestamp': rsvp.created_at.isoformat() if rsvp.created_at else None
+    })
+
+@events_bp.route('/<int:event_id>/rsvp/', methods=['DELETE'])
+@jwt_required()
+def delete_user_rsvp(event_id):
+    """Delete the current user's RSVP for an event"""
+    user_id = get_jwt_identity()
+    claims = get_jwt()
+    org_id = claims.get('organization_id')
+    
+    # Verify event exists and belongs to user's organization
+    event = Event.query.filter_by(id=event_id, organization_id=org_id).first()
+    if not event:
+        return jsonify({'msg': 'Event not found'}), 404
+    
+    # Find existing RSVP
+    rsvp = RSVP.query.filter_by(user_id=user_id, event_id=event_id).first()
+    if not rsvp:
+        return jsonify({'msg': 'RSVP not found'}), 404
+    
+    # Track RSVP deletion for admin notifications
+    try:
+        from services.admin_attendance_service import AdminAttendanceService
+        AdminAttendanceService.track_rsvp_change(event_id, user_id, rsvp.status, None)
+    except Exception as e:
+        # Don't fail the RSVP if notification tracking fails
+        print(f"Error tracking RSVP change: {str(e)}")
+    
+    # Delete RSVP
+    db.session.delete(rsvp)
+    db.session.commit()
+    
+    return '', 204
 
 @events_bp.route('/<int:event_id>', methods=['GET'])
 @jwt_required()
