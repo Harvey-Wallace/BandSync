@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from models import Event, RSVP, EventCategory, User, db
+from models import Event, RSVP, EventCategory, User, UserOrganization, db
 from datetime import datetime, timedelta
 import csv
 import io
@@ -61,6 +61,18 @@ def get_events():
     
     events = query.order_by(Event.date.asc()).all()
     
+    # Get total number of users in the organization
+    total_org_users = db.session.query(User).join(
+        UserOrganization, 
+        (User.id == UserOrganization.user_id) & 
+        (UserOrganization.organization_id == org_id) & 
+        (UserOrganization.is_active == True)
+    ).count()
+    
+    # If no users found in UserOrganization table, fall back to legacy organization_id field
+    if total_org_users == 0:
+        total_org_users = User.query.filter_by(organization_id=org_id).count()
+    
     def safe_get_time_field(event, field_name):
         """Safely get time field, handling missing columns"""
         try:
@@ -70,6 +82,43 @@ def get_events():
             # Column doesn't exist yet (before migration)
             return None
     
+    def get_rsvp_stats(event_id):
+        """Get RSVP statistics for an event"""
+        rsvps = RSVP.query.filter_by(event_id=event_id).all()
+        rsvp_count = 0
+        yes_count = 0
+        no_count = 0
+        maybe_count = 0
+        
+        for rsvp in rsvps:
+            user = User.query.get(rsvp.user_id)
+            if user:
+                # Check if user belongs to the organization
+                user_in_org = (user.organization_id == org_id) or \
+                             UserOrganization.query.filter_by(
+                                 user_id=user.id, 
+                                 organization_id=org_id, 
+                                 is_active=True
+                             ).first()
+                
+                if user_in_org:
+                    rsvp_count += 1
+                    if rsvp.status == 'Yes':
+                        yes_count += 1
+                    elif rsvp.status == 'No':
+                        no_count += 1
+                    elif rsvp.status == 'Maybe':
+                        maybe_count += 1
+        
+        return {
+            'total_responses': rsvp_count,
+            'total_users': total_org_users,
+            'yes_count': yes_count,
+            'no_count': no_count,
+            'maybe_count': maybe_count,
+            'no_response_count': total_org_users - rsvp_count
+        }
+
     return jsonify([{
         'id': e.id,
         'title': e.title,
@@ -105,7 +154,9 @@ def get_events():
         'cancelled_by': e.cancelled_by,
         'canceller_name': e.canceller.name if e.canceller else None,
         'cancellation_reason': e.cancellation_reason,
-        'cancellation_notification_sent': e.cancellation_notification_sent
+        'cancellation_notification_sent': e.cancellation_notification_sent,
+        # RSVP statistics
+        'rsvp_stats': get_rsvp_stats(e.id)
     } for e in events])
 
 @events_bp.route('/', methods=['POST'])
