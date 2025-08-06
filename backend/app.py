@@ -183,6 +183,89 @@ def auto_migrate_super_admin():
         print(f"❌ Super Admin migration failed: {e}")
         return False
 
+def auto_migrate_time_fields():
+    """Automatically add time fields to events table on app startup"""
+    
+    print("🚀 Starting time fields migration check...")
+    
+    # Only run in production
+    if os.getenv('ENVIRONMENT') != 'production':
+        print("⚠️  Skipping migration - not in production environment")
+        return True
+    
+    database_url = os.getenv('DATABASE_URL')
+    if not database_url:
+        print("❌ DATABASE_URL not found - skipping time fields migration")
+        return False
+    
+    print(f"🔗 DATABASE_URL found: {database_url[:50]}...")
+    
+    try:
+        from sqlalchemy import create_engine, text
+        engine = create_engine(database_url)
+        
+        print("📦 Connecting to database...")
+        
+        with engine.connect() as conn:
+            print("✅ Database connection successful")
+            
+            # Check if time columns exist
+            result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'event' 
+                AND column_name IN ('arrive_by_time', 'start_time', 'end_time')
+            """))
+            
+            existing = [row[0] for row in result.fetchall()]
+            print(f"📋 Found existing time columns: {existing}")
+            
+            # Define new time columns to add
+            time_columns = [
+                ('arrive_by_time', 'TIME'),
+                ('start_time', 'TIME'),
+                ('end_time', 'TIME')
+            ]
+            
+            # Add missing columns
+            added_count = 0
+            for column_name, column_type in time_columns:
+                if column_name not in existing:
+                    try:
+                        sql = f'ALTER TABLE "event" ADD COLUMN {column_name} {column_type}'
+                        print(f"🔄 Executing: {sql}")
+                        conn.execute(text(sql))
+                        conn.commit()
+                        print(f"✅ Added {column_name} column")
+                        added_count += 1
+                    except Exception as e:
+                        print(f"❌ Failed to add {column_name}: {e}")
+                else:
+                    print(f"✅ Column {column_name} already exists")
+            
+            if added_count > 0:
+                print(f"🎉 Time fields migration completed! Added {added_count} columns.")
+            else:
+                print("✅ Time fields already exist - no migration needed")
+            
+            # Final verification
+            result = conn.execute(text("""
+                SELECT column_name 
+                FROM information_schema.columns 
+                WHERE table_name = 'event' 
+                AND column_name IN ('arrive_by_time', 'start_time', 'end_time')
+            """))
+            
+            final_columns = [row[0] for row in result.fetchall()]
+            print(f"🔍 Final verification - found {len(final_columns)} time columns: {final_columns}")
+            
+            return len(final_columns) == 3
+            
+    except Exception as e:
+        print(f"❌ Time fields migration failed: {e}")
+        print(f"❌ Error type: {type(e).__name__}")
+        return False
+
 # Disable Flask's default static file serving to use our custom route
 app = Flask(__name__, static_folder=None)
 app.config.from_object(Config)
@@ -219,6 +302,7 @@ from routes.super_analytics import super_analytics_bp
 # Phase 3 Security & Compliance - Audit trails and data privacy
 print("🔐 Phase 3 Security & Compliance module loading...")
 from routes.security_simple import security_bp
+from routes.debug import debug_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(events_bp, url_prefix='/api/events')
@@ -240,6 +324,7 @@ app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 app.register_blueprint(super_admin_bp, url_prefix='/api/super-admin')
 app.register_blueprint(super_analytics_bp, url_prefix='/api/super-admin/analytics')
 app.register_blueprint(security_bp, url_prefix='/api/super-admin/security')
+app.register_blueprint(debug_bp, url_prefix='/api/debug')
 
 # JWT error handlers
 @jwt.unauthorized_loader
@@ -426,6 +511,7 @@ print(f"Index.html exists: {os.path.exists('static/index.html')}")
 auto_migrate_password_reset()
 auto_migrate_organization()
 auto_migrate_super_admin()
+auto_migrate_time_fields()
 
 if __name__ == '__main__':
     # Railway sets the PORT environment variable

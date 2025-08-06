@@ -2,6 +2,20 @@
 # Stage 1: Build frontend
 FROM node:18-alpine AS frontend-builder
 
+# Accept build-time arguments for React environment variables
+ARG REACT_APP_GOOGLE_MAPS_API_KEY
+ARG REACT_APP_API_URL
+
+# Set environment variables for the build
+ENV REACT_APP_GOOGLE_MAPS_API_KEY=$REACT_APP_GOOGLE_MAPS_API_KEY
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
+
+# Debug: Print environment variables during build
+RUN echo "🔍 Build-time environment variables:" && \
+    echo "REACT_APP_API_URL: $REACT_APP_API_URL" && \
+    echo "REACT_APP_GOOGLE_MAPS_API_KEY: ${REACT_APP_GOOGLE_MAPS_API_KEY:0:20}..." && \
+    echo "📦 Starting frontend build..."
+
 # Force cache invalidation with a comment
 WORKDIR /app/frontend
 COPY frontend/package*.json ./

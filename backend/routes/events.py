@@ -129,6 +129,8 @@ def get_events():
         'arrive_by_time': safe_get_time_field(e, 'arrive_by_time'),
         'start_time': safe_get_time_field(e, 'start_time'),
         'end_time': safe_get_time_field(e, 'end_time'),
+        # Legacy time field extracted from date for backward compatibility
+        'time': e.date.strftime('%H:%M') if e.date else None,
         'location': e.location_address,  # For backward compatibility
         'location_address': e.location_address,
         'lat': e.location_lat,
@@ -717,6 +719,8 @@ def get_event(event_id):
         'arrive_by_time': safe_get_time_field(event, 'arrive_by_time'),
         'start_time': safe_get_time_field(event, 'start_time'),
         'end_time': safe_get_time_field(event, 'end_time'),
+        # Legacy time field extracted from date for backward compatibility
+        'time': event.date.strftime('%H:%M') if event.date else None,
         'location': event.location_address,  # For backward compatibility
         'location_address': event.location_address,
         'lat': event.location_lat,
