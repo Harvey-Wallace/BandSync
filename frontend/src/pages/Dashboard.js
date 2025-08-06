@@ -265,6 +265,23 @@ function Dashboard() {
     return { yes, no, maybe, total };
   };
 
+  // Get RSVP stats from the new backend format (X of Y display)
+  const getRsvpStats = (event) => {
+    if (event.rsvp_stats) {
+      return event.rsvp_stats;
+    }
+    // Fallback to old format if new stats not available
+    const rsvpSummary = getRsvpSummary(event.id);
+    return {
+      total_responses: rsvpSummary.total,
+      total_users: rsvpSummary.total, // Fallback - not accurate
+      yes_count: rsvpSummary.yes.length,
+      no_count: rsvpSummary.no.length,
+      maybe_count: rsvpSummary.maybe.length,
+      no_response_count: 0
+    };
+  };
+
   const filteredEvents = events.filter(event => {
     switch (filter) {
       case 'upcoming':
@@ -442,7 +459,9 @@ function Dashboard() {
                                 day: 'numeric',
                                 year: 'numeric'
                               })}
-                              {event.time && ` • ${formatTime(event.time)}`}
+                              {/* Show main time info - prefer start_time, then arrive_by_time, then legacy time */}
+                              {(event.start_time || event.arrive_by_time || event.time) && 
+                                ` • ${formatTime(event.start_time || event.arrive_by_time || event.time)}`}
                             </span>
                             {event.location_address && (
                               <span className="badge bg-info text-xs">
@@ -479,7 +498,10 @@ function Dashboard() {
                       </div>
                       <div className="d-flex align-items-center gap-2">
                         <small className="text-muted d-none d-md-inline">
-                          {rsvpSummary.yes?.length || 0} going
+                          {(() => {
+                            const stats = getRsvpStats(event);
+                            return `${stats.total_responses} of ${stats.total_users}`;
+                          })()}
                         </small>
                         
                         {/* Quick RSVP buttons - only for upcoming events */}
@@ -558,7 +580,36 @@ function Dashboard() {
                               })}
                             </div>
                             
-                            {event.time && (
+                            {/* Enhanced Timing Information */}
+                            {(event.arrive_by_time || event.start_time || event.end_time) && (
+                              <div className="mb-2">
+                                <i className="bi bi-clock me-2 text-muted"></i>
+                                <strong>Timing:</strong>
+                                <div className="ms-4 mt-1">
+                                  {event.arrive_by_time && (
+                                    <div className="small">
+                                      <span className="badge bg-info me-2">Arrive by</span>
+                                      {formatTime(event.arrive_by_time)}
+                                    </div>
+                                  )}
+                                  {event.start_time && (
+                                    <div className="small">
+                                      <span className="badge bg-primary me-2">Start</span>
+                                      {formatTime(event.start_time)}
+                                    </div>
+                                  )}
+                                  {event.end_time && (
+                                    <div className="small">
+                                      <span className="badge bg-secondary me-2">End</span>
+                                      {formatTime(event.end_time)}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Fallback for legacy time field */}
+                            {!event.arrive_by_time && !event.start_time && !event.end_time && event.time && (
                               <div className="mb-2">
                                 <i className="bi bi-clock me-2 text-muted"></i>
                                 <strong>Time:</strong> {formatTime(event.time)}
@@ -587,14 +638,20 @@ function Dashboard() {
                           <div className="col-md-6">
                             <h6 className="mb-3">
                               <i className="bi bi-people me-2"></i>
-                              Member Responses ({rsvpSummary.total || 0} total)
+                              Member Responses ({(() => {
+                                const stats = getRsvpStats(event);
+                                return `${stats.total_responses} of ${stats.total_users}`;
+                              })()})
                             </h6>
                             
                             <div className="row g-2 mb-3">
                               <div className="col-4">
                                 <div className="card bg-success bg-opacity-10 border-success">
                                   <div className="card-body text-center py-2">
-                                    <div className="fw-bold text-success">{(rsvpSummary.yes || []).length}</div>
+                                    <div className="fw-bold text-success">{(() => {
+                                      const stats = getRsvpStats(event);
+                                      return stats.yes_count || 0;
+                                    })()}</div>
                                     <div className="small text-success">Going</div>
                                   </div>
                                 </div>
@@ -602,7 +659,10 @@ function Dashboard() {
                               <div className="col-4">
                                 <div className="card bg-warning bg-opacity-10 border-warning">
                                   <div className="card-body text-center py-2">
-                                    <div className="fw-bold text-warning">{(rsvpSummary.maybe || []).length}</div>
+                                    <div className="fw-bold text-warning">{(() => {
+                                      const stats = getRsvpStats(event);
+                                      return stats.maybe_count || 0;
+                                    })()}</div>
                                     <div className="small text-warning">Maybe</div>
                                   </div>
                                 </div>
@@ -610,7 +670,10 @@ function Dashboard() {
                               <div className="col-4">
                                 <div className="card bg-danger bg-opacity-10 border-danger">
                                   <div className="card-body text-center py-2">
-                                    <div className="fw-bold text-danger">{(rsvpSummary.no || []).length}</div>
+                                    <div className="fw-bold text-danger">{(() => {
+                                      const stats = getRsvpStats(event);
+                                      return stats.no_count || 0;
+                                    })()}</div>
                                     <div className="small text-danger">Not Going</div>
                                   </div>
                                 </div>
