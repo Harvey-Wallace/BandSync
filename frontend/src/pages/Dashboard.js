@@ -478,7 +478,7 @@ function Dashboard() {
                               </span>
                             )}
                             <span className={`badge bg-${getEventTypeBadge(event.event_type)} text-xs`}>
-                              {event.event_type || 'other'}
+                              {event.event_type ? event.event_type.charAt(0).toUpperCase() + event.event_type.slice(1) : 'Other'}
                             </span>
                             {!isUpcoming && (
                               <span className="badge bg-secondary text-xs">Past</span>

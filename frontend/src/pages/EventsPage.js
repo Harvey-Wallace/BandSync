@@ -524,6 +524,33 @@ function EventsPage() {
     return colors[event.type] || colors['other'];
   };
 
+  // Helper function to get RSVP stats from event data
+  const getRsvpStats = (event) => {
+    if (event.rsvp_stats) {
+      return event.rsvp_stats;
+    }
+    // Fallback to local RSVP summary if new stats not available
+    const summary = rsvpSummary[event.id];
+    if (summary) {
+      return {
+        total_responses: (summary.yes?.length || 0) + (summary.no?.length || 0) + (summary.maybe?.length || 0),
+        total_users: (summary.yes?.length || 0) + (summary.no?.length || 0) + (summary.maybe?.length || 0),
+        yes_count: summary.yes?.length || 0,
+        no_count: summary.no?.length || 0,
+        maybe_count: summary.maybe?.length || 0,
+        no_response_count: 0
+      };
+    }
+    return {
+      total_responses: 0,
+      total_users: 0,
+      yes_count: 0,
+      no_count: 0,
+      maybe_count: 0,
+      no_response_count: 0
+    };
+  };
+
   const toggleSummary = (eventId) => {
     setOpenSummary(prev => ({
       ...prev,
@@ -722,7 +749,7 @@ function EventsPage() {
                         </span>
                       )}
                       <span className={`badge bg-${typeof getEventTypeBadge(event) === 'string' ? getEventTypeBadge(event) : 'secondary'}`}>
-                        {event.type || 'other'}
+                        {event.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : 'Other'}
                       </span>
                     </div>
                   </div>
@@ -748,11 +775,11 @@ function EventsPage() {
                         {formatDate(event.date)}
                       </small>
                     </div>
-                    {event.time && (
+                    {(event.timing_display || event.time) && (
                       <div className="mb-2">
                         <small className="text-muted">
                           <i className="bi bi-clock me-1"></i>
-                          {formatTime(event.time)}
+                          {event.timing_display || formatTime(event.time)}
                         </small>
                       </div>
                     )}
@@ -774,6 +801,17 @@ function EventsPage() {
                         </small>
                       </div>
                     )}
+                    
+                    {/* Display RSVP count in "X of Y" format */}
+                    <div className="mb-2">
+                      <small className="text-muted">
+                        <i className="bi bi-people me-1"></i>
+                        {(() => {
+                          const stats = getRsvpStats(event);
+                          return `${stats.total_responses} of ${stats.total_users} responded`;
+                        })()}
+                      </small>
+                    </div>
                     
                     <div className="d-flex gap-2 flex-wrap">
                       <button 
@@ -889,7 +927,12 @@ function EventsPage() {
                       
                       {openSummary[event.id] && rsvpSummary[event.id] && (
                         <div className="mt-3">
-                          <h6>RSVP Summary:</h6>
+                          <h6>
+                            RSVP Summary ({(() => {
+                              const stats = getRsvpStats(event);
+                              return `${stats.total_responses} of ${stats.total_users}`;
+                            })()}):
+                          </h6>
                           {rsvpLoading ? (
                             <LoadingSpinner size="sm" />
                           ) : rsvpError ? (
@@ -897,13 +940,25 @@ function EventsPage() {
                           ) : (
                             <div className="small">
                               <div className="text-success">
-                                <strong>Yes ({rsvpSummary[event.id].yes?.length || 0}):</strong> {rsvpSummary[event.id].yes?.map(user => user.name || user.username).join(', ') || 'None'}
+                                <strong>Yes ({rsvpSummary[event.id].yes?.length || 0}):</strong> 
+                                {rsvpSummary[event.id].yes?.map(user => {
+                                  const section = user.section || 'Unassigned';
+                                  return `${user.name || user.username} (${section})`;
+                                }).join(', ') || 'None'}
                               </div>
                               <div className="text-danger">
-                                <strong>No ({rsvpSummary[event.id].no?.length || 0}):</strong> {rsvpSummary[event.id].no?.map(user => user.name || user.username).join(', ') || 'None'}
+                                <strong>No ({rsvpSummary[event.id].no?.length || 0}):</strong> 
+                                {rsvpSummary[event.id].no?.map(user => {
+                                  const section = user.section || 'Unassigned';
+                                  return `${user.name || user.username} (${section})`;
+                                }).join(', ') || 'None'}
                               </div>
                               <div className="text-warning">
-                                <strong>Maybe ({rsvpSummary[event.id].maybe?.length || 0}):</strong> {rsvpSummary[event.id].maybe?.map(user => user.name || user.username).join(', ') || 'None'}
+                                <strong>Maybe ({rsvpSummary[event.id].maybe?.length || 0}):</strong> 
+                                {rsvpSummary[event.id].maybe?.map(user => {
+                                  const section = user.section || 'Unassigned';
+                                  return `${user.name || user.username} (${section})`;
+                                }).join(', ') || 'None'}
                               </div>
                             </div>
                           )}
