@@ -310,6 +310,9 @@ app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(rsvps_bp, url_prefix='/api/events')
 app.register_blueprint(admin_tools_bp, url_prefix='/api/admin-tools')
 app.register_blueprint(org_bp, url_prefix='/api/organizations')
+# Mobile app endpoints
+from routes.mobile_api import mobile_api_bp
+app.register_blueprint(mobile_api_bp, url_prefix='/api/organization')
 app.register_blueprint(email_prefs_bp, url_prefix='/api/email')
 app.register_blueprint(calendar_bp, url_prefix='/api/calendar')
 app.register_blueprint(custom_fields_bp)

@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt, create_access_token
-from models import db, User, Organization, UserOrganization
+from models import db, User, Organization, UserOrganization, Section
 
 org_bp = Blueprint('organization', __name__)
 
