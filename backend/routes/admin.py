@@ -1180,13 +1180,26 @@ def get_all_users():
     for user_org in user_orgs:
         u = user_org.user
         user_ids_from_org_table.add(u.id)
+        
+        # Get section information - check UserOrganization first, then legacy User field
+        section_id = None
+        section_name = None
+        
+        if user_org.section_id:
+            section_id = user_org.section_id
+            section_name = user_org.section.name if user_org.section else None
+        elif u.section_id:
+            # Fall back to legacy User.section_id
+            section_id = u.section_id
+            section_name = u.section.name if u.section else None
+        
         user_data = {
             'id': u.id,
             'username': u.username,
             'name': u.name or u.username,
             'display_name': u.name or u.username,
-            'section_id': u.section_id,
-            'section_name': u.section.name if u.section else None
+            'section_id': section_id,
+            'section_name': section_name
         }
         users_data.append(user_data)
     
@@ -1194,13 +1207,17 @@ def get_all_users():
     legacy_users = User.query.filter_by(organization_id=org_id).all()
     for u in legacy_users:
         if u.id not in user_ids_from_org_table:  # Don't duplicate users
+            # For legacy users, only use User.section_id
+            section_id = u.section_id
+            section_name = u.section.name if u.section else None
+            
             user_data = {
                 'id': u.id,
                 'username': u.username,
                 'name': u.name or u.username,
                 'display_name': u.name or u.username,
-                'section_id': u.section_id,
-                'section_name': u.section.name if u.section else None
+                'section_id': section_id,
+                'section_name': section_name
             }
             users_data.append(user_data)
     

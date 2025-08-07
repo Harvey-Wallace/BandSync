@@ -25,13 +25,32 @@ def get_event_rsvps(event_id):
                          UserOrganization.query.filter_by(user_id=user.id, organization_id=org_id, is_active=True).first()
             
             if user_in_org:
+                # Get section information - check UserOrganization first, then legacy User field
+                section_id = None
+                section_name = None
+                
+                # Check if user has section assigned through UserOrganization table
+                user_org = UserOrganization.query.filter_by(
+                    user_id=user.id, 
+                    organization_id=org_id, 
+                    is_active=True
+                ).first()
+                
+                if user_org and user_org.section_id:
+                    section_id = user_org.section_id
+                    section_name = user_org.section.name if user_org.section else None
+                elif user.section_id:
+                    # Fall back to legacy User.section_id
+                    section_id = user.section_id
+                    section_name = user.section.name if user.section else None
+                
                 # Return both username and full name for better display
                 user_info = {
                     'username': user.username,
                     'name': user.name or user.username,  # Fallback to username if name is empty
                     'display_name': user.name or user.username,  # Convenient display name
-                    'section_id': user.section_id,
-                    'section_name': user.section.name if user.section else None
+                    'section_id': section_id,
+                    'section_name': section_name
                 }
                 # Normalize the status to proper case to handle any legacy data
                 status = r.status
