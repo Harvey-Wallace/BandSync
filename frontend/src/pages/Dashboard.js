@@ -580,31 +580,31 @@ function Dashboard() {
                               })}
                             </div>
                             
-                            {/* Enhanced Timing Information */}
+                            {/* Enhanced Timing Information - Single Line Display */}
                             {(event.arrive_by_time || event.start_time || event.end_time) && (
                               <div className="mb-2">
                                 <i className="bi bi-clock me-2 text-muted"></i>
                                 <strong>Timing:</strong>
-                                <div className="ms-4 mt-1">
+                                <span className="ms-2">
                                   {event.arrive_by_time && (
-                                    <div className="small">
-                                      <span className="badge bg-info me-2">Arrive by</span>
+                                    <span className="me-3">
+                                      <span className="badge bg-info me-1">Arrive by</span>
                                       {formatTime(event.arrive_by_time)}
-                                    </div>
+                                    </span>
                                   )}
                                   {event.start_time && (
-                                    <div className="small">
-                                      <span className="badge bg-primary me-2">Start</span>
+                                    <span className="me-3">
+                                      <span className="badge bg-primary me-1">Start</span>
                                       {formatTime(event.start_time)}
-                                    </div>
+                                    </span>
                                   )}
                                   {event.end_time && (
-                                    <div className="small">
-                                      <span className="badge bg-secondary me-2">End</span>
+                                    <span>
+                                      <span className="badge bg-secondary me-1">End</span>
                                       {formatTime(event.end_time)}
-                                    </div>
+                                    </span>
                                   )}
-                                </div>
+                                </span>
                               </div>
                             )}
                             

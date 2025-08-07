@@ -749,7 +749,7 @@ function EventsPage() {
                         </span>
                       )}
                       <span className={`badge bg-${typeof getEventTypeBadge(event) === 'string' ? getEventTypeBadge(event) : 'secondary'}`}>
-                        {event.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : 'Other'}
+                        {event.type && event.type !== 'other' ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : 'Rehearsal'}
                       </span>
                     </div>
                   </div>
@@ -925,7 +925,7 @@ function EventsPage() {
                         </div>
                       </div>
                       
-                      {openSummary[event.id] && rsvpSummary[event.id] && (
+                      {openSummary[event.id] && (
                         <div className="mt-3">
                           <h6>
                             RSVP Summary ({(() => {
@@ -939,27 +939,60 @@ function EventsPage() {
                             <p className="text-danger">{rsvpError}</p>
                           ) : (
                             <div className="small">
-                              <div className="text-success">
-                                <strong>Yes ({rsvpSummary[event.id].yes?.length || 0}):</strong> 
-                                {rsvpSummary[event.id].yes?.map(user => {
-                                  const section = user.section || 'Unassigned';
-                                  return `${user.name || user.username} (${section})`;
-                                }).join(', ') || 'None'}
-                              </div>
-                              <div className="text-danger">
-                                <strong>No ({rsvpSummary[event.id].no?.length || 0}):</strong> 
-                                {rsvpSummary[event.id].no?.map(user => {
-                                  const section = user.section || 'Unassigned';
-                                  return `${user.name || user.username} (${section})`;
-                                }).join(', ') || 'None'}
-                              </div>
-                              <div className="text-warning">
-                                <strong>Maybe ({rsvpSummary[event.id].maybe?.length || 0}):</strong> 
-                                {rsvpSummary[event.id].maybe?.map(user => {
-                                  const section = user.section || 'Unassigned';
-                                  return `${user.name || user.username} (${section})`;
-                                }).join(', ') || 'None'}
-                              </div>
+                              {/* Use enhanced responses data if available, otherwise fallback to rsvpSummary */}
+                              {event.rsvp_stats && event.rsvp_stats.responses ? (
+                                // Enhanced display with sections
+                                <>
+                                  <div className="text-success">
+                                    <strong>Yes ({event.rsvp_stats.responses.filter(r => r.status === 'Yes').length}):</strong> 
+                                    {event.rsvp_stats.responses
+                                      .filter(r => r.status === 'Yes')
+                                      .map(user => `${user.name} (${user.section})`)
+                                      .join(', ') || 'None'}
+                                  </div>
+                                  <div className="text-danger">
+                                    <strong>No ({event.rsvp_stats.responses.filter(r => r.status === 'No').length}):</strong> 
+                                    {event.rsvp_stats.responses
+                                      .filter(r => r.status === 'No')
+                                      .map(user => `${user.name} (${user.section})`)
+                                      .join(', ') || 'None'}
+                                  </div>
+                                  <div className="text-warning">
+                                    <strong>Maybe ({event.rsvp_stats.responses.filter(r => r.status === 'Maybe').length}):</strong> 
+                                    {event.rsvp_stats.responses
+                                      .filter(r => r.status === 'Maybe')
+                                      .map(user => `${user.name} (${user.section})`)
+                                      .join(', ') || 'None'}
+                                  </div>
+                                </>
+                              ) : rsvpSummary[event.id] ? (
+                                // Fallback to old format
+                                <>
+                                  <div className="text-success">
+                                    <strong>Yes ({rsvpSummary[event.id].yes?.length || 0}):</strong> 
+                                    {rsvpSummary[event.id].yes?.map(user => {
+                                      const section = user.section || 'Unassigned';
+                                      return `${user.name || user.username} (${section})`;
+                                    }).join(', ') || 'None'}
+                                  </div>
+                                  <div className="text-danger">
+                                    <strong>No ({rsvpSummary[event.id].no?.length || 0}):</strong> 
+                                    {rsvpSummary[event.id].no?.map(user => {
+                                      const section = user.section || 'Unassigned';
+                                      return `${user.name || user.username} (${section})`;
+                                    }).join(', ') || 'None'}
+                                  </div>
+                                  <div className="text-warning">
+                                    <strong>Maybe ({rsvpSummary[event.id].maybe?.length || 0}):</strong> 
+                                    {rsvpSummary[event.id].maybe?.map(user => {
+                                      const section = user.section || 'Unassigned';
+                                      return `${user.name || user.username} (${section})`;
+                                    }).join(', ') || 'None'}
+                                  </div>
+                                </>
+                              ) : (
+                                <p className="text-muted">No RSVP data available</p>
+                              )}
                             </div>
                           )}
                         </div>
