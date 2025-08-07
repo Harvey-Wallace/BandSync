@@ -228,25 +228,33 @@ function Dashboard() {
   };
 
   const getEventTypeIcon = (eventType) => {
+    const type = eventType ? eventType.toLowerCase() : 'other';
     const icons = {
       'performance': '🎵',
       'rehearsal': '🎼',
+      'concert': '🎵',
+      'committee meeting': '💼',
       'meeting': '💼',
+      'agm': '💼',
       'social': '🎉',
       'other': '📅'
     };
-    return icons[eventType] || icons['other'];
+    return icons[type] || icons['other'];
   };
 
   const getEventTypeBadge = (eventType) => {
+    const type = eventType ? eventType.toLowerCase() : 'other';
     const colors = {
       'performance': 'danger',
       'rehearsal': 'primary',
+      'concert': 'danger',
+      'committee meeting': 'warning',
       'meeting': 'warning',
+      'agm': 'warning',
       'social': 'success',
       'other': 'secondary'
     };
-    return colors[eventType] || colors['other'];
+    return colors[type] || colors['other'];
   };
 
   const getRsvpSummary = (eventId) => {
@@ -448,7 +456,7 @@ function Dashboard() {
                     <div className="card-header d-flex justify-content-between align-items-center py-2">
                       <div className="d-flex align-items-center flex-grow-1">
                         <span className="me-2" style={{ fontSize: '1.1em' }}>
-                          {getEventTypeIcon(event.event_type)}
+                          {getEventTypeIcon(event.type)}
                         </span>
                         <div className="d-flex flex-column flex-md-row align-items-md-center flex-grow-1">
                           <h6 className="mb-0 fw-bold me-md-3">{event.title}</h6>
@@ -477,8 +485,8 @@ function Dashboard() {
                                 CANCELLED
                               </span>
                             )}
-                            <span className={`badge bg-${getEventTypeBadge(event.event_type)} text-xs`}>
-                              {event.event_type ? event.event_type.charAt(0).toUpperCase() + event.event_type.slice(1) : 'Other'}
+                            <span className={`badge bg-${getEventTypeBadge(event.type)} text-xs`}>
+                              {event.type ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : 'Rehearsal'}
                             </span>
                             {!isUpcoming && (
                               <span className="badge bg-secondary text-xs">Past</span>
