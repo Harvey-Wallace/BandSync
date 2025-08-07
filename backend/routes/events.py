@@ -20,6 +20,8 @@ except ImportError:
 
 events_bp = Blueprint('events', __name__)
 
+# Removed debug logging - events API is working normally
+
 def mobile_to_backend_status(mobile_status):
     """Convert mobile app status format to backend format"""
     status_map = {
@@ -41,127 +43,218 @@ def backend_to_mobile_status(backend_status):
 @events_bp.route('/', methods=['GET'])
 @jwt_required()
 def get_events():
-    claims = get_jwt()
-    org_id = claims.get('organization_id')
+    try:
+        print(f"🔍 Starting get_events() function")
+        claims = get_jwt()
+        org_id = claims.get('organization_id')
+        print(f"🏢 Organization ID: {org_id}")
+        
+        # Get query parameters
+        include_templates = request.args.get('include_templates', 'false').lower() == 'true'
+        category_id = request.args.get('category_id')
+        print(f"📊 Query params - include_templates: {include_templates}, category_id: {category_id}")
+        
+        # Base query
+        query = Event.query.filter_by(organization_id=org_id)
+        
+        # Filter by template status
+        if not include_templates:
+            query = query.filter_by(is_template=False)
+        
+        # Filter by category
+        if category_id:
+            query = query.filter_by(category_id=category_id)
+        
+        print(f"🔍 Executing database query...")
+        events = query.order_by(Event.date.asc()).all()
+        print(f"📅 Found {len(events)} events")
     
-    # Get query parameters
-    include_templates = request.args.get('include_templates', 'false').lower() == 'true'
-    category_id = request.args.get('category_id')
-    
-    # Base query
-    query = Event.query.filter_by(organization_id=org_id)
-    
-    # Filter by template status
-    if not include_templates:
-        query = query.filter_by(is_template=False)
-    
-    # Filter by category
-    if category_id:
-        query = query.filter_by(category_id=category_id)
-    
-    events = query.order_by(Event.date.asc()).all()
-    
-    # Get total number of users in the organization
-    total_org_users = db.session.query(User).join(
-        UserOrganization, 
-        (User.id == UserOrganization.user_id) & 
-        (UserOrganization.organization_id == org_id) & 
-        (UserOrganization.is_active == True)
-    ).count()
-    
-    # If no users found in UserOrganization table, fall back to legacy organization_id field
-    if total_org_users == 0:
-        total_org_users = User.query.filter_by(organization_id=org_id).count()
-    
-    def safe_get_time_field(event, field_name):
-        """Safely get time field, handling missing columns"""
-        try:
-            value = getattr(event, field_name, None)
-            return value.strftime('%H:%M') if value else None
-        except AttributeError:
-            # Column doesn't exist yet (before migration)
+        print(f"🔍 Getting total org users...")
+        
+        # Method 1: Count via UserOrganization (modern approach)
+        modern_count = db.session.query(User).join(
+            UserOrganization, 
+            (User.id == UserOrganization.user_id) & 
+            (UserOrganization.organization_id == org_id) & 
+            (UserOrganization.is_active == True)
+        ).count()
+        
+        # Method 2: Count via legacy User.organization_id
+        legacy_count = User.query.filter_by(organization_id=org_id).count()
+        
+        # Method 3: Count unique users who have RSVPs for this organization's events
+        rsvp_user_count = db.session.query(User.id).join(RSVP).join(Event).filter(
+            Event.organization_id == org_id
+        ).distinct().count()
+        
+        # Use the highest count that makes sense
+        total_org_users = max(modern_count, legacy_count, rsvp_user_count)
+        
+        print(f"👥 Total org users: {total_org_users}")
+        
+        def safe_get_time_field(event, field_name):
+            """Safely get time field, handling missing columns"""
+            try:
+                value = getattr(event, field_name, None)
+                return value.strftime('%H:%M') if value else None
+            except AttributeError:
+                # Column doesn't exist yet (before migration)
+                return None
+        
+        def format_timing_display(event):
+            """Format timing information for compact display"""
+            arrive_by = safe_get_time_field(event, 'arrive_by_time')
+            start_time = safe_get_time_field(event, 'start_time')
+            end_time = safe_get_time_field(event, 'end_time')
+            
+            timing_parts = []
+            if arrive_by:
+                timing_parts.append(f"Arrive: {arrive_by}")
+            if start_time:
+                timing_parts.append(f"Start: {start_time}")
+            if end_time:
+                timing_parts.append(f"End: {end_time}")
+            
+            if timing_parts:
+                return " | ".join(timing_parts)
+            
+            # Fallback to legacy time from date
+            if event.date:
+                return f"Time: {event.date.strftime('%H:%M')}"
+            
             return None
-    
-    def get_rsvp_stats(event_id):
-        """Get RSVP statistics for an event"""
-        rsvps = RSVP.query.filter_by(event_id=event_id).all()
-        rsvp_count = 0
-        yes_count = 0
-        no_count = 0
-        maybe_count = 0
         
-        for rsvp in rsvps:
-            user = User.query.get(rsvp.user_id)
-            if user:
-                # Check if user belongs to the organization
-                user_in_org = (user.organization_id == org_id) or \
-                             UserOrganization.query.filter_by(
-                                 user_id=user.id, 
-                                 organization_id=org_id, 
-                                 is_active=True
-                             ).first()
+        def get_rsvp_stats(event_id):
+            """Get RSVP statistics for an event with detailed user information"""
+            try:
+                rsvps = RSVP.query.filter_by(event_id=event_id).all()
+                rsvp_count = 0
+                yes_count = 0
+                no_count = 0
+                maybe_count = 0
+                detailed_rsvps = []
                 
-                if user_in_org:
-                    rsvp_count += 1
-                    if rsvp.status == 'Yes':
-                        yes_count += 1
-                    elif rsvp.status == 'No':
-                        no_count += 1
-                    elif rsvp.status == 'Maybe':
-                        maybe_count += 1
+                for rsvp in rsvps:
+                    user = User.query.get(rsvp.user_id)
+                    if user:
+                        # Check if user belongs to the organization
+                        user_in_org = (user.organization_id == org_id) or \
+                                     UserOrganization.query.filter_by(
+                                         user_id=user.id, 
+                                         organization_id=org_id, 
+                                         is_active=True
+                                     ).first()
+                        
+                        if user_in_org:
+                            rsvp_count += 1
+                            if rsvp.status == 'Yes':
+                                yes_count += 1
+                            elif rsvp.status == 'No':
+                                no_count += 1
+                            elif rsvp.status == 'Maybe':
+                                maybe_count += 1
+                            
+                            # Get user's section (check both UserOrganization and legacy User field)
+                            section_name = "Unassigned"
+                            user_org = UserOrganization.query.filter_by(
+                                user_id=user.id, 
+                                organization_id=org_id, 
+                                is_active=True
+                            ).first()
+                            
+                            if user_org and user_org.section:
+                                section_name = user_org.section.name
+                            elif user.section:
+                                section_name = user.section.name
+                            
+                            detailed_rsvps.append({
+                                'user_id': user.id,
+                                'name': user.name or user.username,
+                                'status': rsvp.status,
+                                'section': section_name
+                            })
+                
+                return {
+                    'total_responses': rsvp_count,
+                    'total_users': total_org_users,
+                    'yes_count': yes_count,
+                    'no_count': no_count,
+                    'maybe_count': maybe_count,
+                    'no_response_count': total_org_users - rsvp_count,
+                    'responses': detailed_rsvps
+                }
+            except Exception as e:
+                print(f"❌ Error getting RSVP stats for event {event_id}: {e}")
+                return {
+                    'total_responses': 0,
+                    'total_users': total_org_users,
+                    'yes_count': 0,
+                    'no_count': 0,
+                    'maybe_count': 0,
+                    'no_response_count': total_org_users
+                }
+
+        print(f"🔍 Building event response data...")
+        event_data = []
+        for i, e in enumerate(events):
+            try:
+                print(f"📅 Processing event {i+1}/{len(events)}: {e.title}")
+                event_obj = {
+                    'id': e.id,
+                    'title': e.title,
+                    'type': e.type,
+                    'description': e.description,
+                    'date': e.date.isoformat(),
+                    'end_date': e.end_date.isoformat() if e.end_date else None,
+                    'arrive_by_time': safe_get_time_field(e, 'arrive_by_time'),
+                    'start_time': safe_get_time_field(e, 'start_time'),
+                    'end_time': safe_get_time_field(e, 'end_time'),
+                    # Legacy time field extracted from date for backward compatibility
+                    'time': e.date.strftime('%H:%M') if e.date else None,
+                    # Combined timing display for better UI
+                    'timing_display': format_timing_display(e),
+                    'location': e.location_address,  # For backward compatibility
+                    'location_address': e.location_address,
+                    'lat': e.location_lat,
+                    'lng': e.location_lng,
+                    'location_place_id': e.location_place_id,
+                    'category_id': e.category_id,
+                    'category': e.category.name if e.category else None,
+                    'is_recurring': e.is_recurring,
+                    'recurring_pattern': e.recurring_pattern,
+                    'recurring_interval': e.recurring_interval,
+                    'recurring_end_date': e.recurring_end_date.isoformat() if e.recurring_end_date else None,
+                    'parent_event_id': e.parent_event_id,
+                    'is_template': e.is_template,
+                    'template_name': e.template_name,
+                    'send_reminders': e.send_reminders,
+                    'reminder_days_before': e.reminder_days_before,
+                    'created_at': e.created_at.isoformat() if e.created_at else None,
+                    'created_by': e.created_by,
+                    'creator_name': e.creator.name if e.creator else None,
+                    # Cancellation information
+                    'is_cancelled': e.is_cancelled,
+                    'cancelled_at': e.cancelled_at.isoformat() if e.cancelled_at else None,
+                    'cancelled_by': e.cancelled_by,
+                    'canceller_name': e.canceller.name if e.canceller else None,
+                    'cancellation_reason': e.cancellation_reason,
+                    'cancellation_notification_sent': e.cancellation_notification_sent,
+                    # RSVP statistics
+                    'rsvp_stats': get_rsvp_stats(e.id)
+                }
+                event_data.append(event_obj)
+            except Exception as e_error:
+                print(f"❌ Error processing event {e.id} ({e.title}): {e_error}")
+                continue
         
-        return {
-            'total_responses': rsvp_count,
-            'total_users': total_org_users,
-            'yes_count': yes_count,
-            'no_count': no_count,
-            'maybe_count': maybe_count,
-            'no_response_count': total_org_users - rsvp_count
-        }
-
-    return jsonify([{
-        'id': e.id,
-        'title': e.title,
-        'type': e.type,
-        'description': e.description,
-        'date': e.date.isoformat(),
-        'end_date': e.end_date.isoformat() if e.end_date else None,
-        'arrive_by_time': safe_get_time_field(e, 'arrive_by_time'),
-        'start_time': safe_get_time_field(e, 'start_time'),
-        'end_time': safe_get_time_field(e, 'end_time'),
-        # Legacy time field extracted from date for backward compatibility
-        'time': e.date.strftime('%H:%M') if e.date else None,
-        'location': e.location_address,  # For backward compatibility
-        'location_address': e.location_address,
-        'lat': e.location_lat,
-        'lng': e.location_lng,
-        'location_place_id': e.location_place_id,
-        'category_id': e.category_id,
-        'category': e.category.name if e.category else None,
-        'is_recurring': e.is_recurring,
-        'recurring_pattern': e.recurring_pattern,
-        'recurring_interval': e.recurring_interval,
-        'recurring_end_date': e.recurring_end_date.isoformat() if e.recurring_end_date else None,
-        'parent_event_id': e.parent_event_id,
-        'is_template': e.is_template,
-        'template_name': e.template_name,
-        'send_reminders': e.send_reminders,
-        'reminder_days_before': e.reminder_days_before,
-        'created_at': e.created_at.isoformat() if e.created_at else None,
-        'created_by': e.created_by,
-        'creator_name': e.creator.name if e.creator else None,
-        # Cancellation information
-        'is_cancelled': e.is_cancelled,
-        'cancelled_at': e.cancelled_at.isoformat() if e.cancelled_at else None,
-        'cancelled_by': e.cancelled_by,
-        'canceller_name': e.canceller.name if e.canceller else None,
-        'cancellation_reason': e.cancellation_reason,
-        'cancellation_notification_sent': e.cancellation_notification_sent,
-        # RSVP statistics
-        'rsvp_stats': get_rsvp_stats(e.id)
-    } for e in events])
-
-@events_bp.route('/', methods=['POST'])
+        print(f"✅ Successfully processed {len(event_data)} events, returning JSON response")
+        return jsonify(event_data)
+        
+    except Exception as e:
+        print(f"❌ Fatal error in get_events(): {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': 'Failed to load events', 'details': str(e)}), 500@events_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_event():
     claims = get_jwt()
@@ -433,14 +526,49 @@ def cancel_event(event_id):
 @events_bp.route('/<int:event_id>', methods=['DELETE'])
 @jwt_required()
 def delete_event(event_id):
+    print(f"🗑️  DELETE event request received for event_id: {event_id}")
+    
     claims = get_jwt()
     if claims.get('role') != 'Admin':
+        print(f"❌ Access denied - user role: {claims.get('role')}")
         return jsonify({'msg': 'Admins only'}), 403
+    
     org_id = claims.get('organization_id')
+    print(f"🏢 Organization ID: {org_id}")
+    
     event = Event.query.filter_by(id=event_id, organization_id=org_id).first_or_404()
-    db.session.delete(event)
-    db.session.commit()
-    return jsonify({'msg': 'Event deleted'})
+    print(f"📅 Found event: {event.title} (ID: {event.id})")
+    
+    try:
+        # First, delete all RSVPs associated with this event
+        rsvps = RSVP.query.filter_by(event_id=event_id).all()
+        print(f"🎫 Found {len(rsvps)} RSVPs to delete")
+        
+        for rsvp in rsvps:
+            db.session.delete(rsvp)
+        
+        # Delete any recurring child events if this is a parent event
+        child_events = Event.query.filter_by(parent_event_id=event_id).all()
+        print(f"🔗 Found {len(child_events)} child events to delete")
+        
+        for child_event in child_events:
+            # Delete RSVPs for child events too
+            child_rsvps = RSVP.query.filter_by(event_id=child_event.id).all()
+            for child_rsvp in child_rsvps:
+                db.session.delete(child_rsvp)
+            db.session.delete(child_event)
+        
+        # Now delete the main event
+        db.session.delete(event)
+        db.session.commit()
+        
+        print(f"✅ Successfully deleted event: {event.title} (ID: {event_id})")
+        return jsonify({'msg': 'Event deleted'})
+        
+    except Exception as e:
+        print(f"❌ Error deleting event {event_id}: {e}")
+        db.session.rollback()
+        return jsonify({'msg': f'Failed to delete event: {str(e)}'}), 500
 
 @events_bp.route('/<int:event_id>/rsvp', methods=['POST'])
 @jwt_required()
@@ -651,17 +779,24 @@ def get_event(event_id):
     org_id = claims.get('organization_id')
     event = Event.query.filter_by(id=event_id, organization_id=org_id).first_or_404()
     
-    # Get total number of users in the organization
-    total_org_users = db.session.query(User).join(
+    # Method 1: Count via UserOrganization (modern approach)
+    modern_count = db.session.query(User).join(
         UserOrganization, 
         (User.id == UserOrganization.user_id) & 
         (UserOrganization.organization_id == org_id) & 
         (UserOrganization.is_active == True)
     ).count()
     
-    # If no users found in UserOrganization table, fall back to legacy organization_id field
-    if total_org_users == 0:
-        total_org_users = User.query.filter_by(organization_id=org_id).count()
+    # Method 2: Count via legacy User.organization_id
+    legacy_count = User.query.filter_by(organization_id=org_id).count()
+    
+    # Method 3: Count unique users who have RSVPs for this organization's events
+    rsvp_user_count = db.session.query(User.id).join(RSVP).join(Event).filter(
+        Event.organization_id == org_id
+    ).distinct().count()
+    
+    # Use the highest count that makes sense
+    total_org_users = max(modern_count, legacy_count, rsvp_user_count)
     
     def safe_get_time_field(event, field_name):
         """Safely get time field, handling missing columns"""
@@ -672,13 +807,37 @@ def get_event(event_id):
             # Column doesn't exist yet (before migration)
             return None
     
+    def format_timing_display(event):
+        """Format timing information for compact display"""
+        arrive_by = safe_get_time_field(event, 'arrive_by_time')
+        start_time = safe_get_time_field(event, 'start_time')
+        end_time = safe_get_time_field(event, 'end_time')
+        
+        timing_parts = []
+        if arrive_by:
+            timing_parts.append(f"Arrive: {arrive_by}")
+        if start_time:
+            timing_parts.append(f"Start: {start_time}")
+        if end_time:
+            timing_parts.append(f"End: {end_time}")
+        
+        if timing_parts:
+            return " | ".join(timing_parts)
+        
+        # Fallback to legacy time from date
+        if event.date:
+            return f"Time: {event.date.strftime('%H:%M')}"
+        
+        return None
+    
     def get_rsvp_stats(event_id):
-        """Get RSVP statistics for an event"""
+        """Get RSVP statistics for an event with detailed user information"""
         rsvps = RSVP.query.filter_by(event_id=event_id).all()
         rsvp_count = 0
         yes_count = 0
         no_count = 0
         maybe_count = 0
+        detailed_rsvps = []
         
         for rsvp in rsvps:
             user = User.query.get(rsvp.user_id)
@@ -699,6 +858,26 @@ def get_event(event_id):
                         no_count += 1
                     elif rsvp.status == 'Maybe':
                         maybe_count += 1
+                    
+                    # Get user's section (check both UserOrganization and legacy User field)
+                    section_name = "Unassigned"
+                    user_org = UserOrganization.query.filter_by(
+                        user_id=user.id, 
+                        organization_id=org_id, 
+                        is_active=True
+                    ).first()
+                    
+                    if user_org and user_org.section:
+                        section_name = user_org.section.name
+                    elif user.section:
+                        section_name = user.section.name
+                    
+                    detailed_rsvps.append({
+                        'user_id': user.id,
+                        'name': user.name or user.username,
+                        'status': rsvp.status,
+                        'section': section_name
+                    })
         
         return {
             'total_responses': rsvp_count,
@@ -706,7 +885,8 @@ def get_event(event_id):
             'yes_count': yes_count,
             'no_count': no_count,
             'maybe_count': maybe_count,
-            'no_response_count': total_org_users - rsvp_count
+            'no_response_count': total_org_users - rsvp_count,
+            'responses': detailed_rsvps
         }
     
     return jsonify({
@@ -721,6 +901,8 @@ def get_event(event_id):
         'end_time': safe_get_time_field(event, 'end_time'),
         # Legacy time field extracted from date for backward compatibility
         'time': event.date.strftime('%H:%M') if event.date else None,
+        # Combined timing display for better UI
+        'timing_display': format_timing_display(event),
         'location': event.location_address,  # For backward compatibility
         'location_address': event.location_address,
         'lat': event.location_lat,

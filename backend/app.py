@@ -329,18 +329,33 @@ app.register_blueprint(debug_bp, url_prefix='/api/debug')
 # JWT error handlers
 @jwt.unauthorized_loader
 def unauthorized_callback(callback):
-    print("JWT unauthorized error:", callback)
+    print(f"🚫 JWT UNAUTHORIZED ERROR: {callback}")
+    print(f"🚫 This usually means no Authorization header was provided")
     return {"msg": callback}, 401
 
 @jwt.invalid_token_loader
 def invalid_token_callback(callback):
-    print("JWT invalid token error:", callback)
+    print(f"🚫 JWT INVALID TOKEN ERROR: {callback}")
+    print(f"🚫 This usually means the token format is wrong or corrupted")
     return {"msg": callback}, 422
 
 @jwt.expired_token_loader
 def expired_token_callback(jwt_header, jwt_payload):
-    print("JWT expired token error")
+    print(f"🚫 JWT EXPIRED TOKEN ERROR")
+    print(f"🚫 Token payload: {jwt_payload}")
     return {"msg": "Token has expired"}, 401
+
+@jwt.needs_fresh_token_loader
+def needs_fresh_token_callback(jwt_header, jwt_payload):
+    print(f"🚫 JWT NEEDS FRESH TOKEN ERROR")
+    print(f"🚫 Token payload: {jwt_payload}")
+    return {"msg": "Fresh token required"}, 401
+
+@jwt.revoked_token_loader
+def revoked_token_callback(jwt_header, jwt_payload):
+    print(f"🚫 JWT REVOKED TOKEN ERROR")
+    print(f"🚫 Token payload: {jwt_payload}")
+    return {"msg": "Token has been revoked"}, 401
 
 # Health check endpoint for deployment
 @app.route('/health')
