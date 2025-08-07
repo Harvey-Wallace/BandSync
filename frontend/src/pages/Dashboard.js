@@ -177,20 +177,57 @@ function Dashboard() {
       users: []
     };
     
-    // Add all users to their respective sections
-    allUsers.forEach(user => {
-      const rsvpStatus = getUserRsvpStatus(user, eventId);
-      const userWithStatus = {
-        ...user,
-        rsvpStatus
-      };
-      
-      if (user.section_id) {
-        if (sectionGroups[user.section_id]) {
+    // Get RSVP data for this event
+    const eventRsvps = allRsvps[eventId] || { Yes: [], No: [], Maybe: [] };
+    
+    // Process all RSVP responses and organize by sections
+    Object.entries(eventRsvps).forEach(([status, users]) => {
+      users.forEach(user => {
+        const userWithStatus = {
+          ...user,
+          rsvpStatus: status
+        };
+        
+        // Use the section information from the RSVP data itself
+        if (user.section_id) {
+          // Find or create section group
+          if (!sectionGroups[user.section_id]) {
+            sectionGroups[user.section_id] = {
+              name: user.section_name || `Section ${user.section_id}`,
+              users: []
+            };
+          }
           sectionGroups[user.section_id].users.push(userWithStatus);
+        } else {
+          sectionGroups['unassigned'].users.push(userWithStatus);
         }
-      } else {
-        sectionGroups['unassigned'].users.push(userWithStatus);
+      });
+    });
+    
+    // Also add users who haven't responded yet
+    allUsers.forEach(user => {
+      // Check if this user already has an RSVP response
+      const hasResponse = Object.values(eventRsvps).some(statusUsers => 
+        statusUsers.some(rsvpUser => rsvpUser.username === user.username)
+      );
+      
+      if (!hasResponse) {
+        const userWithStatus = {
+          ...user,
+          rsvpStatus: null // No response
+        };
+        
+        if (user.section_id) {
+          if (!sectionGroups[user.section_id]) {
+            sectionGroups[user.section_id] = {
+              name: user.section_name || `Section ${user.section_id}`,
+              users: []
+            };
+          }
+          sectionGroups[user.section_id].users.push(userWithStatus);
+        } else {
+          sectionGroups['unassigned'].users.push(userWithStatus);
+        }
       }
     });
     
