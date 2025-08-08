@@ -93,7 +93,10 @@ function EventsPage() {
   }, [role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (role === 'Admin' && events.length) fetchRsvpSummary();
+    // Only fetch legacy RSVP summary if events don't have enhanced rsvp_stats
+    if (role === 'Admin' && events.length && events.some(event => !event.rsvp_stats)) {
+      fetchRsvpSummary();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [events, role]);
 
@@ -202,7 +205,8 @@ function EventsPage() {
         });
         setStatus({ ...status, [eventId]: rsvpStatus });
         showSuccessMessage(`RSVP set to ${rsvpStatus}`);
-        if (role === 'Admin') fetchRsvpSummary();
+        // Refresh events to get updated RSVP data
+        await fetchEvents();
       } else {
         // Offline: save RSVP locally
         const saved = await offlineManager.saveOfflineRSVP(eventId, userId, rsvpStatus);
@@ -226,9 +230,8 @@ function EventsPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       showSuccessMessage('Event created successfully');
-      fetchEvents();
       setShowForm(false);
-      if (role === 'Admin') fetchRsvpSummary();
+      await fetchEvents(); // This will refresh events with updated rsvp_stats
     } catch {
       showErrorMessage('Failed to create event');
     }
@@ -241,10 +244,9 @@ function EventsPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
       showSuccessMessage('Event updated successfully');
-      fetchEvents();
       setEditEvent(null);
       setShowForm(false);
-      if (role === 'Admin') fetchRsvpSummary();
+      await fetchEvents(); // This will refresh events with updated rsvp_stats
     } catch {
       showErrorMessage('Failed to update event');
     }
@@ -258,8 +260,7 @@ function EventsPage() {
           headers: { Authorization: `Bearer ${token}` }
         });
         showSuccessMessage('Event deleted successfully');
-        fetchEvents();
-        if (role === 'Admin') fetchRsvpSummary();
+        await fetchEvents(); // This will refresh events with updated rsvp_stats
       } catch {
         showErrorMessage('Failed to delete event');
       }
@@ -299,8 +300,7 @@ function EventsPage() {
       setSendCancellationNotification(true);
       
       // Refresh events
-      fetchEvents();
-      if (role === 'Admin') fetchRsvpSummary();
+      await fetchEvents(); // This will refresh events with updated rsvp_stats
       
     } catch (error) {
       const errorMessage = error.response?.data?.msg || 'Failed to cancel event';
@@ -940,30 +940,55 @@ function EventsPage() {
                           ) : (
                             <div className="small">
                               {/* Use enhanced responses data if available, otherwise fallback to rsvpSummary */}
-                              {event.rsvp_stats && event.rsvp_stats.responses ? (
-                                // Enhanced display with sections
+                              {event.rsvp_stats ? (
+                                // Enhanced display with privacy-aware logic
                                 <>
-                                  <div className="text-success">
-                                    <strong>Yes ({event.rsvp_stats.responses.filter(r => r.status === 'Yes').length}):</strong> 
-                                    {event.rsvp_stats.responses
-                                      .filter(r => r.status === 'Yes')
-                                      .map(user => `${user.name} (${user.section})`)
-                                      .join(', ') || 'None'}
+                                  {/* Always show summary counts */}
+                                  <div className="mb-2">
+                                    <span className="text-success me-3">
+                                      <strong>Yes: {event.rsvp_stats.yes_count}</strong>
+                                    </span>
+                                    <span className="text-danger me-3">
+                                      <strong>No: {event.rsvp_stats.no_count}</strong>
+                                    </span>
+                                    <span className="text-warning me-3">
+                                      <strong>Maybe: {event.rsvp_stats.maybe_count}</strong>
+                                    </span>
+                                    <span className="text-muted">
+                                      <strong>No Response: {event.rsvp_stats.no_response_count}</strong>
+                                    </span>
                                   </div>
-                                  <div className="text-danger">
-                                    <strong>No ({event.rsvp_stats.responses.filter(r => r.status === 'No').length}):</strong> 
-                                    {event.rsvp_stats.responses
-                                      .filter(r => r.status === 'No')
-                                      .map(user => `${user.name} (${user.section})`)
-                                      .join(', ') || 'None'}
-                                  </div>
-                                  <div className="text-warning">
-                                    <strong>Maybe ({event.rsvp_stats.responses.filter(r => r.status === 'Maybe').length}):</strong> 
-                                    {event.rsvp_stats.responses
-                                      .filter(r => r.status === 'Maybe')
-                                      .map(user => `${user.name} (${user.section})`)
-                                      .join(', ') || 'None'}
-                                  </div>
+                                  
+                                  {/* Show detailed responses only if user can view them */}
+                                  {event.rsvp_stats.can_view_details && event.rsvp_stats.responses ? (
+                                    <>
+                                      <div className="text-success">
+                                        <strong>Yes ({event.rsvp_stats.responses.filter(r => r.status === 'Yes').length}):</strong> 
+                                        {event.rsvp_stats.responses
+                                          .filter(r => r.status === 'Yes')
+                                          .map(user => `${user.name} (${user.section})`)
+                                          .join(', ') || 'None'}
+                                      </div>
+                                      <div className="text-danger">
+                                        <strong>No ({event.rsvp_stats.responses.filter(r => r.status === 'No').length}):</strong> 
+                                        {event.rsvp_stats.responses
+                                          .filter(r => r.status === 'No')
+                                          .map(user => `${user.name} (${user.section})`)
+                                          .join(', ') || 'None'}
+                                      </div>
+                                      <div className="text-warning">
+                                        <strong>Maybe ({event.rsvp_stats.responses.filter(r => r.status === 'Maybe').length}):</strong> 
+                                        {event.rsvp_stats.responses
+                                          .filter(r => r.status === 'Maybe')
+                                          .map(user => `${user.name} (${user.section})`)
+                                          .join(', ') || 'None'}
+                                      </div>
+                                    </>
+                                  ) : event.rsvp_stats.privacy_message ? (
+                                    <div className="text-muted small">
+                                      <em>{event.rsvp_stats.privacy_message}</em>
+                                    </div>
+                                  ) : null}
                                 </>
                               ) : rsvpSummary[event.id] ? (
                                 // Fallback to old format
