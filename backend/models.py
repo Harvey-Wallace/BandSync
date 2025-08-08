@@ -45,6 +45,9 @@ class Organization(db.Model):
     twitter_url = db.Column(db.String(255), nullable=True)
     tiktok_url = db.Column(db.String(255), nullable=True)
     
+    # RSVP visibility settings
+    members_can_view_rsvp_status = db.Column(db.Boolean, default=True)  # Controls if members can see other members' RSVP status
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships - specify foreign keys to avoid ambiguity

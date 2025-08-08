@@ -161,3 +161,87 @@ def debug_organization():
             }
     
     return jsonify(debug_info)
+
+@org_bp.route('/settings/rsvp-visibility', methods=['GET'])
+@jwt_required()
+def get_rsvp_visibility_setting():
+    """Get the RSVP visibility setting for the current organization"""
+    user_id = get_jwt_identity()
+    claims = get_jwt()
+    
+    # Get organization from JWT claims
+    org_id = claims.get('organization_id')
+    if not org_id:
+        user = User.query.get(user_id)
+        if user and user.current_organization_id:
+            org_id = user.current_organization_id
+        else:
+            return jsonify({'error': 'No current organization set'}), 404
+    
+    org = Organization.query.get(org_id)
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+    
+    # Get the setting value, defaulting to True if not set
+    members_can_view = getattr(org, 'members_can_view_rsvp_status', True)
+    
+    return jsonify({
+        'organization_id': org.id,
+        'organization_name': org.name,
+        'members_can_view_rsvp_status': members_can_view
+    })
+
+@org_bp.route('/settings/rsvp-visibility', methods=['PUT'])
+@jwt_required()
+def update_rsvp_visibility_setting():
+    """Update the RSVP visibility setting for the current organization (Admin only)"""
+    user_id = get_jwt_identity()
+    claims = get_jwt()
+    
+    # Check if user is Admin
+    user_role = claims.get('role', 'Member')
+    if user_role != 'Admin':
+        return jsonify({'error': 'Admin access required'}), 403
+    
+    # Get organization from JWT claims
+    org_id = claims.get('organization_id')
+    if not org_id:
+        user = User.query.get(user_id)
+        if user and user.current_organization_id:
+            org_id = user.current_organization_id
+        else:
+            return jsonify({'error': 'No current organization set'}), 404
+    
+    org = Organization.query.get(org_id)
+    if not org:
+        return jsonify({'error': 'Organization not found'}), 404
+    
+    # Get the new setting from request
+    data = request.get_json()
+    if not data or 'members_can_view_rsvp_status' not in data:
+        return jsonify({'error': 'members_can_view_rsvp_status is required'}), 400
+    
+    new_setting = data['members_can_view_rsvp_status']
+    if not isinstance(new_setting, bool):
+        return jsonify({'error': 'members_can_view_rsvp_status must be a boolean'}), 400
+    
+    try:
+        # Update the organization setting
+        org.members_can_view_rsvp_status = new_setting
+        db.session.commit()
+        
+        # Log the change
+        current_app.logger.info(f"Admin user {user_id} updated RSVP visibility setting for org {org_id} to {new_setting}")
+        
+        return jsonify({
+            'msg': 'RSVP visibility setting updated successfully',
+            'organization_id': org.id,
+            'organization_name': org.name,
+            'members_can_view_rsvp_status': new_setting,
+            'updated_by': user_id
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Failed to update RSVP visibility setting: {e}")
+        return jsonify({'error': 'Failed to update setting'}), 500

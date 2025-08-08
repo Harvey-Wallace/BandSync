@@ -51,6 +51,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend code
 COPY backend/ ./
 
+# Copy migration scripts and startup script
+COPY railway_rsvp_visibility_migration.py ./
+COPY add_rsvp_visibility_setting.py ./
+COPY railway_startup.sh ./
+
+# Make startup script executable
+RUN chmod +x railway_startup.sh
+
 # Clean the static directory before copying the new build
 RUN rm -rf /app/static
 # Copy built frontend - ensure clean copy
@@ -66,5 +74,5 @@ EXPOSE 5000
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:5000/health || exit 1
 
-# Run the application
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 4 --timeout 120 app:app"]
+# Run the application with migration via startup script
+CMD ["./railway_startup.sh"]

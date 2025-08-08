@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from models import Event, RSVP, EventCategory, User, UserOrganization, db
+from models import Event, RSVP, EventCategory, User, UserOrganization, Organization, db
 from datetime import datetime, timedelta
 import csv
 import io
@@ -127,6 +127,19 @@ def get_events():
         def get_rsvp_stats(event_id):
             """Get RSVP statistics for an event with detailed user information"""
             try:
+                from flask_jwt_extended import get_jwt_identity
+                
+                # Get organization privacy setting
+                org = Organization.query.get(org_id)
+                members_can_view_rsvp = getattr(org, 'members_can_view_rsvp_status', True) if org else True
+                
+                # Get current user's role
+                current_user_role = claims.get('role', 'Member')
+                current_user_id = get_jwt_identity()
+                
+                # Determine if user can see detailed RSVP information
+                can_see_details = (current_user_role == 'Admin') or members_can_view_rsvp
+                
                 rsvps = RSVP.query.filter_by(event_id=event_id).all()
                 rsvp_count = 0
                 yes_count = 0
@@ -154,35 +167,51 @@ def get_events():
                             elif rsvp.status == 'Maybe':
                                 maybe_count += 1
                             
-                            # Get user's section (check both UserOrganization and legacy User field)
-                            section_name = "Unassigned"
-                            user_org = UserOrganization.query.filter_by(
-                                user_id=user.id, 
-                                organization_id=org_id, 
-                                is_active=True
-                            ).first()
-                            
-                            if user_org and user_org.section:
-                                section_name = user_org.section.name
-                            elif user.section:
-                                section_name = user.section.name
-                            
-                            detailed_rsvps.append({
-                                'user_id': user.id,
-                                'name': user.name or user.username,
-                                'status': rsvp.status,
-                                'section': section_name
-                            })
+                            # Only include detailed RSVP info if user can see it or it's their own RSVP
+                            if can_see_details or str(user.id) == str(current_user_id):
+                                # Get user's section (check both UserOrganization and legacy User field)
+                                section_name = "Unassigned"
+                                user_org = UserOrganization.query.filter_by(
+                                    user_id=user.id, 
+                                    organization_id=org_id, 
+                                    is_active=True
+                                ).first()
+                                
+                                if user_org and user_org.section:
+                                    section_name = user_org.section.name
+                                elif user.section:
+                                    section_name = user.section.name
+                                
+                                detailed_rsvps.append({
+                                    'user_id': user.id,
+                                    'name': user.name or user.username,
+                                    'status': rsvp.status,
+                                    'section': section_name
+                                })
                 
-                return {
+                # Build response based on privacy settings
+                response = {
                     'total_responses': rsvp_count,
                     'total_users': total_org_users,
                     'yes_count': yes_count,
                     'no_count': no_count,
                     'maybe_count': maybe_count,
                     'no_response_count': total_org_users - rsvp_count,
-                    'responses': detailed_rsvps
+                    'can_view_details': can_see_details
                 }
+                
+                # Only include detailed responses if user can see them
+                if can_see_details:
+                    response['responses'] = detailed_rsvps
+                else:
+                    # For non-admin users when visibility is disabled, 
+                    # only show their own RSVP in the responses
+                    current_user_rsvp = [r for r in detailed_rsvps if str(r['user_id']) == str(current_user_id)]
+                    response['responses'] = current_user_rsvp
+                    response['privacy_message'] = "Individual RSVP details are private. Only totals and your own response are shown."
+                
+                return response
+                
             except Exception as e:
                 print(f"❌ Error getting RSVP stats for event {event_id}: {e}")
                 return {
@@ -191,7 +220,8 @@ def get_events():
                     'yes_count': 0,
                     'no_count': 0,
                     'maybe_count': 0,
-                    'no_response_count': total_org_users
+                    'no_response_count': total_org_users,
+                    'can_view_details': False
                 }
 
         print(f"🔍 Building event response data...")

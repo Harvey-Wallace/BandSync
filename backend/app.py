@@ -80,7 +80,7 @@ def auto_migrate_organization():
                 WHERE table_name = 'organization' 
                 AND column_name IN ('rehearsal_address', 'contact_phone', 'contact_email', 
                                   'website', 'facebook_url', 'instagram_url', 'twitter_url', 
-                                  'tiktok_url', 'created_at')
+                                  'tiktok_url', 'created_at', 'members_can_view_rsvp_status')
             """))
             
             existing = [row[0] for row in result.fetchall()]
@@ -95,7 +95,8 @@ def auto_migrate_organization():
                 ('instagram_url', 'VARCHAR(255)'),
                 ('twitter_url', 'VARCHAR(255)'),
                 ('tiktok_url', 'VARCHAR(255)'),
-                ('created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP')
+                ('created_at', 'TIMESTAMP DEFAULT CURRENT_TIMESTAMP'),
+                ('members_can_view_rsvp_status', 'BOOLEAN DEFAULT TRUE')
             ]
             
             # Add missing columns
