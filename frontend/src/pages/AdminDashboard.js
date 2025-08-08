@@ -98,6 +98,12 @@ function AdminDashboard() {
   // Calendar management state
   const [calendarStats, setCalendarStats] = useState({});
   const [calendarLoading, setCalendarLoading] = useState(false);
+  
+  // RSVP visibility state
+  const [rsvpVisibility, setRsvpVisibility] = useState({
+    members_can_view_rsvp_status: true,
+    loading: false
+  });
   const [calendarInfo, setCalendarInfo] = useState({});
 
   const API_BASE_URL = getApiUrl();
@@ -478,6 +484,72 @@ function AdminDashboard() {
     event.target.value = '';
   };
 
+  // RSVP Visibility Management Functions
+  const fetchRsvpVisibilitySetting = async () => {
+    setRsvpVisibility(prev => ({ ...prev, loading: true }));
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/organizations/settings/rsvp-visibility`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRsvpVisibility({
+          members_can_view_rsvp_status: data.members_can_view_rsvp_status,
+          loading: false
+        });
+      } else {
+        console.error('Failed to fetch RSVP visibility setting');
+        setRsvpVisibility(prev => ({ ...prev, loading: false }));
+      }
+    } catch (error) {
+      console.error('Error fetching RSVP visibility setting:', error);
+      setRsvpVisibility(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const updateRsvpVisibilitySetting = async (newSetting) => {
+    setRsvpVisibility(prev => ({ ...prev, loading: true }));
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/organizations/settings/rsvp-visibility`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ members_can_view_rsvp_status: newSetting })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setRsvpVisibility({
+          members_can_view_rsvp_status: data.members_can_view_rsvp_status,
+          loading: false
+        });
+        showSuccessMessage(`RSVP visibility ${newSetting ? 'enabled' : 'disabled'} successfully`);
+      } else {
+        const errorData = await response.json();
+        console.error('Failed to update RSVP visibility setting:', errorData);
+        showErrorMessage(`Failed to update RSVP visibility setting: ${errorData.error || 'Unknown error'}`);
+        setRsvpVisibility(prev => ({ ...prev, loading: false }));
+      }
+    } catch (error) {
+      console.error('Error updating RSVP visibility setting:', error);
+      showErrorMessage('Error updating RSVP visibility setting');
+      setRsvpVisibility(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const handleRsvpVisibilityToggle = () => {
+    const newSetting = !rsvpVisibility.members_can_view_rsvp_status;
+    updateRsvpVisibilitySetting(newSetting);
+  };
+
   const updateUserRole = async (userId, newRole) => {
     try {
       const token = localStorage.getItem('token');
@@ -777,6 +849,7 @@ function AdminDashboard() {
     fetchEmailLogs();
     fetchScheduledJobs();
     fetchCalendarStats();
+    fetchRsvpVisibilitySetting();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -1073,6 +1146,83 @@ function AdminDashboard() {
                       {orgLoading ? <LoadingSpinner /> : 'Save Changes'}
                     </button>
                   </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Privacy Settings Row */}
+        {activeTab === 'organization' && (
+          <div className="row mt-4">
+            <div className="col-md-6">
+              <div className="card border-primary">
+                <div className="card-header bg-primary text-white">
+                  <h5 className="mb-0">
+                    <i className="bi bi-shield-lock me-2"></i>🔒 Privacy Settings (DEBUG)
+                  </h5>
+                </div>
+                <div className="card-body">
+                  <div className="mb-3">
+                    <label className="form-label fw-bold">RSVP Visibility</label>
+                    <div className="form-text mb-3">
+                      Control whether regular members can see other members' RSVP responses to events.
+                    </div>
+                    
+                    <div className="form-check form-switch">
+                      <input
+                        className="form-check-input"
+                        type="checkbox"
+                        id="rsvpVisibilitySwitch"
+                        checked={rsvpVisibility.members_can_view_rsvp_status}
+                        onChange={handleRsvpVisibilityToggle}
+                        disabled={rsvpVisibility.loading}
+                      />
+                      <label className="form-check-label" htmlFor="rsvpVisibilitySwitch">
+                        Allow members to see other members' RSVP responses
+                      </label>
+                    </div>
+                    
+                    {rsvpVisibility.loading && (
+                      <div className="mt-2">
+                        <LoadingSpinner />
+                        <span className="ms-2 text-muted">Updating privacy setting...</span>
+                      </div>
+                    )}
+                    
+                    <div className="mt-3">
+                      <div className="alert alert-info">
+                        <i className="bi bi-info-circle me-2"></i>
+                        <strong>Privacy Behavior:</strong>
+                        <ul className="mb-0 mt-2">
+                          <li>
+                            <strong>Enabled:</strong> Members can see all RSVP responses with names and sections
+                          </li>
+                          <li>
+                            <strong>Disabled:</strong> Members only see totals (Yes/No/Maybe counts) and their own response
+                          </li>
+                          <li>
+                            <strong>Note:</strong> Admins always see full RSVP details regardless of this setting
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="col-md-6">
+              {/* Future privacy settings can go here */}
+              <div className="card">
+                <div className="card-header">
+                  <h5>
+                    <i className="bi bi-gear me-2"></i>Additional Settings
+                  </h5>
+                </div>
+                <div className="card-body">
+                  <p className="text-muted">
+                    Additional privacy and security settings will be available here in future updates.
+                  </p>
                 </div>
               </div>
             </div>
