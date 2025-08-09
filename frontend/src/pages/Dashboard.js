@@ -91,17 +91,23 @@ function Dashboard() {
               
               // Organize responses by status for backward compatibility
               const groupedResponses = { Yes: [], No: [], Maybe: [] };
-              event.rsvp_stats.responses.forEach(response => {
-                if (groupedResponses[response.status]) {
-                  groupedResponses[response.status].push({
-                    username: response.name,
-                    name: response.name,
-                    display_name: response.name,
-                    section_id: null,
-                    section_name: response.section || 'Unassigned'
-                  });
-                }
-              });
+              
+              // Ensure responses is an array before processing
+              if (Array.isArray(event.rsvp_stats.responses)) {
+                event.rsvp_stats.responses.forEach(response => {
+                  if (groupedResponses[response.status]) {
+                    groupedResponses[response.status].push({
+                      username: response.name,
+                      name: response.name,
+                      display_name: response.name,
+                      section_id: null,
+                      section_name: response.section || 'Unassigned'
+                    });
+                  }
+                });
+              } else {
+                console.warn(`[DEBUG] Event ${event.id} responses is not an array:`, event.rsvp_stats.responses);
+              }
               
               // Add privacy metadata - this contains the correct behavior
               groupedResponses._privacy = {
@@ -109,12 +115,16 @@ function Dashboard() {
                 privacy_message: event.rsvp_stats.privacy_message
               };
               
+              console.log(`[DEBUG] Event ${event.id} final groupedResponses:`, groupedResponses);
+              
               allRsvpMap[event.id] = groupedResponses;
             } else {
               // Fallback: make separate API call for events without rsvp_stats
               const res = await axios.get(`${apiUrl}/events/${event.id}/rsvps`, {
                 headers: { Authorization: `Bearer ${token}` }
               });
+              
+              console.log(`[DEBUG] Event ${event.id} fallback RSVP data:`, res.data);
               
               // Store all responses for this event
               allRsvpMap[event.id] = res.data;
@@ -220,6 +230,9 @@ function Dashboard() {
     const eventRsvps = allRsvps[eventId] || { Yes: [], No: [], Maybe: [] };
     
     for (const [status, users] of Object.entries(eventRsvps)) {
+      // Skip privacy metadata and ensure users is an array
+      if (!Array.isArray(users)) continue;
+      
       const hasResponse = users.some(u => 
         typeof u === 'object' ? u.username === user.username : u === user.username
       );
@@ -241,6 +254,8 @@ function Dashboard() {
   // Helper function to organize users by sections for RSVP display
   const organizeUsersBySection = (eventId) => {
     const eventRsvps = allRsvps[eventId] || { Yes: [], No: [], Maybe: [] };
+    
+    console.log(`[DEBUG] organizeUsersBySection for event ${eventId}:`, eventRsvps);
     
     // Check if user can view details based on privacy settings
     const privacyData = eventRsvps._privacy;
@@ -271,6 +286,12 @@ function Dashboard() {
       // Skip privacy metadata
       if (status === '_privacy') return;
       
+      // Ensure users is an array before processing
+      if (!Array.isArray(users)) {
+        console.warn(`Expected array for status ${status}, got:`, typeof users);
+        return;
+      }
+      
       users.forEach(user => {
         const userWithStatus = {
           ...user,
@@ -296,9 +317,11 @@ function Dashboard() {
     // Also add users who haven't responded yet
     allUsers.forEach(user => {
       // Check if this user already has an RSVP response
-      const hasResponse = Object.values(eventRsvps).some(statusUsers => 
-        statusUsers.some(rsvpUser => rsvpUser.username === user.username)
-      );
+      const hasResponse = Object.values(eventRsvps).some(statusUsers => {
+        // Skip privacy metadata and ensure statusUsers is an array
+        if (!Array.isArray(statusUsers)) return false;
+        return statusUsers.some(rsvpUser => rsvpUser.username === user.username);
+      });
       
       if (!hasResponse) {
         const userWithStatus = {
