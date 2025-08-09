@@ -115,16 +115,12 @@ function Dashboard() {
                 privacy_message: event.rsvp_stats.privacy_message
               };
               
-              console.log(`[DEBUG] Event ${event.id} final groupedResponses:`, groupedResponses);
-              
               allRsvpMap[event.id] = groupedResponses;
             } else {
               // Fallback: make separate API call for events without rsvp_stats
               const res = await axios.get(`${apiUrl}/events/${event.id}/rsvps`, {
                 headers: { Authorization: `Bearer ${token}` }
               });
-              
-              console.log(`[DEBUG] Event ${event.id} fallback RSVP data:`, res.data);
               
               // Store all responses for this event
               allRsvpMap[event.id] = res.data;
@@ -298,6 +294,8 @@ function Dashboard() {
           rsvpStatus: status
         };
         
+        console.log(`[DEBUG] Processing user ${user.name || user.username} with section_id: ${user.section_id}, section_name: ${user.section_name}`);
+        
         // Use the section information from the RSVP data itself
         if (user.section_id) {
           // Find or create section group
@@ -309,7 +307,32 @@ function Dashboard() {
           }
           sectionGroups[user.section_id].users.push(userWithStatus);
         } else {
-          sectionGroups['unassigned'].users.push(userWithStatus);
+          // If no section_id in RSVP data, try to find it from allUsers
+          const fullUserData = allUsers.find(u => 
+            u.username === user.username || 
+            u.name === user.name || 
+            u.username === user.name ||
+            u.name === user.username
+          );
+          
+          if (fullUserData && fullUserData.section_id) {
+            console.log(`[DEBUG] Found section for ${user.name || user.username} from allUsers: ${fullUserData.section_name}`);
+            if (!sectionGroups[fullUserData.section_id]) {
+              sectionGroups[fullUserData.section_id] = {
+                name: fullUserData.section_name || `Section ${fullUserData.section_id}`,
+                users: []
+              };
+            }
+            const enhancedUser = {
+              ...userWithStatus,
+              section_id: fullUserData.section_id,
+              section_name: fullUserData.section_name
+            };
+            sectionGroups[fullUserData.section_id].users.push(enhancedUser);
+          } else {
+            console.log(`[DEBUG] No section found for ${user.name || user.username}, adding to unassigned`);
+            sectionGroups['unassigned'].users.push(userWithStatus);
+          }
         }
       });
     });
@@ -320,7 +343,15 @@ function Dashboard() {
       const hasResponse = Object.values(eventRsvps).some(statusUsers => {
         // Skip privacy metadata and ensure statusUsers is an array
         if (!Array.isArray(statusUsers)) return false;
-        return statusUsers.some(rsvpUser => rsvpUser.username === user.username);
+        return statusUsers.some(rsvpUser => {
+          // Match by username, name, or display_name to be comprehensive
+          return rsvpUser.username === user.username || 
+                 rsvpUser.name === user.username ||
+                 rsvpUser.display_name === user.username ||
+                 rsvpUser.username === user.name ||
+                 rsvpUser.name === user.name ||
+                 rsvpUser.display_name === user.name;
+        });
       });
       
       if (!hasResponse) {
@@ -343,10 +374,26 @@ function Dashboard() {
       }
     });
     
-    // Remove empty sections
+    // Remove empty sections and deduplicate users within sections
     Object.keys(sectionGroups).forEach(key => {
       if (sectionGroups[key].users.length === 0) {
         delete sectionGroups[key];
+      } else {
+        // Deduplicate users in this section
+        const uniqueUsers = [];
+        const seenUsernames = new Set();
+        
+        sectionGroups[key].users.forEach(user => {
+          const userKey = user.username || user.name || user.display_name;
+          if (!seenUsernames.has(userKey)) {
+            seenUsernames.add(userKey);
+            uniqueUsers.push(user);
+          } else {
+            console.log(`[DEBUG] Removing duplicate user ${userKey} from section ${key}`);
+          }
+        });
+        
+        sectionGroups[key].users = uniqueUsers;
       }
     });
     
