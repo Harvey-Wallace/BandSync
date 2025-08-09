@@ -7,14 +7,26 @@ rsvps_bp = Blueprint('rsvps', __name__)
 @rsvps_bp.route('/<int:event_id>/rsvps', methods=['GET'])
 @jwt_required()
 def get_event_rsvps(event_id):
-    from flask_jwt_extended import get_jwt
+    from flask_jwt_extended import get_jwt, get_jwt_identity
     claims = get_jwt()
     org_id = claims.get('organization_id')
+    user_role = claims.get('role')
+    current_user_id = get_jwt_identity()
+    
     # Only allow access to RSVPs for events in the user's org
-    from models import Event
+    from models import Event, Organization
     event = Event.query.filter_by(id=event_id, organization_id=org_id).first()
     if not event:
         return jsonify({'msg': 'Not found'}), 404
+    
+    # Check organization privacy setting
+    org = Organization.query.get(org_id)
+    if not org:
+        return jsonify({'msg': 'Organization not found'}), 404
+    
+    # Determine if user can see detailed RSVP responses
+    can_see_details = (user_role == 'Admin') or getattr(org, 'members_can_view_rsvp_status', True)
+    
     rsvps = RSVP.query.filter_by(event_id=event_id).all()
     summary = {'Yes': [], 'No': [], 'Maybe': []}
     for r in rsvps:
@@ -25,6 +37,10 @@ def get_event_rsvps(event_id):
                          UserOrganization.query.filter_by(user_id=user.id, organization_id=org_id, is_active=True).first()
             
             if user_in_org:
+                # If user can't see details and this isn't their own RSVP, skip it
+                if not can_see_details and str(user.id) != str(current_user_id):
+                    continue
+                    
                 # Get section information - check UserOrganization first, then legacy User field
                 section_id = None
                 section_name = None
@@ -60,4 +76,12 @@ def get_event_rsvps(event_id):
                     status = 'No'  # Default fallback
                 
                 summary[status].append(user_info)
-    return jsonify(summary)
+    
+    # Add privacy metadata to response
+    result = summary.copy()
+    result['_privacy'] = {
+        'can_view_details': can_see_details,
+        'privacy_message': None if can_see_details else "Individual RSVP details are private. Only totals and your own response are shown."
+    }
+    
+    return jsonify(result)

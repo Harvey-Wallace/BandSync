@@ -74,32 +74,76 @@ function Dashboard() {
         const sortedEvents = resEvents.data.sort((a, b) => new Date(a.date) - new Date(b.date));
         setEvents(sortedEvents);
         
-        // Get user's RSVPs for all events and all member responses
+        // Get user's RSVP status from the new rsvp_stats format
         const rsvpMap = {};
         const allRsvpMap = {};
+        const username = localStorage.getItem('username');
+        
         for (const event of sortedEvents) {
           try {
-            const res = await axios.get(`${apiUrl}/events/${event.id}/rsvps`, {
-              headers: { Authorization: `Bearer ${token}` }
-            });
-            
-            // Store all responses for this event
-            allRsvpMap[event.id] = res.data;
-            
-            // Find the RSVP for the current user
-            const username = localStorage.getItem('username');
-            let status = null;
-            for (const [rsvpStatus, users] of Object.entries(res.data)) {
-              // Check if users array contains objects with username property
-              const hasUserRsvp = users.some(user => 
-                typeof user === 'object' ? user.username === username : user === username
+            // Use the rsvp_stats from events API which includes privacy logic
+            if (event.rsvp_stats && event.rsvp_stats.responses) {
+              // Find current user's RSVP status
+              const userRsvp = event.rsvp_stats.responses.find(response => 
+                response.name === username || response.username === username
               );
-              if (hasUserRsvp) status = rsvpStatus;
+              rsvpMap[event.id] = userRsvp ? userRsvp.status : null;
+              
+              // Organize responses by status for backward compatibility
+              const groupedResponses = { Yes: [], No: [], Maybe: [] };
+              event.rsvp_stats.responses.forEach(response => {
+                if (groupedResponses[response.status]) {
+                  groupedResponses[response.status].push({
+                    username: response.name,
+                    name: response.name,
+                    display_name: response.name,
+                    section_id: null,
+                    section_name: response.section || 'Unassigned'
+                  });
+                }
+              });
+              
+              // Add privacy metadata - this contains the correct behavior
+              groupedResponses._privacy = {
+                can_view_details: event.rsvp_stats.can_view_details,
+                privacy_message: event.rsvp_stats.privacy_message
+              };
+              
+              allRsvpMap[event.id] = groupedResponses;
+            } else {
+              // Fallback: make separate API call for events without rsvp_stats
+              const res = await axios.get(`${apiUrl}/events/${event.id}/rsvps`, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+              
+              // Store all responses for this event
+              allRsvpMap[event.id] = res.data;
+              
+              // Find the RSVP for the current user
+              let status = null;
+              for (const [rsvpStatus, users] of Object.entries(res.data)) {
+                // Skip privacy metadata
+                if (rsvpStatus === '_privacy') continue;
+                
+                // Check if users array contains objects with username property
+                const hasUserRsvp = users.some(user => 
+                  typeof user === 'object' ? user.username === username : user === username
+                );
+                if (hasUserRsvp) status = rsvpStatus;
+              }
+              rsvpMap[event.id] = status;
             }
-            rsvpMap[event.id] = status;
           } catch {
             rsvpMap[event.id] = null;
-            allRsvpMap[event.id] = { Yes: [], No: [], Maybe: [] };
+            allRsvpMap[event.id] = { 
+              Yes: [], 
+              No: [], 
+              Maybe: [],
+              _privacy: {
+                can_view_details: false,
+                privacy_message: "Unable to load RSVP data"
+              }
+            };
           }
         }
         setRsvps(rsvpMap);
@@ -126,11 +170,46 @@ function Dashboard() {
       setRsvps({ ...rsvps, [eventId]: capitalizedStatus });
       showSuccessMessage(`RSVP updated to "${capitalizedStatus}"`);
       
-      // Refresh the RSVP data to get updated member responses
-      const res = await axios.get(`${apiUrl}/events/${eventId}/rsvps`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setAllRsvps(prev => ({ ...prev, [eventId]: res.data }));
+      // Refresh the RSVP data - check if we have rsvp_stats or need to use legacy endpoint
+      const currentEvent = events.find(e => e.id === eventId);
+      if (currentEvent && currentEvent.rsvp_stats) {
+        // Refresh the entire events list to get updated rsvp_stats
+        const resEvents = await axios.get(`${apiUrl}/events/`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        const sortedEvents = resEvents.data.sort((a, b) => new Date(a.date) - new Date(b.date));
+        setEvents(sortedEvents);
+        
+        // Update RSVP data from the refreshed events
+        const updatedEvent = sortedEvents.find(e => e.id === eventId);
+        if (updatedEvent && updatedEvent.rsvp_stats && updatedEvent.rsvp_stats.responses) {
+          const groupedResponses = { Yes: [], No: [], Maybe: [] };
+          updatedEvent.rsvp_stats.responses.forEach(response => {
+            if (groupedResponses[response.status]) {
+              groupedResponses[response.status].push({
+                username: response.name,
+                name: response.name,
+                display_name: response.name,
+                section_id: null,
+                section_name: response.section || 'Unassigned'
+              });
+            }
+          });
+          
+          groupedResponses._privacy = {
+            can_view_details: updatedEvent.rsvp_stats.can_view_details,
+            privacy_message: updatedEvent.rsvp_stats.privacy_message
+          };
+          
+          setAllRsvps(prev => ({ ...prev, [eventId]: groupedResponses }));
+        }
+      } else {
+        // Fallback to legacy endpoint
+        const res = await axios.get(`${apiUrl}/events/${eventId}/rsvps`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setAllRsvps(prev => ({ ...prev, [eventId]: res.data }));
+      }
     } catch (error) {
       showErrorMessage('Failed to update RSVP');
     }
@@ -161,6 +240,16 @@ function Dashboard() {
 
   // Helper function to organize users by sections for RSVP display
   const organizeUsersBySection = (eventId) => {
+    const eventRsvps = allRsvps[eventId] || { Yes: [], No: [], Maybe: [] };
+    
+    // Check if user can view details based on privacy settings
+    const privacyData = eventRsvps._privacy;
+    
+    if (privacyData && !privacyData.can_view_details) {
+      // User cannot see detailed RSVP list, return empty sections
+      return {};
+    }
+    
     const sectionGroups = {};
     
     // Initialize section groups
@@ -177,11 +266,11 @@ function Dashboard() {
       users: []
     };
     
-    // Get RSVP data for this event
-    const eventRsvps = allRsvps[eventId] || { Yes: [], No: [], Maybe: [] };
-    
     // Process all RSVP responses and organize by sections
     Object.entries(eventRsvps).forEach(([status, users]) => {
+      // Skip privacy metadata
+      if (status === '_privacy') return;
+      
       users.forEach(user => {
         const userWithStatus = {
           ...user,
@@ -313,6 +402,7 @@ function Dashboard() {
   // Get RSVP stats from the new backend format (X of Y display)
   const getRsvpStats = (event) => {
     if (event.rsvp_stats) {
+      // Use the backend stats directly - these are always correct regardless of privacy settings
       return event.rsvp_stats;
     }
     // Fallback to old format if new stats not available
@@ -769,7 +859,34 @@ function Dashboard() {
                               <h6>Member Responses by Section</h6>
                               
                               {(() => {
+                                const eventRsvps = allRsvps[event.id] || { Yes: [], No: [], Maybe: [] };
+                                const privacyData = eventRsvps._privacy;
+                                
+                                // Check if user can view details
+                                if (privacyData && !privacyData.can_view_details) {
+                                  return (
+                                    <div className="alert alert-info">
+                                      <i className="bi bi-shield-lock me-2"></i>
+                                      <strong>Privacy Mode Active</strong>
+                                      <div className="small mt-1">
+                                        {privacyData.privacy_message}
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                
                                 const sectionGroups = organizeUsersBySection(event.id);
+                                
+                                // If no sections with users, show message
+                                if (Object.keys(sectionGroups).length === 0 || 
+                                    Object.values(sectionGroups).every(section => section.users.length === 0)) {
+                                  return (
+                                    <div className="text-muted fst-italic">
+                                      No RSVP responses yet
+                                    </div>
+                                  );
+                                }
+                                
                                 return Object.entries(sectionGroups).map(([sectionId, section]) => (
                                   <div key={sectionId} className="mb-4">
                                     <h6 className="text-primary border-bottom pb-1">

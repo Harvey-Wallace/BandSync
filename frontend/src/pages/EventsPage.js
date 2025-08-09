@@ -991,29 +991,55 @@ function EventsPage() {
                                   ) : null}
                                 </>
                               ) : rsvpSummary[event.id] ? (
-                                // Fallback to old format
+                                // Fallback to old format with privacy handling
                                 <>
-                                  <div className="text-success">
-                                    <strong>Yes ({rsvpSummary[event.id].yes?.length || 0}):</strong> 
-                                    {rsvpSummary[event.id].yes?.map(user => {
-                                      const section = user.section || 'Unassigned';
-                                      return `${user.name || user.username} (${section})`;
-                                    }).join(', ') || 'None'}
-                                  </div>
-                                  <div className="text-danger">
-                                    <strong>No ({rsvpSummary[event.id].no?.length || 0}):</strong> 
-                                    {rsvpSummary[event.id].no?.map(user => {
-                                      const section = user.section || 'Unassigned';
-                                      return `${user.name || user.username} (${section})`;
-                                    }).join(', ') || 'None'}
-                                  </div>
-                                  <div className="text-warning">
-                                    <strong>Maybe ({rsvpSummary[event.id].maybe?.length || 0}):</strong> 
-                                    {rsvpSummary[event.id].maybe?.map(user => {
-                                      const section = user.section || 'Unassigned';
-                                      return `${user.name || user.username} (${section})`;
-                                    }).join(', ') || 'None'}
-                                  </div>
+                                  {/* Check if this is privacy-filtered data */}
+                                  {rsvpSummary[event.id]._privacy && !rsvpSummary[event.id]._privacy.can_view_details ? (
+                                    <>
+                                      {/* Show only counts when privacy is enabled */}
+                                      <div className="mb-2">
+                                        <span className="text-success me-3">
+                                          <strong>Yes: {rsvpSummary[event.id].Yes?.length || 0}</strong>
+                                        </span>
+                                        <span className="text-danger me-3">
+                                          <strong>No: {rsvpSummary[event.id].No?.length || 0}</strong>
+                                        </span>
+                                        <span className="text-warning">
+                                          <strong>Maybe: {rsvpSummary[event.id].Maybe?.length || 0}</strong>
+                                        </span>
+                                      </div>
+                                      {rsvpSummary[event.id]._privacy.privacy_message && (
+                                        <div className="text-muted small">
+                                          <em>{rsvpSummary[event.id]._privacy.privacy_message}</em>
+                                        </div>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <>
+                                      {/* Show full details when privacy allows */}
+                                      <div className="text-success">
+                                        <strong>Yes ({rsvpSummary[event.id].yes?.length || rsvpSummary[event.id].Yes?.length || 0}):</strong> 
+                                        {(rsvpSummary[event.id].yes || rsvpSummary[event.id].Yes || []).map(user => {
+                                          const section = user.section_name || user.section || 'Unassigned';
+                                          return `${user.name || user.display_name || user.username} (${section})`;
+                                        }).join(', ') || 'None'}
+                                      </div>
+                                      <div className="text-danger">
+                                        <strong>No ({rsvpSummary[event.id].no?.length || rsvpSummary[event.id].No?.length || 0}):</strong> 
+                                        {(rsvpSummary[event.id].no || rsvpSummary[event.id].No || []).map(user => {
+                                          const section = user.section_name || user.section || 'Unassigned';
+                                          return `${user.name || user.display_name || user.username} (${section})`;
+                                        }).join(', ') || 'None'}
+                                      </div>
+                                      <div className="text-warning">
+                                        <strong>Maybe ({rsvpSummary[event.id].maybe?.length || rsvpSummary[event.id].Maybe?.length || 0}):</strong> 
+                                        {(rsvpSummary[event.id].maybe || rsvpSummary[event.id].Maybe || []).map(user => {
+                                          const section = user.section_name || user.section || 'Unassigned';
+                                          return `${user.name || user.display_name || user.username} (${section})`;
+                                        }).join(', ') || 'None'}
+                                      </div>
+                                    </>
+                                  )}
                                 </>
                               ) : (
                                 <p className="text-muted">No RSVP data available</p>
