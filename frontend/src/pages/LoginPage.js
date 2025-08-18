@@ -123,15 +123,30 @@ function LoginPage() {
     
     try {
       const apiUrl = getApiUrl();
-      await axios.post(`${apiUrl}/auth/magic-link-request`, {
+      console.log('Magic link debug info:', {
+        apiUrl,
+        email: magicLinkEmail,
+        fullUrl: `${apiUrl}/auth/magic-link-request`
+      });
+      
+      const response = await axios.post(`${apiUrl}/auth/magic-link-request`, {
         email: magicLinkEmail
       });
       
+      console.log('Magic link response:', response.data);
       setMagicLinkMessage('If an account with that email exists, a login link has been sent to your email.');
       setMagicLinkEmail('');
+      showSuccessMessage('Magic link request sent successfully!');
     } catch (err) {
       console.error('Magic link request error:', err);
+      console.error('Error details:', {
+        status: err.response?.status,
+        statusText: err.response?.statusText,
+        data: err.response?.data,
+        url: err.config?.url
+      });
       setError(err.response?.data?.msg || 'An error occurred. Please try again.');
+      showErrorMessage(err.response?.data?.msg || 'Failed to send magic link');
     } finally {
       setMagicLinkLoading(false);
     }
