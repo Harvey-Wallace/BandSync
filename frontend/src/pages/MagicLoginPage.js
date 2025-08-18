@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getApiUrl } from '../utils/api';
-import LoadingSpinner from '../components/LoadingSpinner';
+import { LoadingSpinner } from '../components/LoadingComponents';
 import NotificationSystem from '../components/NotificationSystem';
 
 function MagicLoginPage() {
@@ -99,8 +99,7 @@ function MagicLoginPage() {
                   <i className="bi bi-music-note me-2"></i>
                   Logging you in...
                 </h2>
-                <LoadingSpinner />
-                <p className="mt-3 text-muted">Please wait while we verify your login link.</p>
+                <LoadingSpinner text="Please wait while we verify your login link." />
               </div>
             </div>
           </div>
@@ -177,7 +176,12 @@ function MagicLoginPage() {
                 
                 <div className="d-grid">
                   <button className="btn btn-primary" type="submit" disabled={loading}>
-                    {loading ? <LoadingSpinner size="sm" /> : 'Continue'}
+                    {loading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Loading...
+                      </>
+                    ) : 'Continue'}
                   </button>
                 </div>
               </form>
