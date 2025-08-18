@@ -694,6 +694,7 @@ def magic_login():
         return jsonify({
             'access_token': access_token,
             'refresh_token': refresh_token,
+            'username': user.username,
             'role': selected_role,
             'organization_id': selected_org.id if selected_org else None,
             'organization': selected_org.name if selected_org else None,
@@ -752,6 +753,7 @@ def magic_login_org():
         return jsonify({
             'access_token': access_token,
             'refresh_token': refresh_token,
+            'username': user.username,
             'role': user_org.role,
             'organization_id': user_org.organization.id,
             'organization': user_org.organization.name,

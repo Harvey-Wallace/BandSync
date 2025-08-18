@@ -74,7 +74,7 @@ function MagicLoginPage() {
   const completeLogin = (loginData) => {
     localStorage.setItem('token', loginData.access_token);
     localStorage.setItem('refreshToken', loginData.refresh_token);
-    localStorage.setItem('username', 'magic-login-user'); // We don't have username from magic login
+    localStorage.setItem('username', loginData.username || 'Unknown User');
     localStorage.setItem('role', loginData.role);
     localStorage.setItem('super_admin', loginData.super_admin ? 'true' : 'false');
     
