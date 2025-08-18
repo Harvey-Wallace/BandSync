@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { getApiUrl } from '../utils/api';
+import { getApiUrl } from '../utils/apiUrl';
 import { LoadingSpinner } from '../components/LoadingComponents';
 import NotificationSystem from '../components/NotificationSystem';
 
