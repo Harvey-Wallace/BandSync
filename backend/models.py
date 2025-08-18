@@ -132,6 +132,10 @@ class User(db.Model):
     password_reset_token = db.Column(db.String(255), nullable=True)
     password_reset_expires = db.Column(db.DateTime, nullable=True)
     
+    # Magic link authentication
+    magic_link_token = db.Column(db.String(255), nullable=True)
+    magic_link_expires = db.Column(db.DateTime, nullable=True)
+    
     # Notification preferences
     notification_messages = db.Column(db.Boolean, default=True)
     notification_substitute_requests = db.Column(db.Boolean, default=True)
@@ -180,6 +184,36 @@ class User(db.Model):
         """Clear the password reset token after use"""
         self.password_reset_token = None
         self.password_reset_expires = None
+    
+    def generate_magic_link_token(self):
+        """Generate a magic link token that expires in 15 minutes"""
+        import secrets
+        from datetime import datetime, timedelta
+        
+        token = secrets.token_urlsafe(32)
+        self.magic_link_token = token
+        self.magic_link_expires = datetime.utcnow() + timedelta(minutes=15)  # Shorter expiry for security
+        return token
+    
+    def verify_magic_link_token(self, token):
+        """Verify if the magic link token is valid and not expired"""
+        from datetime import datetime
+        
+        if not self.magic_link_token or not self.magic_link_expires:
+            return False
+        
+        if self.magic_link_token != token:
+            return False
+        
+        if datetime.utcnow() > self.magic_link_expires:
+            return False
+        
+        return True
+    
+    def clear_magic_link_token(self):
+        """Clear the magic link token after use"""
+        self.magic_link_token = None
+        self.magic_link_expires = None
     
     def get_organizations(self):
         """Get all organizations this user belongs to"""

@@ -490,6 +490,279 @@ def password_reset_request():
         print(f"Password reset request error: {e}")
         return jsonify({'msg': 'An error occurred. Please try again later.'}), 500
 
+
+@auth_bp.route('/magic-link-request', methods=['POST'])
+def magic_link_request():
+    """Request a magic login link via email"""
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        
+        if not email:
+            return jsonify({'msg': 'Email is required'}), 400
+        
+        user = User.query.filter_by(email=email).first()
+        
+        # Always return success to prevent email enumeration
+        if user:
+            try:
+                # Check if magic link columns exist
+                if not hasattr(user, 'magic_link_token'):
+                    return jsonify({'msg': 'Magic link login temporarily unavailable. Please contact administrator.'}), 503
+                
+                # Generate magic link token
+                token = user.generate_magic_link_token()
+                db.session.commit()
+                
+                # Send magic link email
+                from services.email_service import EmailService
+                email_service = EmailService()
+                
+                if not email_service.client:
+                    return jsonify({'msg': 'Email service not configured. Please contact administrator.'}), 503
+                
+                base_url = os.getenv('BASE_URL', 'http://localhost:3000')
+                magic_url = f"{base_url}/magic-login?token={token}"
+                
+                # Get user's organization for context
+                org = user.current_organization or user.primary_organization or user.organization
+                org_name = org.name if org else 'BandSync'
+                
+                html_content = f"""
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; }}
+                        .container {{ max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ text-align: center; margin-bottom: 30px; }}
+                        .logo {{ font-size: 24px; font-weight: bold; color: #007bff; }}
+                        .content {{ background: #f8f9fa; padding: 30px; border-radius: 8px; }}
+                        .button {{ display: inline-block; padding: 12px 30px; background: #007bff; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }}
+                        .warning {{ color: #856404; background: #fff3cd; padding: 15px; border-radius: 5px; margin: 20px 0; }}
+                        .footer {{ text-align: center; margin-top: 30px; color: #666; font-size: 12px; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="header">
+                            <div class="logo">🎵 BandSync</div>
+                            <h1>Login to Your Account</h1>
+                        </div>
+                        
+                        <div class="content">
+                            <p>Hello <strong>{user.name or user.username}</strong>,</p>
+                            
+                            <p>You requested to log in to your BandSync account for <strong>{org_name}</strong>.</p>
+                            
+                            <p>Click the button below to securely log in to your account:</p>
+                            
+                            <div style="text-align: center;">
+                                <a href="{magic_url}" class="button">🚀 Log In to BandSync</a>
+                            </div>
+                            
+                            <p>Or copy and paste this link into your browser:</p>
+                            <p style="word-break: break-all; background: #e9ecef; padding: 10px; border-radius: 5px;">{magic_url}</p>
+                            
+                            <div class="warning">
+                                <strong>⚠️ Important:</strong>
+                                <ul>
+                                    <li>This link will expire in 15 minutes for security</li>
+                                    <li>If you didn't request this login, please ignore this email</li>
+                                    <li>For security, this link can only be used once</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="footer">
+                            <p>If you're having trouble with the link, you can try the traditional login with your password.</p>
+                            <p>This email was sent by BandSync for {org_name}.</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                
+                text_content = f"""
+                BandSync - Login Link
+                
+                Hello {user.name or user.username},
+                
+                You requested to log in to your BandSync account for {org_name}.
+                
+                Click this link to log in: {magic_url}
+                
+                Important:
+                - This link will expire in 15 minutes
+                - If you didn't request this login, please ignore this email
+                - For security, this link can only be used once
+                
+                If you're having trouble with the link, you can try the traditional login with your password.
+                
+                This email was sent by BandSync for {org_name}.
+                """
+                
+                success = email_service._send_email(
+                    to_emails=[user.email],
+                    subject=f"Secure Login Link - {org_name}",
+                    html_content=html_content,
+                    text_content=text_content
+                )
+                
+                if not success:
+                    print(f"Failed to send magic link email to {user.email}")
+                    
+            except Exception as e:
+                print(f"Error sending magic link email: {e}")
+                # Don't reveal the error to prevent information disclosure
+                pass
+        
+        return jsonify({'msg': 'If an account with that email exists, a login link has been sent.'})
+        
+    except Exception as e:
+        print(f"Magic link request error: {e}")
+        return jsonify({'msg': 'An error occurred. Please try again later.'}), 500
+
+
+@auth_bp.route('/magic-login', methods=['POST'])
+def magic_login():
+    """Log in using magic link token"""
+    try:
+        data = request.get_json()
+        token = data.get('token')
+        
+        if not token:
+            return jsonify({'msg': 'Login token is required'}), 400
+        
+        # Find user with this magic link token
+        user = User.query.filter_by(magic_link_token=token).first()
+        
+        if not user or not user.verify_magic_link_token(token):
+            return jsonify({'msg': 'Invalid or expired login link'}), 400
+        
+        # Clear the magic link token to prevent reuse
+        user.clear_magic_link_token()
+        db.session.commit()
+        
+        # Get user's organizations and handle the login process
+        from models import UserOrganization
+        user_orgs = UserOrganization.query.filter_by(user_id=user.id).all()
+        
+        if len(user_orgs) > 1:
+            # Multiple organizations - return list for user selection
+            return jsonify({
+                'multiple_organizations': True,
+                'organizations': [{
+                    'id': uo.organization.id,
+                    'name': uo.organization.name,
+                    'role': uo.role
+                } for uo in user_orgs if uo.is_active],
+                'user_id': user.id  # We'll need this for the second step
+            })
+        
+        # Single organization or no specific org
+        if user_orgs:
+            user_org = user_orgs[0]
+            selected_org = user_org.organization
+            selected_role = user_org.role
+            
+            # Update current organization
+            user.current_organization_id = user_org.organization_id
+            db.session.commit()
+        else:
+            # Fallback to legacy organization setup
+            org_id = user.primary_organization_id or user.organization_id
+            selected_org = Organization.query.get(org_id) if org_id else None
+            selected_role = user.role
+            
+            if selected_org:
+                user.current_organization_id = org_id
+                db.session.commit()
+        
+        # Create tokens with organization context
+        access_token = create_access_token(
+            identity=str(user.id),
+            additional_claims={
+                'role': selected_role,
+                'organization_id': selected_org.id if selected_org else None,
+                'organization': selected_org.name if selected_org else None,
+                'super_admin': getattr(user, 'super_admin', False),
+                'requires_password_change': False  # Magic links don't require password change
+            }
+        )
+        refresh_token = create_refresh_token(identity=str(user.id))
+        
+        return jsonify({
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'role': selected_role,
+            'organization_id': selected_org.id if selected_org else None,
+            'organization': selected_org.name if selected_org else None,
+            'super_admin': getattr(user, 'super_admin', False),
+            'requires_password_change': False
+        })
+        
+    except Exception as e:
+        print(f"Magic login error: {e}")
+        return jsonify({'msg': 'Login failed. Please try again.'}), 500
+
+
+@auth_bp.route('/magic-login-org', methods=['POST'])
+def magic_login_org():
+    """Complete magic login with organization selection"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        organization_id = data.get('organization_id')
+        
+        if not user_id or not organization_id:
+            return jsonify({'msg': 'User ID and organization ID are required'}), 400
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'msg': 'User not found'}), 404
+        
+        # Verify user has access to this organization
+        from models import UserOrganization
+        user_org = UserOrganization.query.filter_by(
+            user_id=user_id, 
+            organization_id=organization_id, 
+            is_active=True
+        ).first()
+        
+        if not user_org:
+            return jsonify({'msg': 'Access denied to this organization'}), 403
+        
+        # Update current organization
+        user.current_organization_id = organization_id
+        db.session.commit()
+        
+        # Create tokens
+        access_token = create_access_token(
+            identity=str(user.id),
+            additional_claims={
+                'role': user_org.role,
+                'organization_id': user_org.organization.id,
+                'organization': user_org.organization.name,
+                'super_admin': getattr(user, 'super_admin', False),
+                'requires_password_change': False
+            }
+        )
+        refresh_token = create_refresh_token(identity=str(user.id))
+        
+        return jsonify({
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'role': user_org.role,
+            'organization_id': user_org.organization.id,
+            'organization': user_org.organization.name,
+            'super_admin': getattr(user, 'super_admin', False),
+            'requires_password_change': False
+        })
+        
+    except Exception as e:
+        print(f"Magic login org selection error: {e}")
+        return jsonify({'msg': 'Organization selection failed. Please try again.'}), 500
+
 @auth_bp.route('/password-reset', methods=['POST'])
 def password_reset():
     """Reset password using token"""

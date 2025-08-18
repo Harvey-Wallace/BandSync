@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PasswordResetPage from './pages/PasswordResetPage';
 import ChangePasswordPage from './pages/ChangePasswordPage';
+import MagicLoginPage from './pages/MagicLoginPage';
 import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import SuperAdminPage from './pages/SuperAdminPage';
@@ -57,6 +58,7 @@ function App() {
                     <Route path="/register" element={<RegisterPage />} />
                     <Route path="/reset-password" element={<PasswordResetPage />} />
                     <Route path="/change-password" element={<ChangePasswordPage />} />
+                    <Route path="/magic-login" element={<MagicLoginPage />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/admin" element={<AdminDashboard />} />
                     <Route path="/super-admin" element={<SuperAdminPage />} />
@@ -91,6 +93,7 @@ function App() {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/reset-password" element={<PasswordResetPage />} />
               <Route path="/change-password" element={<ChangePasswordPage />} />
+              <Route path="/magic-login" element={<MagicLoginPage />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/super-admin" element={<SuperAdminPage />} />
