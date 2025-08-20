@@ -191,10 +191,11 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-vh-100 d-flex align-items-center" style={{
+    <div className="vh-100 d-flex align-items-center justify-content-center" style={{
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       position: 'relative',
-      overflow: 'hidden'
+      overflow: 'hidden',
+      padding: '20px 0'
     }}>
       {/* Background Pattern */}
       <div style={{
@@ -207,31 +208,33 @@ function LoginPage() {
         opacity: 0.3
       }} />
       
-      <div className="container">
+      <div className="container-fluid">
         <div className="row justify-content-center">
-          <div className="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+          <div className="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5 col-xxl-4">
             <div className="card border-0 shadow-lg" style={{
               borderRadius: '20px',
               backdropFilter: 'blur(10px)',
-              background: 'rgba(255, 255, 255, 0.95)'
+              background: 'rgba(255, 255, 255, 0.95)',
+              maxHeight: '90vh',
+              overflow: 'auto'
             }}>
-              <div className="card-body p-4 p-md-5">
+              <div className="card-body p-3 p-md-4">
                 {/* Header */}
-                <div className="text-center mb-4">
-                  <div className="mb-3">
+                <div className="text-center mb-3">
+                  <div className="mb-2">
                     <div className="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary text-white" style={{
-                      width: '80px',
-                      height: '80px',
-                      fontSize: '2rem'
+                      width: '60px',
+                      height: '60px',
+                      fontSize: '1.5rem'
                     }}>
                       <i className="bi bi-music-note-beamed"></i>
                     </div>
                   </div>
-                  <h1 className="h3 fw-bold text-dark mb-2">
+                  <h1 className="h4 fw-bold text-dark mb-1">
                     {showPasswordReset ? 'Reset Password' : 
                      showMagicLink ? 'Magic Link Login' : 'Welcome to BandSync'}
                   </h1>
-                  <p className="text-muted mb-0">
+                  <p className="text-muted mb-0 small">
                     {showPasswordReset ? 'Enter your email to reset your password' : 
                      showMagicLink ? 'Get a secure login link sent to your email' : 
                      'Sign in to manage your band activities'}
@@ -240,7 +243,7 @@ function LoginPage() {
               
                 {showMagicLink ? (
                   <form onSubmit={handleMagicLinkRequest}>
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <label className="form-label fw-semibold text-dark">Email Address</label>
                       <div className="input-group">
                         <span className="input-group-text bg-light border-end-0">
@@ -257,18 +260,18 @@ function LoginPage() {
                           style={{ 
                             borderRadius: '0 10px 10px 0',
                             fontSize: '1rem',
-                            padding: '12px 16px'
+                            padding: '10px 14px'
                           }}
                         />
                       </div>
-                      <div className="form-text text-muted mt-2">
+                      <div className="form-text text-muted mt-1 small">
                         <i className="bi bi-info-circle me-1"></i>
                         We'll send a secure login link to this email address
                       </div>
                     </div>
                     
                     {error && (
-                      <div className="alert alert-danger border-0 rounded-3 mb-4" style={{
+                      <div className="alert alert-danger border-0 rounded-3 mb-3 py-2" style={{
                         background: 'linear-gradient(135deg, #ff6b6b, #ee5a5a)',
                         color: 'white'
                       }}>
@@ -278,7 +281,7 @@ function LoginPage() {
                     )}
                     
                     {magicLinkMessage && (
-                      <div className="alert alert-success border-0 rounded-3 mb-4" style={{
+                      <div className="alert alert-success border-0 rounded-3 mb-3 py-2" style={{
                         background: 'linear-gradient(135deg, #51cf66, #40c057)',
                         color: 'white'
                       }}>
@@ -287,7 +290,7 @@ function LoginPage() {
                       </div>
                     )}
                     
-                    <div className="d-grid gap-3">
+                    <div className="d-grid gap-2">
                       <button 
                         className="btn btn-primary btn-lg fw-semibold" 
                         type="submit" 
@@ -296,8 +299,8 @@ function LoginPage() {
                           borderRadius: '12px',
                           background: 'linear-gradient(135deg, #667eea, #764ba2)',
                           border: 'none',
-                          padding: '12px',
-                          fontSize: '1.1rem'
+                          padding: '10px',
+                          fontSize: '1rem'
                         }}
                       >
                         {magicLinkLoading ? (
@@ -313,12 +316,12 @@ function LoginPage() {
                       </button>
                       <button 
                         type="button" 
-                        className="btn btn-outline-secondary btn-lg" 
+                        className="btn btn-outline-secondary" 
                         onClick={handleBackToLogin}
                         disabled={magicLinkLoading}
                         style={{
                           borderRadius: '12px',
-                          padding: '12px'
+                          padding: '8px'
                         }}
                       >
                         <i className="bi bi-arrow-left me-2"></i>
@@ -416,7 +419,7 @@ function LoginPage() {
                   </form>
                 ) : !multipleOrgs ? (
                   <form onSubmit={handleSubmit}>
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <label className="form-label fw-semibold text-dark">Username or Email</label>
                       <div className="input-group">
                         <span className="input-group-text bg-light border-end-0">
@@ -432,17 +435,17 @@ function LoginPage() {
                           style={{ 
                             borderRadius: '0 10px 10px 0',
                             fontSize: '1rem',
-                            padding: '12px 16px'
+                            padding: '10px 14px'
                           }}
                         />
                       </div>
-                      <div className="form-text text-muted mt-2">
+                      <div className="form-text text-muted mt-1 small">
                         <i className="bi bi-info-circle me-1"></i>
                         You can use either your username or email address
                       </div>
                     </div>
                     
-                    <div className="mb-4">
+                    <div className="mb-3">
                       <label className="form-label fw-semibold text-dark">Password</label>
                       <div className="input-group">
                         <span className="input-group-text bg-light border-end-0">
@@ -459,14 +462,14 @@ function LoginPage() {
                           style={{ 
                             borderRadius: '0 10px 10px 0',
                             fontSize: '1rem',
-                            padding: '12px 16px'
+                            padding: '10px 14px'
                           }}
                         />
                       </div>
                     </div>
                     
                     {error && (
-                      <div className="alert alert-danger border-0 rounded-3 mb-4" style={{
+                      <div className="alert alert-danger border-0 rounded-3 mb-3 py-2" style={{
                         background: 'linear-gradient(135deg, #ff6b6b, #ee5a5a)',
                         color: 'white'
                       }}>
@@ -475,7 +478,7 @@ function LoginPage() {
                       </div>
                     )}
                     
-                    <div className="d-grid mb-4">
+                    <div className="d-grid mb-3">
                       <button 
                         className="btn btn-primary btn-lg fw-semibold" 
                         type="submit" 
@@ -484,8 +487,8 @@ function LoginPage() {
                           borderRadius: '12px',
                           background: 'linear-gradient(135deg, #667eea, #764ba2)',
                           border: 'none',
-                          padding: '12px',
-                          fontSize: '1.1rem'
+                          padding: '10px',
+                          fontSize: '1rem'
                         }}
                       >
                         {loading ? (
@@ -592,10 +595,10 @@ function LoginPage() {
                 )}
                 
                 {/* Footer Links */}
-                <div className="text-center mt-4 pt-4 border-top">
-                  <div className="mb-3">
-                    <span className="text-muted">Don't have an account? </span>
-                    <a href="/register" className="text-decoration-none fw-semibold" style={{
+                <div className="text-center mt-3 pt-3 border-top">
+                  <div className="mb-2">
+                    <span className="text-muted small">Don't have an account? </span>
+                    <a href="/register" className="text-decoration-none fw-semibold small" style={{
                       color: '#667eea'
                     }}>
                       Create Account
@@ -603,20 +606,20 @@ function LoginPage() {
                   </div>
                   
                   {!showPasswordReset && !showMagicLink && (
-                    <div className="d-flex flex-column flex-sm-row gap-3 justify-content-center align-items-center">
+                    <div className="d-flex flex-column flex-sm-row gap-2 justify-content-center align-items-center">
                       <button 
                         type="button" 
-                        className="btn btn-link p-0 text-decoration-none fw-semibold" 
+                        className="btn btn-link p-0 text-decoration-none fw-semibold small" 
                         onClick={handleShowPasswordReset}
                         style={{ color: '#667eea' }}
                       >
                         <i className="bi bi-key me-1"></i>
                         Forgot Password?
                       </button>
-                      <span className="text-muted d-none d-sm-inline">•</span>
+                      <span className="text-muted d-none d-sm-inline small">•</span>
                       <button 
                         type="button" 
-                        className="btn btn-link p-0 text-decoration-none fw-semibold" 
+                        className="btn btn-link p-0 text-decoration-none fw-semibold small" 
                         onClick={handleShowMagicLink}
                         style={{ color: '#667eea' }}
                       >
@@ -629,36 +632,32 @@ function LoginPage() {
               </div>
             </div>
             
-            {/* Footer */}
-            <div className="text-center mt-4">
-              <p className="text-white-50 mb-2">
+            {/* Compact Footer */}
+            <div className="text-center mt-3">
+              <p className="text-white-50 mb-1 small">
                 <i className="bi bi-shield-check me-1"></i>
                 Secure • Reliable • Easy to Use
               </p>
               
               {/* Copyright Footer */}
-              <div className="text-center mt-3 pt-3" style={{
-                borderTop: '1px solid rgba(255, 255, 255, 0.1)'
-              }}>
-                <p className="text-white-50 mb-0" style={{ fontSize: '0.85rem' }}>
-                  © {new Date().getFullYear()} BandSync. Powered by{' '}
-                  <a 
-                    href="https://Harvey-Wallace.co.uk" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-decoration-none"
-                    style={{ 
-                      color: '#c3dafe',
-                      fontWeight: '500',
-                      transition: 'color 0.2s ease'
-                    }}
-                    onMouseEnter={(e) => e.target.style.color = '#ffffff'}
-                    onMouseLeave={(e) => e.target.style.color = '#c3dafe'}
-                  >
-                    Harvey-Wallace
-                  </a>
-                </p>
-              </div>
+              <p className="text-white-50 mb-0" style={{ fontSize: '0.75rem' }}>
+                © {new Date().getFullYear()} BandSync. Powered by{' '}
+                <a 
+                  href="https://Harvey-Wallace.co.uk" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-decoration-none"
+                  style={{ 
+                    color: '#c3dafe',
+                    fontWeight: '500',
+                    transition: 'color 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = '#ffffff'}
+                  onMouseLeave={(e) => e.target.style.color = '#c3dafe'}
+                >
+                  Harvey-Wallace
+                </a>
+              </p>
             </div>
           </div>
         </div>
