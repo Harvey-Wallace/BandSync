@@ -6,7 +6,9 @@ import {
   LoadingSpinner, 
   DataLoadingState, 
   ErrorState, 
-  EmptyState 
+  EmptyState,
+  LoadingDots,
+  PageLoadingState
 } from '../components/LoadingComponents';
 import { 
   ResponsiveStatsGrid, 
@@ -507,7 +509,12 @@ function Dashboard() {
         <Navbar />
         <NotificationSystem />
         <div className="container-fluid mt-4 px-3">
-          <DataLoadingState type="skeleton" message="Loading your events..." />
+          <DataLoadingState 
+            type="skeleton" 
+            message="Loading your events..." 
+            animated={true}
+            className="fade-in"
+          />
         </div>
       </>
     );
@@ -521,7 +528,8 @@ function Dashboard() {
         <div className="container-fluid mt-4 px-3">
           <ErrorState 
             message={error} 
-            onRetry={() => window.location.reload()} 
+            onRetry={() => window.location.reload()}
+            animated={true}
           />
         </div>
       </>
@@ -532,7 +540,7 @@ function Dashboard() {
     <>
       <Navbar />
       <NotificationSystem />
-      <div className="container-fluid mt-4 px-3">
+      <div className="container-fluid mt-4 px-3 stagger-container">
         <ResponsiveActionBar
           title="My Events"
           subtitle="Manage your event attendance and stay updated"
@@ -590,28 +598,28 @@ function Dashboard() {
               icon: role === 'Admin' ? 'shield-check' : 'person-check'
             }
           ]}
-          className="mb-4"
-        />
+          className="mb-4 stagger-item"
+        />`
 
         {/* Quick Actions */}
-        <div className="card card-enhanced mb-4">
+        <div className="card card-enhanced mb-4 stagger-item">
           <div className="card-body">
             <h6 className="card-title mb-3">
               <i className="bi bi-lightning me-2"></i>
               Quick Actions
             </h6>
             <div className="d-flex flex-column flex-md-row gap-2">
-              <a href="/messaging" className="btn btn-outline-primary flex-fill mb-2 mb-md-0">
+              <a href="/messaging" className="btn btn-outline-primary flex-fill mb-2 mb-md-0 hover-scale-sm transition-all duration-200">
                 <i className="bi bi-chat-dots me-1"></i>Messages
               </a>
-              <a href="/substitution" className="btn btn-outline-success flex-fill mb-2 mb-md-0">
+              <a href="/substitution" className="btn btn-outline-success flex-fill mb-2 mb-md-0 hover-scale-sm transition-all duration-200">
                 <i className="bi bi-person-plus me-1"></i>Find Substitute
               </a>
-              <a href="/polls" className="btn btn-outline-info flex-fill mb-2 mb-md-0">
+              <a href="/polls" className="btn btn-outline-info flex-fill mb-2 mb-md-0 hover-scale-sm transition-all duration-200">
                 <i className="bi bi-bar-chart me-1"></i>Quick Polls
               </a>
               {(role === 'Admin' || localStorage.getItem('super_admin') === 'true') && (
-                <a href="/admin" className="btn btn-outline-warning flex-fill mb-2 mb-md-0">
+                <a href="/admin" className="btn btn-outline-warning flex-fill mb-2 mb-md-0 hover-scale-sm transition-all duration-200">
                   <i className="bi bi-gear me-1"></i>Admin Panel
                 </a>
               )}
@@ -620,7 +628,7 @@ function Dashboard() {
         </div>
 
         {/* Events List */}
-        <div className="row">
+        <div className="row stagger-item">
           {filteredEvents.length === 0 ? (
             <div className="col-12">
               <EmptyState
@@ -640,15 +648,19 @@ function Dashboard() {
               />
             </div>
           ) : (
-            filteredEvents.map(event => {
+            filteredEvents.map((event, index) => {
               const isUpcoming = isEventUpcoming(event.date);
               const eventRsvp = rsvps[event.id];
               const rsvpSummary = getRsvpSummary(event.id) || { yes: [], no: [], maybe: [], total: 0 };
               const isExpanded = expandedEvents[event.id];
               
               return (
-                <div key={event.id} className="col-12 mb-3">
-                  <div className={`card shadow-sm event-card-compact ${!isUpcoming ? 'border-muted event-past' : 'event-upcoming'}`}>
+                <div 
+                  key={event.id} 
+                  className="col-12 mb-3 stagger-item"
+                  style={{ animationDelay: `${index * 0.1}s` }}
+                >
+                  <div className={`card card-enhanced hover-lift transition-all duration-300 ${!isUpcoming ? 'border-muted event-past' : 'event-upcoming'}`}>
                     {/* Collapsed View - Always Visible */}
                     <div className="card-header d-flex justify-content-between align-items-center py-2">
                       <div className="d-flex align-items-center flex-grow-1">
@@ -718,7 +730,7 @@ function Dashboard() {
                                 <button
                                   key={option}
                                   type="button"
-                                  className={`btn btn-sm ${eventRsvp === capitalizedOption ? 
+                                  className={`btn btn-sm transition-all duration-200 hover-scale-sm ${eventRsvp === capitalizedOption ? 
                                     (option === 'yes' ? 'btn-success' : 
                                      option === 'no' ? 'btn-danger' : 'btn-warning') :
                                     'btn-outline-secondary'
@@ -729,7 +741,7 @@ function Dashboard() {
                                   <i className={`bi bi-${
                                     option === 'yes' ? 'check' :
                                     option === 'no' ? 'x' : 'question'
-                                  }-circle`}></i>
+                                  }-circle transition-transform duration-200`}></i>
                                 </button>
                               );
                             })}
@@ -737,17 +749,17 @@ function Dashboard() {
                         )}
                         
                         <button
-                          className="btn btn-sm btn-outline-secondary"
+                          className="btn btn-sm btn-outline-secondary hover-scale-sm transition-all duration-200"
                           onClick={() => toggleEventExpansion(event.id)}
                         >
-                          <i className={`bi bi-${isExpanded ? 'dash' : 'plus'}`}></i>
+                          <i className={`bi bi-${isExpanded ? 'dash' : 'plus'} transition-transform duration-300`}></i>
                         </button>
                       </div>
                     </div>
 
                     {/* Expanded View - Only When Expanded */}
                     {isExpanded && (
-                      <div className="card-body event-card-expanded">
+                      <div className="card-body event-card-expanded slide-in-left">
                         <div className="row">
                           {/* Left Column - Event Details */}
                           <div className="col-md-6">
