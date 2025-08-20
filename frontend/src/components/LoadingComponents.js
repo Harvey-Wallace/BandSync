@@ -244,6 +244,99 @@ export const LoadingBar = ({
     </div>
   );
 };
+
+// Error State Component with enhanced animations
+export const ErrorState = ({ 
+  message = 'Something went wrong', 
+  onRetry = null, 
+  className = '',
+  animated = true
+}) => {
+  return (
+    <div className={`error-container ${animated ? 'fade-in' : ''} ${className}`}>
+      <div className="error-icon">
+        <i className="bi bi-exclamation-triangle"></i>
+      </div>
+      <div className="error-message">{message}</div>
+      {onRetry && (
+        <button className="btn btn-primary btn-enhanced hover-scale-sm transition-all duration-200" onClick={onRetry}>
+          <i className="bi bi-arrow-clockwise me-2"></i>
+          Try Again
+        </button>
+      )}
+    </div>
+  );
+};
+
+// Enhanced Empty State Component
+export const EmptyState = ({ 
+  icon = 'inbox', 
+  title = 'No data available', 
+  description = 'There is no data to display at the moment.',
+  action = null,
+  className = '',
+  animated = true
+}) => {
+  return (
+    <div className={`text-center py-5 ${animated ? 'fade-in' : ''} ${className}`}>
+      <div className="mb-3">
+        <i 
+          className={`bi bi-${icon} loading-pulse`} 
+          style={{ fontSize: '3rem', color: '#6c757d' }}
+        ></i>
+      </div>
+      <h5 className="text-muted">{title}</h5>
+      <p className="text-muted">{description}</p>
+      {action && (
+        <div className="mt-3">
+          {typeof action === 'object' && action.label && action.onClick ? (
+            <button 
+              className={`btn ${action.variant || 'btn-primary'} hover-scale-sm transition-all duration-200`}
+              onClick={action.onClick}
+            >
+              {action.icon && <i className={`bi bi-${action.icon} me-1`}></i>}
+              {action.label}
+            </button>
+          ) : (
+            React.isValidElement(action) ? action : null
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Enhanced Success State Component
+export const SuccessState = ({ 
+  message = 'Operation completed successfully!', 
+  action = null,
+  className = '',
+  animated = true
+}) => {
+  return (
+    <div className={`success-container ${animated ? 'scale-in' : ''} ${className}`}>
+      <div className="success-icon">
+        <i className="bi bi-check-circle"></i>
+      </div>
+      <div className="success-message">{message}</div>
+      {action && (
+        <div className="mt-3">
+          {typeof action === 'object' && action.label && action.onClick ? (
+            <button 
+              className={`btn ${action.variant || 'btn-primary'} hover-scale-sm transition-all duration-200`}
+              onClick={action.onClick}
+            >
+              {action.icon && <i className={`bi bi-${action.icon} me-1`}></i>}
+              {action.label}
+            </button>
+          ) : (
+            React.isValidElement(action) ? action : null
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 export default {
   LoadingSpinner,
   LoadingDots,

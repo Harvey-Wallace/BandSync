@@ -1,18 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import NotificationSystem from '../components/NotificationSystem';
 import { 
-  LoadingSpinner, 
   DataLoadingState, 
   ErrorState, 
-  EmptyState,
-  LoadingDots,
-  PageLoadingState
+  EmptyState 
 } from '../components/LoadingComponents';
 import { 
-  ResponsiveStatsGrid, 
-  ResponsiveCardGrid,
+  ResponsiveStatsGrid,
   ResponsiveActionBar
 } from '../components/ResponsiveComponents';
 import UserAvatar from '../components/UserAvatar';
