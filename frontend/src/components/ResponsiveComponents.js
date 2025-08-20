@@ -39,30 +39,30 @@ export const ResponsiveCardGrid = ({ children, className = '' }) => {
 // Mobile-responsive stats grid
 export const ResponsiveStatsGrid = ({ stats = [], className = '' }) => {
   return (
-    <div className={`row ${className}`}>
+    <div className={`row g-4 ${className}`}>
       {stats.filter(stat => 
         stat && typeof stat === 'object' && stat.label
       ).map((stat, index) => (
-        <div key={index} className="col-6 col-md-3 mb-3">
-          <div className="card card-stats stats-card-mobile text-center hover-lift">
-            <div className="card-body">
-              <h6 className="card-title text-white-50">
-                {typeof stat.label === 'string' ? stat.label : JSON.stringify(stat.label)}
-              </h6>
-              <h4 className="text-white">
+        <div key={index} className="col-6 col-lg-3 stagger-item">
+          <div className="card card-stats hover-lift">
+            <div className="card-body text-center">
+              {stat.icon && (
+                <div className="stats-icon">
+                  <i className={`bi bi-${stat.icon}`}></i>
+                </div>
+              )}
+              <h4 className="mb-2">
                 {typeof stat.value === 'string' || typeof stat.value === 'number' ? 
                   stat.value : 
                   JSON.stringify(stat.value)
                 }
               </h4>
+              <h6 className="text-muted mb-1">
+                {typeof stat.label === 'string' ? stat.label : JSON.stringify(stat.label)}
+              </h6>
               {stat.subtitle && (
-                <small className="text-white-50">
+                <div className="stats-subtitle">
                   {typeof stat.subtitle === 'string' ? stat.subtitle : JSON.stringify(stat.subtitle)}
-                </small>
-              )}
-              {stat.icon && (
-                <div className="mt-2">
-                  <i className={`bi bi-${stat.icon} text-white-50`}></i>
                 </div>
               )}
             </div>
