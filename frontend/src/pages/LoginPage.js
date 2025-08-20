@@ -1,16 +1,8 @@
 import React, { useState } from 'react';
 import NotificationSystem from '../components/NotificationSystem';
 import { 
-  LoadingSpinner, 
-  DataLoadingState, 
-  ErrorState, 
-  EmptyState 
+  LoadingSpinner 
 } from '../components/LoadingComponents';
-import { 
-  ResponsiveStatsGrid, 
-  ResponsiveActionBar,
-  ResponsiveCardGrid 
-} from '../components/ResponsiveComponents';
 import axios from 'axios';
 import { getApiUrl } from '../utils/apiUrl';
 
@@ -37,14 +29,6 @@ function LoginPage() {
 
   const showErrorMessage = (message) => {
     if (window.showError) window.showError(message);
-  };
-
-  const showInfoMessage = (message) => {
-    if (window.showInfo) window.showInfo(message);
-  };
-
-  const showWarningMessage = (message) => {
-    if (window.showWarning) window.showWarning(message);
   };
 
   const handleSubmit = async (e) => {
@@ -242,29 +226,31 @@ function LoginPage() {
                 </div>
               
                 {showMagicLink ? (
-                  <form onSubmit={handleMagicLinkRequest}>
-                    <div className="mb-3">
+                  <form onSubmit={handleMagicLinkRequest} className="form-mobile">
+                    <div className="mb-4">
                       <label className="form-label fw-semibold text-dark">Email Address</label>
                       <div className="input-group">
-                        <span className="input-group-text bg-light border-end-0">
+                        <span className="input-group-text bg-light border-end-0 touch-target">
                           <i className="bi bi-envelope text-muted"></i>
                         </span>
                         <input 
                           type="email"
-                          className="form-control border-start-0 bg-light" 
+                          className="form-control border-start-0 bg-light touch-feedback" 
                           value={magicLinkEmail} 
                           onChange={e => setMagicLinkEmail(e.target.value)} 
                           required 
                           disabled={magicLinkLoading}
                           placeholder="Enter your email address"
+                          autoComplete="email"
                           style={{ 
-                            borderRadius: '0 10px 10px 0',
-                            fontSize: '1rem',
-                            padding: '10px 14px'
+                            borderRadius: '0 12px 12px 0',
+                            fontSize: '16px', // Prevents zoom on iOS
+                            padding: '12px 16px',
+                            minHeight: '48px'
                           }}
                         />
                       </div>
-                      <div className="form-text text-muted mt-1 small">
+                      <div className="form-text text-muted mt-2 small">
                         <i className="bi bi-info-circle me-1"></i>
                         We'll send a secure login link to this email address
                       </div>
@@ -418,51 +404,55 @@ function LoginPage() {
                     </div>
                   </form>
                 ) : !multipleOrgs ? (
-                  <form onSubmit={handleSubmit}>
-                    <div className="mb-3">
+                  <form onSubmit={handleSubmit} className="form-mobile">
+                    <div className="mb-4">
                       <label className="form-label fw-semibold text-dark">Username or Email</label>
                       <div className="input-group">
-                        <span className="input-group-text bg-light border-end-0">
+                        <span className="input-group-text bg-light border-end-0 touch-target">
                           <i className="bi bi-person text-muted"></i>
                         </span>
                         <input 
-                          className="form-control border-start-0 bg-light" 
+                          className="form-control border-start-0 bg-light touch-feedback" 
                           value={identifier} 
                           onChange={e => setIdentifier(e.target.value)} 
                           required 
                           disabled={loading}
                           placeholder="Enter username or email"
+                          autoComplete="username"
                           style={{ 
-                            borderRadius: '0 10px 10px 0',
-                            fontSize: '1rem',
-                            padding: '10px 14px'
+                            borderRadius: '0 12px 12px 0',
+                            fontSize: '16px', // Prevents zoom on iOS
+                            padding: '12px 16px',
+                            minHeight: '48px'
                           }}
                         />
                       </div>
-                      <div className="form-text text-muted mt-1 small">
+                      <div className="form-text text-muted mt-2 small">
                         <i className="bi bi-info-circle me-1"></i>
                         You can use either your username or email address
                       </div>
                     </div>
                     
-                    <div className="mb-3">
+                    <div className="mb-4">
                       <label className="form-label fw-semibold text-dark">Password</label>
                       <div className="input-group">
-                        <span className="input-group-text bg-light border-end-0">
+                        <span className="input-group-text bg-light border-end-0 touch-target">
                           <i className="bi bi-lock text-muted"></i>
                         </span>
                         <input 
                           type="password" 
-                          className="form-control border-start-0 bg-light" 
+                          className="form-control border-start-0 bg-light touch-feedback" 
                           value={password} 
                           onChange={e => setPassword(e.target.value)} 
                           required 
                           disabled={loading}
+                          autoComplete="current-password"
                           placeholder="Enter your password"
                           style={{ 
-                            borderRadius: '0 10px 10px 0',
-                            fontSize: '1rem',
-                            padding: '10px 14px'
+                            borderRadius: '0 12px 12px 0',
+                            fontSize: '16px', // Prevents zoom on iOS
+                            padding: '12px 16px',
+                            minHeight: '48px'
                           }}
                         />
                       </div>
@@ -480,15 +470,16 @@ function LoginPage() {
                     
                     <div className="d-grid mb-3">
                       <button 
-                        className="btn btn-primary btn-lg fw-semibold" 
+                        className="btn btn-primary btn-lg fw-semibold touch-target mobile-button" 
                         type="submit" 
                         disabled={loading}
                         style={{
                           borderRadius: '12px',
                           background: 'linear-gradient(135deg, #667eea, #764ba2)',
                           border: 'none',
-                          padding: '10px',
-                          fontSize: '1rem'
+                          padding: '16px 20px',
+                          fontSize: '1.1rem',
+                          minHeight: '50px'
                         }}
                       >
                         {loading ? (
@@ -554,15 +545,16 @@ function LoginPage() {
                       
                       <div className="d-grid gap-3">
                         <button 
-                          className="btn btn-primary btn-lg fw-semibold" 
+                          className="btn btn-primary btn-lg fw-semibold touch-target mobile-button" 
                           type="submit" 
                           disabled={loading || !selectedOrgId}
                           style={{
                             borderRadius: '12px',
                             background: 'linear-gradient(135deg, #667eea, #764ba2)',
                             border: 'none',
-                            padding: '12px',
-                            fontSize: '1.1rem'
+                            padding: '16px 20px',
+                            fontSize: '1.1rem',
+                            minHeight: '50px'
                           }}
                         >
                           {loading ? (
@@ -598,20 +590,27 @@ function LoginPage() {
                 <div className="text-center mt-3 pt-3 border-top">
                   <div className="mb-2">
                     <span className="text-muted small">Don't have an account? </span>
-                    <a href="/register" className="text-decoration-none fw-semibold small" style={{
-                      color: '#667eea'
+                    <a href="/register" className="text-decoration-none fw-semibold small touch-target" style={{
+                      color: '#667eea',
+                      padding: '4px 8px',
+                      borderRadius: '4px'
                     }}>
                       Create Account
                     </a>
                   </div>
                   
                   {!showPasswordReset && !showMagicLink && (
-                    <div className="d-flex flex-column flex-sm-row gap-2 justify-content-center align-items-center">
+                    <div className="d-flex flex-column flex-sm-row gap-3 justify-content-center align-items-center">
                       <button 
                         type="button" 
-                        className="btn btn-link p-0 text-decoration-none fw-semibold small" 
+                        className="btn btn-link p-0 text-decoration-none fw-semibold small touch-target" 
                         onClick={handleShowPasswordReset}
-                        style={{ color: '#667eea' }}
+                        style={{ 
+                          color: '#667eea',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          minHeight: '44px'
+                        }}
                       >
                         <i className="bi bi-key me-1"></i>
                         Forgot Password?
@@ -619,9 +618,14 @@ function LoginPage() {
                       <span className="text-muted d-none d-sm-inline small">•</span>
                       <button 
                         type="button" 
-                        className="btn btn-link p-0 text-decoration-none fw-semibold small" 
+                        className="btn btn-link p-0 text-decoration-none fw-semibold small touch-target" 
                         onClick={handleShowMagicLink}
-                        style={{ color: '#667eea' }}
+                        style={{ 
+                          color: '#667eea',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          minHeight: '44px'
+                        }}
                       >
                         <i className="bi bi-envelope-heart me-1"></i>
                         Email Login Link

@@ -594,7 +594,7 @@ function EventsPage() {
   return (
     <div>
       <Navbar />
-      <div className="container mt-4">
+      <div className="container mt-4 mobile-container">
         {/* Offline indicator */}
         {!isOnline && (
           <div className="alert alert-warning mb-3" role="alert">
@@ -609,18 +609,20 @@ function EventsPage() {
           {role === 'Admin' && (
             <div className="d-flex gap-2">
               <button 
-                className="btn btn-outline-secondary"
+                className="btn btn-outline-secondary touch-target mobile-button"
                 onClick={() => setShowTemplates(!showTemplates)}
+                style={{ minHeight: '44px' }}
               >
                 <i className="bi bi-file-earmark me-2"></i>
-                Templates
+                <span className="d-none d-sm-inline">Templates</span>
               </button>
               <button 
-                className="btn btn-primary"
+                className="btn btn-primary touch-target mobile-button"
                 onClick={() => setShowForm(true)}
+                style={{ minHeight: '44px' }}
               >
                 <i className="bi bi-plus me-2"></i>
-                Create Event
+                <span className="d-none d-sm-inline">Create</span>
               </button>
             </div>
           )}
@@ -648,8 +650,9 @@ function EventsPage() {
             </select>
             {selectedCategory && (
               <button 
-                className="btn btn-sm btn-outline-secondary"
+                className="btn btn-sm btn-outline-secondary touch-target mobile-button"
                 onClick={() => handleCategoryFilter('')}
+                style={{ minHeight: '40px' }}
               >
                 Clear Filter
               </button>
@@ -679,8 +682,9 @@ function EventsPage() {
                           <p className="card-text small text-muted">{template.description}</p>
                           <span className="badge bg-secondary me-2">{template.category || 'No category'}</span>
                           <button 
-                            className="btn btn-sm btn-primary"
+                            className="btn btn-sm btn-primary touch-target mobile-button"
                             onClick={() => openTemplateModal(template)}
+                            style={{ minHeight: '40px' }}
                           >
                             Use Template
                           </button>
@@ -722,7 +726,7 @@ function EventsPage() {
           <div className="row">
             {events.map(event => (
               <div key={event.id} className="col-md-6 col-lg-4 mb-4">
-                <div className={`card h-100 ${event.is_cancelled ? 'border-danger' : ''}`}>
+                <div className={`card h-100 card-mobile touch-target ${event.is_cancelled ? 'border-danger' : ''}`}>
                   <div className="card-header d-flex justify-content-between align-items-center">
                     <div className="d-flex align-items-center">
                       <span className="me-2" style={{ fontSize: '1.2em' }}>
@@ -815,29 +819,33 @@ function EventsPage() {
                     
                     <div className="d-flex gap-2 flex-wrap">
                       <button 
-                        className={`btn btn-sm ${status[event.id] === 'yes' ? 'btn-success' : 'btn-outline-success'}`}
+                        className={`btn btn-sm touch-target mobile-button ${status[event.id] === 'yes' ? 'btn-success' : 'btn-outline-success'}`}
                         onClick={() => handleRsvp(event.id, 'yes')}
+                        style={{ minHeight: '40px', minWidth: '60px' }}
                       >
                         ✓ Yes
                       </button>
                       <button 
-                        className={`btn btn-sm ${status[event.id] === 'no' ? 'btn-danger' : 'btn-outline-danger'}`}
+                        className={`btn btn-sm touch-target mobile-button ${status[event.id] === 'no' ? 'btn-danger' : 'btn-outline-danger'}`}
                         onClick={() => handleRsvp(event.id, 'no')}
+                        style={{ minHeight: '40px', minWidth: '60px' }}
                       >
                         ✗ No
                       </button>
                       {status[event.id] === 'no' && (
                         <button 
-                          className={`btn btn-sm ${substituteRequests[event.id] ? 'btn-success' : 'btn-outline-info'}`}
+                          className={`btn btn-sm touch-target mobile-button ${substituteRequests[event.id] ? 'btn-success' : 'btn-outline-info'}`}
                           onClick={() => handleSubstituteRequest(event.id)}
                           disabled={substituteRequests[event.id]}
+                          style={{ minHeight: '40px' }}
                         >
                           {substituteRequests[event.id] ? '✓ Sub Requested' : '👤 Request Substitute'}
                         </button>
                       )}
                       <button 
-                        className={`btn btn-sm ${status[event.id] === 'maybe' ? 'btn-warning' : 'btn-outline-warning'}`}
+                        className={`btn btn-sm touch-target mobile-button ${status[event.id] === 'maybe' ? 'btn-warning' : 'btn-outline-warning'}`}
                         onClick={() => handleRsvp(event.id, 'maybe')}
+                        style={{ minHeight: '40px', minWidth: '70px' }}
                       >
                         ? Maybe
                       </button>
@@ -849,36 +857,40 @@ function EventsPage() {
                       <div className="d-flex justify-content-between align-items-center">
                         <div>
                           <button
-                            className="btn btn-sm btn-outline-secondary me-2"
+                            className="btn btn-sm btn-outline-secondary me-2 touch-target mobile-button"
                             onClick={() => {
                               setEditEvent(event);
                               setShowForm(true);
                             }}
                             title="Edit Event"
                             disabled={event.is_cancelled}
+                            style={{ minHeight: '36px', minWidth: '36px' }}
                           >
                             <i className="bi bi-pencil"></i>
                           </button>
                           {!event.is_cancelled && (
                             <button
-                              className="btn btn-sm btn-outline-warning me-2"
+                              className="btn btn-sm btn-outline-warning me-2 touch-target mobile-button"
                               onClick={() => openCancelModal(event)}
                               title="Cancel Event"
+                              style={{ minHeight: '36px', minWidth: '36px' }}
                             >
                               <i className="bi bi-x-circle"></i>
                             </button>
                           )}
                           <button
-                            className="btn btn-sm btn-outline-info me-2"
+                            className="btn btn-sm btn-outline-info me-2 touch-target mobile-button"
                             onClick={() => downloadEventRSVPPDF(event)}
                             title="Download RSVP Report PDF"
+                            style={{ minHeight: '36px', minWidth: '36px' }}
                           >
                             <i className="bi bi-file-earmark-pdf"></i>
                           </button>
                           <button
-                            className="btn btn-sm btn-outline-danger"
+                            className="btn btn-sm btn-outline-danger touch-target mobile-button"
                             onClick={() => handleDelete(event.id)}
                             title="Delete Event"
+                            style={{ minHeight: '36px', minWidth: '36px' }}
                           >
                             <i className="bi bi-trash"></i>
                           </button>
@@ -887,9 +899,10 @@ function EventsPage() {
                         <div className="d-flex gap-1">
                           <div className="dropdown">
                             <button 
-                              className="btn btn-sm btn-outline-success dropdown-toggle"
+                              className="btn btn-sm btn-outline-success dropdown-toggle touch-target mobile-button"
                               type="button" 
                               data-bs-toggle="dropdown"
+                              style={{ minHeight: '36px' }}
                             >
                               <i className="bi bi-download me-1"></i>
                               Export

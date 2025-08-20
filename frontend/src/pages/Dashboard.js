@@ -535,7 +535,7 @@ function Dashboard() {
     <>
       <Navbar />
       <NotificationSystem />
-      <div className="container-fluid mt-4 px-3 stagger-container">
+      <div className="container-fluid mt-4 px-3 stagger-container mobile-container">
         <ResponsiveActionBar
           title="My Events"
           subtitle="Manage your event attendance and stay updated"
@@ -604,17 +604,17 @@ function Dashboard() {
               Quick Actions
             </h6>
             <div className="d-flex flex-column flex-md-row gap-2">
-              <a href="/messaging" className="btn btn-outline-primary flex-fill mb-2 mb-md-0 hover-scale-sm transition-all duration-200">
+              <a href="/messaging" className="btn btn-outline-primary flex-fill mb-2 mb-md-0 hover-scale-sm transition-all duration-200 touch-target mobile-button" style={{ minHeight: '48px' }}>
                 <i className="bi bi-chat-dots me-1"></i>Messages
               </a>
-              <a href="/substitution" className="btn btn-outline-success flex-fill mb-2 mb-md-0 hover-scale-sm transition-all duration-200">
+              <a href="/substitution" className="btn btn-outline-success flex-fill mb-2 mb-md-0 hover-scale-sm transition-all duration-200 touch-target mobile-button" style={{ minHeight: '48px' }}>
                 <i className="bi bi-person-plus me-1"></i>Find Substitute
               </a>
-              <a href="/polls" className="btn btn-outline-info flex-fill mb-2 mb-md-0 hover-scale-sm transition-all duration-200">
+              <a href="/polls" className="btn btn-outline-info flex-fill mb-2 mb-md-0 hover-scale-sm transition-all duration-200 touch-target mobile-button" style={{ minHeight: '48px' }}>
                 <i className="bi bi-bar-chart me-1"></i>Quick Polls
               </a>
               {(role === 'Admin' || localStorage.getItem('super_admin') === 'true') && (
-                <a href="/admin" className="btn btn-outline-warning flex-fill mb-2 mb-md-0 hover-scale-sm transition-all duration-200">
+                <a href="/admin" className="btn btn-outline-warning flex-fill mb-2 mb-md-0 hover-scale-sm transition-all duration-200 touch-target mobile-button" style={{ minHeight: '48px' }}>
                   <i className="bi bi-gear me-1"></i>Admin Panel
                 </a>
               )}
@@ -655,7 +655,7 @@ function Dashboard() {
                   className="col-12 mb-3 stagger-item"
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
-                  <div className={`card card-enhanced hover-lift transition-all duration-300 ${!isUpcoming ? 'border-muted event-past' : 'event-upcoming'}`}>
+                  <div className={`card card-enhanced card-mobile hover-lift transition-all duration-300 touch-target ${!isUpcoming ? 'border-muted event-past' : 'event-upcoming'}`}>
                     {/* Collapsed View - Always Visible */}
                     <div className="card-header d-flex justify-content-between align-items-center py-2">
                       <div className="d-flex align-items-center flex-grow-1">
@@ -725,13 +725,14 @@ function Dashboard() {
                                 <button
                                   key={option}
                                   type="button"
-                                  className={`btn btn-sm transition-all duration-200 hover-scale-sm ${eventRsvp === capitalizedOption ? 
+                                  className={`btn btn-sm transition-all duration-200 hover-scale-sm touch-target mobile-button ${eventRsvp === capitalizedOption ? 
                                     (option === 'yes' ? 'btn-success' : 
                                      option === 'no' ? 'btn-danger' : 'btn-warning') :
                                     'btn-outline-secondary'
                                   }`}
                                   onClick={() => handleRSVP(event.id, option)}
                                   title={`RSVP ${option === 'yes' ? 'Yes' : option === 'no' ? 'No' : 'Maybe'}`}
+                                  style={{ minHeight: '40px', minWidth: '40px' }}
                                 >
                                   <i className={`bi bi-${
                                     option === 'yes' ? 'check' :
@@ -744,8 +745,9 @@ function Dashboard() {
                         )}
                         
                         <button
-                          className="btn btn-sm btn-outline-secondary hover-scale-sm transition-all duration-200"
+                          className="btn btn-sm btn-outline-secondary hover-scale-sm transition-all duration-200 touch-target mobile-button"
                           onClick={() => toggleEventExpansion(event.id)}
+                          style={{ minHeight: '40px', minWidth: '40px' }}
                         >
                           <i className={`bi bi-${isExpanded ? 'dash' : 'plus'} transition-transform duration-300`}></i>
                         </button>
@@ -901,12 +903,13 @@ function Dashboard() {
                                     <button
                                       key={option}
                                       type="button"
-                                      className={`btn ${eventRsvp === capitalizedOption ? 
+                                      className={`btn touch-target mobile-button ${eventRsvp === capitalizedOption ? 
                                         (option === 'yes' ? 'btn-success' : 
                                          option === 'no' ? 'btn-danger' : 'btn-warning') :
                                         'btn-outline-secondary'
                                       }`}
                                       onClick={() => handleRSVP(event.id, option)}
+                                      style={{ minHeight: '48px', padding: '12px 16px' }}
                                     >
                                       <i className={`bi bi-${
                                         option === 'yes' ? 'check' :
