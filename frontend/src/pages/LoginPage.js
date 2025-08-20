@@ -631,10 +631,34 @@ function LoginPage() {
             
             {/* Footer */}
             <div className="text-center mt-4">
-              <p className="text-white-50 mb-0">
+              <p className="text-white-50 mb-2">
                 <i className="bi bi-shield-check me-1"></i>
                 Secure • Reliable • Easy to Use
               </p>
+              
+              {/* Copyright Footer */}
+              <div className="text-center mt-3 pt-3" style={{
+                borderTop: '1px solid rgba(255, 255, 255, 0.1)'
+              }}>
+                <p className="text-white-50 mb-0" style={{ fontSize: '0.85rem' }}>
+                  © {new Date().getFullYear()} BandSync. Powered by{' '}
+                  <a 
+                    href="https://Harvey-Wallace.co.uk" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-decoration-none"
+                    style={{ 
+                      color: '#c3dafe',
+                      fontWeight: '500',
+                      transition: 'color 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => e.target.style.color = '#ffffff'}
+                    onMouseLeave={(e) => e.target.style.color = '#c3dafe'}
+                  >
+                    Harvey-Wallace
+                  </a>
+                </p>
+              </div>
             </div>
           </div>
         </div>
