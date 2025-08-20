@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { OrganizationProvider } from './contexts/OrganizationContext';
 import SessionTimeout from './components/SessionTimeout';
 import IOSDebugger from './components/IOSDebugger';
 import IOSErrorBoundary from './components/IOSErrorBoundary';
+import { realTimeNotifications } from './utils/realTimeNotifications';
 import './utils/superAdminHelper'; // Import super admin helper for global access
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -28,6 +29,35 @@ console.log('🎯 App.js loading...');
 
 function App() {
   console.log('🎯 App component rendering...');
+  
+  // Initialize real-time notifications
+  useEffect(() => {
+    console.log('🔔 Initializing real-time notifications...');
+    
+    // Only initialize if user is logged in
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Real-time notifications will auto-connect
+      console.log('✅ Real-time notifications initialized');
+      
+      // Test notification for development
+      if (window.showInfo) {
+        setTimeout(() => {
+          window.showInfo('🎵 Real-time notifications are active!', 3000, {
+            title: 'System Ready',
+            category: 'system'
+          });
+        }, 2000);
+      }
+    }
+    
+    return () => {
+      // Cleanup on unmount
+      if (realTimeNotifications) {
+        realTimeNotifications.disconnect();
+      }
+    };
+  }, []);
   
   // Precise iOS detection - only actual iOS devices, not macOS Safari
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && 

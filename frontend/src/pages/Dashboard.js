@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import NotificationSystem from '../components/NotificationSystem';
+import NotificationDemo from '../components/NotificationDemo';
 import { 
   DataLoadingState, 
   ErrorState, 
@@ -621,6 +622,9 @@ function Dashboard() {
             </div>
           </div>
         </div>
+
+        {/* Real-Time Notifications Demo */}
+        <NotificationDemo />
 
         {/* Events List */}
         <div className="row stagger-item">
