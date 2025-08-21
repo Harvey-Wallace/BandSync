@@ -887,11 +887,25 @@
     width: 100%;
   }
   
+  @media (min-width: 768px) {
+    .btn-group-mobile {
+      flex-direction: row;
+      width: auto;
+    }
+  }
+  
   .btn-group-mobile .btn {
     width: 100%;
     padding: var(--space-4);
     font-size: var(--text-base);
     justify-content: center;
+  }
+  
+  @media (min-width: 768px) {
+    .btn-group-mobile .btn {
+      width: auto;
+      white-space: nowrap;
+    }
   }
   
   /* Card Optimizations */
@@ -4765,6 +4779,13 @@ body {
   width: 100%;
 }
 
+@media (min-width: 768px) {
+  .btn-group-mobile {
+    flex-direction: row;
+    width: auto;
+  }
+}
+
 .btn-group-mobile .btn {
   border-radius: var(--radius-lg);
   padding: 1rem;
@@ -4773,6 +4794,14 @@ body {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .btn-group-mobile .btn {
+    text-align: center;
+    width: auto;
+    white-space: nowrap;
+  }
 }
 
 .btn-group-mobile .btn i {
