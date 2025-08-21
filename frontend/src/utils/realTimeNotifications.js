@@ -5,10 +5,11 @@ class RealTimeNotificationManager {
   constructor() {
     this.ws = null;
     this.reconnectAttempts = 0;
-    this.maxReconnectAttempts = 5;
+    this.maxReconnectAttempts = 3; // Reduced from 5
     this.reconnectDelay = 1000;
     this.heartbeatInterval = null;
     this.isConnected = false;
+    this.connectionFailed = false; // Track if connection consistently fails
     this.listeners = new Map();
     this.notificationQueue = [];
     this.isVisible = !document.hidden;
@@ -19,8 +20,37 @@ class RealTimeNotificationManager {
     // Initialize visibility tracking
     this.initializeVisibilityTracking();
     
-    // Auto-connect when created
-    this.connect();
+    // Only auto-connect if WebSocket is likely supported and we have a token
+    if (this.shouldAttemptConnection()) {
+      // Delay initial connection to avoid blocking UI
+      setTimeout(() => this.connect(), 2000);
+    } else {
+      this.connectionFailed = true;
+    }
+  }
+
+  // Check if we should attempt WebSocket connection
+  shouldAttemptConnection() {
+    // Check if WebSocket is supported
+    if (typeof WebSocket === 'undefined') {
+      console.log('WebSocket not supported, skipping real-time notifications');
+      return false;
+    }
+
+    // Check if we have authentication
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.log('No auth token, skipping real-time notifications');
+      return false;
+    }
+
+    // Check if we're in development and likely don't have a WebSocket server
+    if (window.location.hostname === 'localhost' && !window.location.search.includes('ws=true')) {
+      console.log('Development mode detected, real-time notifications disabled (add ?ws=true to enable)');
+      return false;
+    }
+
+    return true;
   }
 
   // Load notification preferences from localStorage
@@ -81,6 +111,11 @@ class RealTimeNotificationManager {
 
   // Connect to WebSocket
   connect() {
+    // Don't attempt connection if we already determined it should fail
+    if (this.connectionFailed || !this.shouldAttemptConnection()) {
+      return;
+    }
+
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       return;
     }
@@ -89,6 +124,7 @@ class RealTimeNotificationManager {
       const token = localStorage.getItem('token');
       if (!token) {
         console.warn('No auth token available for WebSocket connection');
+        this.connectionFailed = true;
         return;
       }
 
@@ -97,7 +133,7 @@ class RealTimeNotificationManager {
       const host = window.location.host;
       const wsUrl = `${protocol}//${host}/ws?token=${encodeURIComponent(token)}`;
 
-      console.log('Connecting to WebSocket:', wsUrl);
+      console.log('Attempting WebSocket connection:', wsUrl);
       this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => {
@@ -129,14 +165,26 @@ class RealTimeNotificationManager {
         this.stopHeartbeat();
         this.emit('disconnected');
         
+        // Mark as failed if we've reached max attempts
+        if (this.reconnectAttempts >= this.maxReconnectAttempts) {
+          console.log('Max reconnection attempts reached, disabling WebSocket');
+          this.connectionFailed = true;
+          this.emit('connectionFailed');
+          return;
+        }
+        
         // Attempt to reconnect unless it was a clean close
         if (event.code !== 1000 && this.reconnectAttempts < this.maxReconnectAttempts) {
           this.scheduleReconnect();
+        } else if (event.code !== 1000) {
+          this.connectionFailed = true;
+          this.emit('connectionFailed');
         }
       };
 
       this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
+        console.warn('WebSocket connection failed (likely no server available)');
+        this.connectionFailed = true;
         this.emit('error', error);
       };
 
@@ -148,8 +196,17 @@ class RealTimeNotificationManager {
 
   // Schedule reconnection attempt
   scheduleReconnect() {
+    // Don't schedule reconnection if we shouldn't attempt connections
+    if (!this.shouldAttemptConnection()) {
+      console.log('Skipping reconnection - connection not advisable');
+      this.connectionFailed = true;
+      this.emit('connectionFailed');
+      return;
+    }
+
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('Max reconnection attempts reached');
+      this.connectionFailed = true;
       this.emit('maxReconnectAttemptsReached');
       return;
     }
@@ -604,6 +661,7 @@ class RealTimeNotificationManager {
   getStatus() {
     return {
       connected: this.isConnected,
+      connectionFailed: this.connectionFailed,
       reconnectAttempts: this.reconnectAttempts,
       preferences: this.preferences,
       queuedNotifications: this.notificationQueue.length

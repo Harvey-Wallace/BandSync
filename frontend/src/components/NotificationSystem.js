@@ -112,9 +112,17 @@ const NotificationSystem = () => {
       setConnectionStatus(status);
     };
 
+    const handleConnectionFailed = () => {
+      // Don't show persistent warnings for connection failures
+      // This typically happens in development when no WebSocket server is available
+      console.log('Real-time notifications connection failed - operating in fallback mode');
+      setConnectionStatus({ connected: false, connectionFailed: true });
+    };
+
     realTimeNotifications.on('notification', handleRealTimeNotification);
     realTimeNotifications.on('connected', handleConnectionChange);
     realTimeNotifications.on('disconnected', handleConnectionChange);
+    realTimeNotifications.on('connectionFailed', handleConnectionFailed);
 
     // Initial status load
     handleConnectionChange();
@@ -131,6 +139,7 @@ const NotificationSystem = () => {
       realTimeNotifications.off('notification', handleRealTimeNotification);
       realTimeNotifications.off('connected', handleConnectionChange);
       realTimeNotifications.off('disconnected', handleConnectionChange);
+      realTimeNotifications.off('connectionFailed', handleConnectionFailed);
     };
   }, []);
 
@@ -170,7 +179,7 @@ const NotificationSystem = () => {
   return (
     <>
       {/* Connection Status Indicator */}
-      {!connectionStatus.connected && (
+      {!connectionStatus.connected && !connectionStatus.connectionFailed && (
         <div className="position-fixed top-0 end-0 p-3" style={{ zIndex: 1060 }}>
           <div className="alert alert-warning d-flex align-items-center mb-0 shadow-sm" role="alert">
             <i className="bi bi-wifi-off me-2"></i>
