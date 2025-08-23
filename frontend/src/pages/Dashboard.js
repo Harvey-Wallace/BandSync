@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import NotificationSystem from '../components/NotificationSystem';
 import NotificationDemo from '../components/NotificationDemo';
+import DashboardAnalytics from '../components/DashboardAnalytics';
+import ParticipationInsights from '../components/ParticipationInsights';
+import PerformanceSummary from '../components/PerformanceSummary';
 import { 
   DataLoadingState, 
   ErrorState, 
@@ -595,7 +598,34 @@ function Dashboard() {
             }
           ]}
           className="mb-4 stagger-item"
-        />`
+        />
+
+        {/* Enhanced Dashboard Analytics */}
+        <div className="stagger-item">
+          <DashboardAnalytics 
+            events={events}
+            rsvps={rsvps}
+            allRsvps={allRsvps}
+          />
+        </div>
+
+        {/* Participation Insights */}
+        <div className="stagger-item">
+          <ParticipationInsights 
+            events={events}
+            rsvps={rsvps}
+            allRsvps={allRsvps}
+          />
+        </div>
+
+        {/* Performance Summary */}
+        <div className="stagger-item">
+          <PerformanceSummary 
+            events={events}
+            rsvps={rsvps}
+            allRsvps={allRsvps}
+          />
+        </div>
 
         {/* Quick Actions */}
         <div className="card card-enhanced mb-4 stagger-item">
