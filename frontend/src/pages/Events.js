@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import NotificationSystem from '../components/NotificationSystem';
+import EnhancedEventForm from '../components/EnhancedEventForm';
 import { 
   DataLoadingState, 
   ErrorState, 
@@ -26,6 +27,8 @@ function Events() {
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('upcoming'); // Default to 'upcoming'
   const [expandedEvents, setExpandedEvents] = useState({}); // Track which events are expanded
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [categories, setCategories] = useState([]);
   const { orgThemeColor } = useTheme();
   const role = localStorage.getItem('role');
 
@@ -269,6 +272,33 @@ function Events() {
     return `${baseClass} btn-outline-secondary`;
   };
 
+  // Create new event handler
+  const handleCreateEvent = async (eventData) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.post(`${getApiUrl()}/events`, eventData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Refresh events list
+      const eventsResponse = await axios.get(`${getApiUrl()}/events/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const sortedEvents = eventsResponse.data.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setEvents(sortedEvents);
+      
+      setShowCreateForm(false);
+      showSuccessMessage('Event created successfully! 🎉');
+      
+    } catch (error) {
+      console.error('Error creating event:', error);
+      showErrorMessage(error.response?.data?.error || 'Failed to create event. Please try again.');
+      throw error; // Re-throw so the form can handle it
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-vh-100 bg-light">
@@ -316,14 +346,20 @@ function Events() {
                 <p className="text-muted mb-0">View and manage your event schedule</p>
               </div>
               <div className="d-flex align-items-center gap-3">
+                {/* Create Event Button - Admin Only */}
+                {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
+                  <button 
+                    className="btn btn-success"
+                    onClick={() => setShowCreateForm(true)}
+                  >
+                    <i className="fas fa-plus me-2"></i>
+                    Create Event
+                  </button>
+                )}
                 <a href="/analytics" className="btn btn-outline-primary">
                   <i className="fas fa-chart-line me-2"></i>
                   Analytics Dashboard
                 </a>
-                {/* Temporary Debug Info */}
-                <div className="text-muted small">
-                  Role: {role || 'none'} | OrgID: {localStorage.getItem('organization_id') || 'none'}
-                </div>
               </div>
             </div>
           </div>
@@ -383,21 +419,34 @@ function Events() {
               const isPastEvent = isEventPast(event.dateTime);
               
               return (
-                <div key={event.id} className="col-12 mb-3">
-                  <div className={`card border-0 shadow-sm h-100 ${isPastEvent ? 'opacity-75' : ''}`}>
+                <div key={event.id} className="col-12 mb-4">
+                  <div className={`card border-0 shadow-lg h-100 ${isPastEvent ? 'opacity-75' : ''}`} 
+                       style={{ borderRadius: '15px', transition: 'all 0.3s ease' }}>
                     <div 
-                      className="card-header bg-white border-bottom-0 cursor-pointer event-card-compact"
+                      className="card-header border-bottom-0 cursor-pointer"
                       onClick={() => toggleEventExpansion(event.id)}
+                      style={{ 
+                        background: `linear-gradient(135deg, ${orgThemeColor || '#0d6efd'} 0%, ${orgThemeColor ? `${orgThemeColor}dd` : '#0851d4'} 100%)`,
+                        color: 'white',
+                        padding: '1.25rem',
+                        borderRadius: '15px 15px 0 0'
+                      }}
                     >
                       <div className="d-flex justify-content-between align-items-center">
                         <div className="flex-grow-1">
                           <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
                             <div className="d-flex align-items-center gap-3">
-                              <h5 className="card-title mb-0 fw-bold text-dark">
-                                {event.name}
-                              </h5>
+                              <div className="d-flex align-items-center gap-2">
+                                <i className="fas fa-calendar-check fs-5"></i>
+                                <h5 className="card-title mb-0 fw-bold text-white">
+                                  {event.name}
+                                </h5>
+                              </div>
                               {isPastEvent && (
-                                <span className="badge bg-secondary text-xs">Past Event</span>
+                                <span className="badge bg-light text-dark">
+                                  <i className="fas fa-history me-1"></i>
+                                  Past Event
+                                </span>
                               )}
                             </div>
                             
@@ -457,7 +506,7 @@ function Events() {
                                   </div>
                                 )}
                                 
-                                <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} text-muted ms-2`}></i>
+                                <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-white ms-2 fs-5`}></i>
                               </div>
                             </div>
                           </div>
@@ -567,6 +616,14 @@ function Events() {
             })}
           </div>
         )}
+        
+        {/* Create Event Modal */}
+        <EnhancedEventForm
+          show={showCreateForm}
+          onHide={() => setShowCreateForm(false)}
+          onSave={handleCreateEvent}
+          categories={categories}
+        />
       </div>
     </div>
   );
