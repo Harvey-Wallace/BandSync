@@ -48,18 +48,6 @@ function AnalyticsDashboard() {
           return;
         }
 
-  useEffect(() => {
-    const fetchAnalyticsData = async () => {
-      try {
-        setLoading(true);
-        const token = localStorage.getItem('token');
-        
-        if (!token) {
-          setError('Authentication required. Please log in.');
-          setLoading(false);
-          return;
-        }
-
         const config = {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -139,22 +127,6 @@ function AnalyticsDashboard() {
     };
 
     fetchAnalyticsData();
-  }, []);
-
-      } catch (error) {
-        console.error('Error fetching analytics data:', error);
-        if (error.response?.status === 401) {
-          setError('Session expired. Please log in again.');
-          localStorage.removeItem('token');
-          window.location.href = '/login';
-        } else {
-          setError(error.response?.data?.message || 'Failed to load analytics data. Please try again.');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAnalyticsData();
   }, []);
 
