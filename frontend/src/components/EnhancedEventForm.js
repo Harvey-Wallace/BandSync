@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Alert, Spinner, Tab, Tabs, Card, Row, Col } from 'react-bootstrap';
 import CustomFields from './CustomFields';
+import LocationPicker from './LocationPicker';
 import axios from 'axios';
 
 const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = [] }) => {
@@ -16,6 +17,9 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
     start_time: '',
     end_time: '',
     location_address: '',
+    location_lat: null,
+    location_lng: null,
+    location_place_id: '',
     category_id: '',
     is_template: false,
     template_name: '',
@@ -34,6 +38,9 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
         start_time: event.start_time || '',
         end_time: event.end_time || '',
         location_address: event.location_address || '',
+        location_lat: event.location_lat || null,
+        location_lng: event.location_lng || null,
+        location_place_id: event.location_place_id || '',
         category_id: event.category_id || '',
         is_template: event.is_template || false,
         template_name: event.template_name || '',
@@ -50,6 +57,9 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
         start_time: '',
         end_time: '',
         location_address: '',
+        location_lat: null,
+        location_lng: null,
+        location_place_id: '',
         category_id: '',
         is_template: false,
         template_name: '',
@@ -64,6 +74,23 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  const handleLocationChange = (address) => {
+    setFormData(prev => ({
+      ...prev,
+      location_address: address
+    }));
+  };
+
+  const handleLocationSelect = (locationData) => {
+    setFormData(prev => ({
+      ...prev,
+      location_address: locationData.address,
+      location_lat: locationData.lat,
+      location_lng: locationData.lng,
+      location_place_id: locationData.placeId
     }));
   };
 
@@ -272,16 +299,17 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
                 </>
               )}
 
-              <Form.Group className="mb-3">
-                <Form.Label>Location</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="location_address"
-                  value={formData.location_address}
-                  onChange={handleInputChange}
-                  placeholder="Enter location address"
-                />
-              </Form.Group>
+              <LocationPicker
+                value={formData.location_address}
+                coordinates={{ 
+                  lat: formData.location_lat, 
+                  lng: formData.location_lng 
+                }}
+                placeId={formData.location_place_id}
+                onChange={handleLocationChange}
+                onLocationSelect={handleLocationSelect}
+                placeholder="Search for event location (e.g., Cannon Hill Park Bandstand)"
+              />
 
               <Card className="mb-3">
                 <Card.Header>
