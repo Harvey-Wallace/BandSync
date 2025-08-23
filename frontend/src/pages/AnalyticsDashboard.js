@@ -41,9 +41,8 @@ function AnalyticsDashboard() {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const organizationId = localStorage.getItem('organization_id'); // Fix: use organization_id
         
-        if (!token || !organizationId) {
+        if (!token) {
           setError('Authentication required. Please log in.');
           setLoading(false);
           return;
@@ -56,14 +55,51 @@ function AnalyticsDashboard() {
           }
         };
 
+        // First try to get organization_id
+        const organizationId = localStorage.getItem('organization_id');
+        
         // Fetch all necessary data for analytics
-        const [eventsResponse, rsvpResponse, allRsvpsResponse, usersResponse] = await Promise.all([
-          axios.get(`${getApiUrl()}/events/organization/${organizationId}`, config),
-          axios.get(`${getApiUrl()}/rsvps/user`, config),
-          axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, config),
-          axios.get(`${getApiUrl()}/users/organization/${organizationId}`, config)
-        ]);
+        let allRsvpsResponse, usersResponse;
+        
+        if (organizationId) {
+          // Use organization-specific endpoints if we have organizationId
+          [, , allRsvpsResponse, usersResponse] = await Promise.all([
+            axios.get(`${getApiUrl()}/events/`, config),
+            axios.get(`${getApiUrl()}/rsvps/user`, config),
+            axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, config),
+            axios.get(`${getApiUrl()}/users/organization/${organizationId}`, config)
+          ]);
+        } else {
+          // Fallback to basic endpoints if no organizationId
+          const [eventsResponse, rsvpResponse] = await Promise.all([
+            axios.get(`${getApiUrl()}/events/`, config),
+            axios.get(`${getApiUrl()}/rsvps/user`, config)
+          ]);
+          
+          setEvents(eventsResponse.data);
+          
+          // Convert user RSVP array to object for easier lookup
+          const rsvpMap = {};
+          if (rsvpResponse.data && Array.isArray(rsvpResponse.data)) {
+            rsvpResponse.data.forEach(rsvp => {
+              rsvpMap[rsvp.eventId] = rsvp.status;
+            });
+          }
+          setRsvps(rsvpMap);
+          
+          // Set empty data for organization-specific features
+          setAllRsvps({});
+          setAllUsers([]);
+          setLoading(false);
+          return;
+        }
 
+        // Process events (from the full API call above)
+        const [eventsResponse, rsvpResponse] = await Promise.all([
+          axios.get(`${getApiUrl()}/events/`, config),
+          axios.get(`${getApiUrl()}/rsvps/user`, config)
+        ]);
+        
         setEvents(eventsResponse.data);
         
         // Convert user RSVP array to object for easier lookup

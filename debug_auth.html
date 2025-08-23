@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Auth</title>
+</head>
+<body>
+    <h2>Debug Authentication</h2>
+    <button onclick="showLocalStorage()">Show LocalStorage</button>
+    <button onclick="testAPI()">Test API</button>
+    <pre id="output"></pre>
+
+    <script>
+        function showLocalStorage() {
+            const output = document.getElementById('output');
+            const data = {
+                token: localStorage.getItem('token'),
+                organization_id: localStorage.getItem('organization_id'),
+                organizationId: localStorage.getItem('organizationId'),
+                role: localStorage.getItem('role'),
+                organization: localStorage.getItem('organization')
+            };
+            output.textContent = JSON.stringify(data, null, 2);
+        }
+
+        async function testAPI() {
+            const output = document.getElementById('output');
+            const token = localStorage.getItem('token');
+            const apiUrl = 'https://app.bandsync.co.uk/api';
+            
+            try {
+                const response = await fetch(`${apiUrl}/events/`, {
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = {
+                    status: response.status,
+                    statusText: response.statusText,
+                    data: await response.text()
+                };
+                
+                output.textContent = JSON.stringify(result, null, 2);
+            } catch (error) {
+                output.textContent = `Error: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>

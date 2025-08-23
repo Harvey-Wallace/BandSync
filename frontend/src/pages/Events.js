@@ -83,26 +83,28 @@ function Events() {
         if (role === 'admin' || role === 'super_admin') {
           try {
             const organizationId = localStorage.getItem('organization_id'); // Fix: use organization_id
-            const [allRsvpsResponse, sectionsResponse, usersResponse] = await Promise.all([
-              axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, config),
-              axios.get(`${getApiUrl()}/sections/organization/${organizationId}`, config),
-              axios.get(`${getApiUrl()}/users/organization/${organizationId}`, config)
-            ]);
+            if (organizationId) {
+              const [allRsvpsResponse, sectionsResponse, usersResponse] = await Promise.all([
+                axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, config),
+                axios.get(`${getApiUrl()}/sections/organization/${organizationId}`, config),
+                axios.get(`${getApiUrl()}/users/organization/${organizationId}`, config)
+              ]);
 
-            // Process all RSVPs data
-            const allRsvpsMap = {};
-            if (allRsvpsResponse.data && Array.isArray(allRsvpsResponse.data)) {
-              allRsvpsResponse.data.forEach(rsvp => {
-                if (!allRsvpsMap[rsvp.eventId]) {
-                  allRsvpsMap[rsvp.eventId] = {};
-                }
-                allRsvpsMap[rsvp.eventId][rsvp.userId] = rsvp.status;
-              });
+              // Process all RSVPs data
+              const allRsvpsMap = {};
+              if (allRsvpsResponse.data && Array.isArray(allRsvpsResponse.data)) {
+                allRsvpsResponse.data.forEach(rsvp => {
+                  if (!allRsvpsMap[rsvp.eventId]) {
+                    allRsvpsMap[rsvp.eventId] = {};
+                  }
+                  allRsvpsMap[rsvp.eventId][rsvp.userId] = rsvp.status;
+                });
+              }
+              setAllRsvps(allRsvpsMap);
+
+              setSections(sectionsResponse.data || []);
+              setAllUsers(usersResponse.data || []);
             }
-            setAllRsvps(allRsvpsMap);
-
-            setSections(sectionsResponse.data || []);
-            setAllUsers(usersResponse.data || []);
           } catch (adminError) {
             console.warn('Error fetching admin data:', adminError);
             // Continue without admin data
@@ -129,9 +131,8 @@ function Events() {
   const handleRSVP = async (eventId, status) => {
     try {
       const token = localStorage.getItem('token');
-      const organizationId = localStorage.getItem('organization_id'); // Fix: use organization_id
       
-      if (!token || !organizationId) {
+      if (!token) {
         showErrorMessage('Authentication required. Please log in.');
         return;
       }
@@ -167,17 +168,19 @@ function Events() {
       if (role === 'admin' || role === 'super_admin') {
         try {
           const organizationId = localStorage.getItem('organization_id'); // Fix: use organization_id
-          const allRsvpsResponse = await axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, config);
-          const allRsvpsMap = {};
-          if (allRsvpsResponse.data && Array.isArray(allRsvpsResponse.data)) {
-            allRsvpsResponse.data.forEach(rsvp => {
-              if (!allRsvpsMap[rsvp.eventId]) {
-                allRsvpsMap[rsvp.eventId] = {};
-              }
-              allRsvpsMap[rsvp.eventId][rsvp.userId] = rsvp.status;
-            });
+          if (organizationId) {
+            const allRsvpsResponse = await axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, config);
+            const allRsvpsMap = {};
+            if (allRsvpsResponse.data && Array.isArray(allRsvpsResponse.data)) {
+              allRsvpsResponse.data.forEach(rsvp => {
+                if (!allRsvpsMap[rsvp.eventId]) {
+                  allRsvpsMap[rsvp.eventId] = {};
+                }
+                allRsvpsMap[rsvp.eventId][rsvp.userId] = rsvp.status;
+              });
+            }
+            setAllRsvps(allRsvpsMap);
           }
-          setAllRsvps(allRsvpsMap);
         } catch (error) {
           console.warn('Error refreshing admin RSVP data:', error);
         }
