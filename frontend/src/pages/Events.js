@@ -181,13 +181,14 @@ function Events() {
 
       console.log('RSVP API response:', response.data);
 
-      // Update local state immediately for better UX
+      // Update local state immediately for better UX - normalize to lowercase for UI consistency
+      const normalizedStatus = status.toLowerCase();
       setRsvps(prev => ({
         ...prev,
-        [eventId]: status
+        [eventId]: normalizedStatus
       }));
 
-      console.log(`Updated local RSVP state for event ${eventId} to ${status}`);
+      console.log(`Updated local RSVP state for event ${eventId} to ${normalizedStatus}`);
 
       // Refresh the detailed RSVP data for admin view
       if (role === 'Admin' || role === 'admin' || role === 'super_admin') {
@@ -197,9 +198,9 @@ function Events() {
 
       // Show success message
       const statusMessages = {
-        'yes': 'RSVP confirmed! See you there! 🎉',
-        'no': 'RSVP updated - marked as not attending',
-        'maybe': 'RSVP updated - marked as maybe attending'
+        'Yes': 'RSVP confirmed! See you there! 🎉',
+        'No': 'RSVP updated - marked as not attending',
+        'Maybe': 'RSVP updated - marked as maybe attending'
       };
       
       showSuccessMessage(statusMessages[status] || 'RSVP updated successfully!');
@@ -748,7 +749,7 @@ function Events() {
                                 className={`btn btn-sm ${rsvps[event.id] === 'yes' ? 'btn-success' : 'btn-outline-success'}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleRSVP(event.id, 'yes');
+                                  handleRSVP(event.id, 'Yes');
                                 }}
                                 style={{ borderRadius: '8px', minWidth: '60px' }}
                                 title="Going"
@@ -759,7 +760,7 @@ function Events() {
                                 className={`btn btn-sm ${rsvps[event.id] === 'maybe' ? 'btn-warning' : 'btn-outline-warning'}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleRSVP(event.id, 'maybe');
+                                  handleRSVP(event.id, 'Maybe');
                                 }}
                                 style={{ borderRadius: '8px', minWidth: '60px' }}
                                 title="Maybe"
@@ -770,7 +771,7 @@ function Events() {
                                 className={`btn btn-sm ${rsvps[event.id] === 'no' ? 'btn-danger' : 'btn-outline-danger'}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleRSVP(event.id, 'no');
+                                  handleRSVP(event.id, 'No');
                                 }}
                                 style={{ borderRadius: '8px', minWidth: '60px' }}
                                 title="Can't Go"
