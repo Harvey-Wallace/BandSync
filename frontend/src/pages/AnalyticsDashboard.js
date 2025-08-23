@@ -48,6 +48,18 @@ function AnalyticsDashboard() {
           return;
         }
 
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+          setError('Authentication required. Please log in.');
+          setLoading(false);
+          return;
+        }
+
         const config = {
           headers: { 
             Authorization: `Bearer ${token}`,
@@ -55,75 +67,79 @@ function AnalyticsDashboard() {
           }
         };
 
-        // First try to get organization_id
-        const organizationId = localStorage.getItem('organization_id');
-        
-        // Fetch all necessary data for analytics
-        let allRsvpsResponse, usersResponse;
-        
-        if (organizationId) {
-          // Use organization-specific endpoints if we have organizationId
-          [, , allRsvpsResponse, usersResponse] = await Promise.all([
-            axios.get(`${getApiUrl()}/events/`, config),
-            axios.get(`${getApiUrl()}/rsvps/user`, config),
-            axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, config),
-            axios.get(`${getApiUrl()}/users/organization/${organizationId}`, config)
-          ]);
-        } else {
-          // Fallback to basic endpoints if no organizationId
-          const [eventsResponse, rsvpResponse] = await Promise.all([
-            axios.get(`${getApiUrl()}/events/`, config),
-            axios.get(`${getApiUrl()}/rsvps/user`, config)
-          ]);
-          
-          setEvents(eventsResponse.data);
-          
-          // Convert user RSVP array to object for easier lookup
-          const rsvpMap = {};
-          if (rsvpResponse.data && Array.isArray(rsvpResponse.data)) {
-            rsvpResponse.data.forEach(rsvp => {
-              rsvpMap[rsvp.eventId] = rsvp.status;
-            });
-          }
-          setRsvps(rsvpMap);
-          
-          // Set empty data for organization-specific features
-          setAllRsvps({});
-          setAllUsers([]);
-          setLoading(false);
-          return;
-        }
+        // First get events using the basic endpoint (like EventsPage)
+        const eventsResponse = await axios.get(`${getApiUrl()}/events/`, config);
+        const sortedEvents = eventsResponse.data.sort((a, b) => new Date(a.date) - new Date(b.date));
+        setEvents(sortedEvents);
 
-        // Process events (from the full API call above)
-        const [eventsResponse, rsvpResponse] = await Promise.all([
-          axios.get(`${getApiUrl()}/events/`, config),
-          axios.get(`${getApiUrl()}/rsvps/user`, config)
-        ]);
-        
-        setEvents(eventsResponse.data);
-        
-        // Convert user RSVP array to object for easier lookup
+        // Get user's RSVPs using the same method as EventsPage
+        const username = localStorage.getItem('username');
         const rsvpMap = {};
-        if (rsvpResponse.data && Array.isArray(rsvpResponse.data)) {
-          rsvpResponse.data.forEach(rsvp => {
-            rsvpMap[rsvp.eventId] = rsvp.status;
-          });
+        for (const event of sortedEvents) {
+          try {
+            const rsvpRes = await axios.get(`${getApiUrl()}/events/${event.id}/rsvps`, config);
+            // Find user's RSVP status
+            for (const [rsvpStatus, users] of Object.entries(rsvpRes.data)) {
+              if (users.some(user => user.username === username)) {
+                rsvpMap[event.id] = rsvpStatus;
+                break;
+              }
+            }
+          } catch (error) {
+            console.warn('Error loading RSVP status for event:', event.id, error);
+          }
         }
         setRsvps(rsvpMap);
 
-        // Process all RSVPs data for analytics
-        const allRsvpsMap = {};
-        if (allRsvpsResponse.data && Array.isArray(allRsvpsResponse.data)) {
-          allRsvpsResponse.data.forEach(rsvp => {
-            if (!allRsvpsMap[rsvp.eventId]) {
-              allRsvpsMap[rsvp.eventId] = {};
-            }
-            allRsvpsMap[rsvp.eventId][rsvp.userId] = rsvp.status;
-          });
-        }
-        setAllRsvps(allRsvpsMap);
+        // Try to get organization-specific data for enhanced analytics
+        const organizationId = localStorage.getItem('organization_id');
+        if (organizationId) {
+          try {
+            const [allRsvpsResponse, usersResponse] = await Promise.all([
+              axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, config),
+              axios.get(`${getApiUrl()}/users/organization/${organizationId}`, config)
+            ]);
 
-        setAllUsers(usersResponse.data || []);
+            // Process all RSVPs data for analytics
+            const allRsvpsMap = {};
+            if (allRsvpsResponse.data && Array.isArray(allRsvpsResponse.data)) {
+              allRsvpsResponse.data.forEach(rsvp => {
+                if (!allRsvpsMap[rsvp.eventId]) {
+                  allRsvpsMap[rsvp.eventId] = {};
+                }
+                allRsvpsMap[rsvp.eventId][rsvp.userId] = rsvp.status;
+              });
+            }
+            setAllRsvps(allRsvpsMap);
+            setAllUsers(usersResponse.data || []);
+          } catch (orgError) {
+            console.warn('Organization data not available:', orgError);
+            // Continue with basic analytics
+            setAllRsvps({});
+            setAllUsers([]);
+          }
+        } else {
+          // No organization context - use basic analytics only
+          setAllRsvps({});
+          setAllUsers([]);
+        }
+
+      } catch (error) {
+        console.error('Error fetching analytics data:', error);
+        if (error.response?.status === 401) {
+          setError('Session expired. Please log in again.');
+          localStorage.removeItem('token');
+          window.location.href = '/login';
+        } else {
+          setError(error.response?.data?.message || 'Failed to load analytics data. Please try again.');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAnalyticsData();
+  }, []);
 
       } catch (error) {
         console.error('Error fetching analytics data:', error);

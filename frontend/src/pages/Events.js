@@ -43,6 +43,7 @@ function Events() {
   };
 
   useEffect(() => {
+    useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
@@ -62,27 +63,36 @@ function Events() {
           }
         };
 
-        // Fetch events and RSVPs in parallel - using the same endpoints as EventsPage
-        const [eventsResponse, rsvpResponse] = await Promise.all([
-          axios.get(`${getApiUrl()}/events/`, config),
-          axios.get(`${getApiUrl()}/rsvps/user`, config)
-        ]);
-
-        setEvents(eventsResponse.data);
+        // Fetch events first - using the same approach as EventsPage
+        const eventsResponse = await axios.get(`${getApiUrl()}/events/`, config);
         
-        // Convert RSVP array to object for easier lookup
+        // Sort events by date
+        const sortedEvents = eventsResponse.data.sort((a, b) => new Date(a.date) - new Date(b.date));
+        setEvents(sortedEvents);
+
+        // Load current user's RSVP status for each event (same as EventsPage)
+        const username = localStorage.getItem('username');
         const rsvpMap = {};
-        if (rsvpResponse.data && Array.isArray(rsvpResponse.data)) {
-          rsvpResponse.data.forEach(rsvp => {
-            rsvpMap[rsvp.eventId] = rsvp.status;
-          });
+        for (const event of sortedEvents) {
+          try {
+            const rsvpRes = await axios.get(`${getApiUrl()}/events/${event.id}/rsvps`, config);
+            // Find user's RSVP status
+            for (const [rsvpStatus, users] of Object.entries(rsvpRes.data)) {
+              if (users.some(user => user.username === username)) {
+                rsvpMap[event.id] = rsvpStatus;
+                break;
+              }
+            }
+          } catch (error) {
+            console.warn('Error loading RSVP status for event:', event.id, error);
+          }
         }
         setRsvps(rsvpMap);
 
         // Fetch additional data for admin users
         if (role === 'admin' || role === 'super_admin') {
           try {
-            const organizationId = localStorage.getItem('organization_id'); // Fix: use organization_id
+            const organizationId = localStorage.getItem('organization_id');
             if (organizationId) {
               const [allRsvpsResponse, sectionsResponse, usersResponse] = await Promise.all([
                 axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, config),
