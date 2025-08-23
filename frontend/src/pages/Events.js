@@ -420,191 +420,255 @@ function Events() {
               
               return (
                 <div key={event.id} className="col-12 mb-4">
-                  <div className={`card border-0 shadow-lg h-100 ${isPastEvent ? 'opacity-75' : ''}`} 
-                       style={{ borderRadius: '15px', transition: 'all 0.3s ease' }}>
+                  <div className={`card border-0 shadow-lg h-100 overflow-hidden position-relative ${isPastEvent ? 'opacity-75' : ''}`} 
+                       style={{ 
+                         borderRadius: '20px', 
+                         transition: 'all 0.3s ease, transform 0.2s ease',
+                         cursor: 'pointer',
+                         border: `3px solid ${isPastEvent ? '#dee2e6' : (orgThemeColor || '#0d6efd')}33`
+                       }}
+                       onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
+                       onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0px)'}>
+                    
+                    {/* Color accent top border */}
                     <div 
-                      className="card-header border-bottom-0 cursor-pointer"
-                      onClick={() => toggleEventExpansion(event.id)}
-                      style={{ 
-                        background: `linear-gradient(135deg, ${orgThemeColor || '#0d6efd'} 0%, ${orgThemeColor ? `${orgThemeColor}dd` : '#0851d4'} 100%)`,
-                        color: 'white',
-                        padding: '1.25rem',
-                        borderRadius: '15px 15px 0 0'
+                      style={{
+                        height: '6px',
+                        background: isPastEvent ? '#6c757d' : `linear-gradient(90deg, ${orgThemeColor || '#0d6efd'} 0%, ${orgThemeColor ? `${orgThemeColor}aa` : '#0851d4'} 100%)`,
+                        borderRadius: '20px 20px 0 0'
                       }}
+                    ></div>
+                    
+                    {/* Main Event Content */}
+                    <div 
+                      className="card-body"
+                      onClick={() => toggleEventExpansion(event.id)}
+                      style={{ padding: '1.5rem' }}
                     >
-                      <div className="d-flex justify-content-between align-items-center">
-                        <div className="flex-grow-1">
-                          <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-2">
-                            <div className="d-flex align-items-center gap-3">
-                              <div className="d-flex align-items-center gap-2">
-                                <i className="fas fa-calendar-check fs-5"></i>
-                                <h5 className="card-title mb-0 fw-bold text-white">
-                                  {event.name}
-                                </h5>
-                              </div>
-                              {isPastEvent && (
-                                <span className="badge bg-light text-dark">
-                                  <i className="fas fa-history me-1"></i>
-                                  Past Event
-                                </span>
-                              )}
+                      <div className="d-flex flex-column gap-3">
+                        {/* Event Title and Chevron */}
+                        <div className="d-flex justify-content-between align-items-start">
+                          <div className="d-flex align-items-start gap-3 flex-grow-1">
+                            <div 
+                              className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
+                              style={{
+                                width: '50px',
+                                height: '50px',
+                                background: isPastEvent ? '#6c757d' : `linear-gradient(135deg, ${orgThemeColor || '#0d6efd'} 0%, ${orgThemeColor ? `${orgThemeColor}dd` : '#0851d4'} 100%)`,
+                                color: 'white'
+                              }}
+                            >
+                              <i className="fas fa-calendar-check fs-5"></i>
                             </div>
-                            
-                            <div className="d-flex flex-column flex-md-row gap-2 align-items-start align-items-md-center">
-                              <div className="d-flex flex-wrap gap-1">
-                                <span className="badge bg-info text-xs">
-                                  <i className="fas fa-clock me-1"></i>
-                                  {formatDateTime(event.dateTime)}
+                            <div className="flex-grow-1">
+                              <h5 className="card-title mb-1 fw-bold text-dark">
+                                {event.name}
+                              </h5>
+                              <div className="d-flex flex-wrap gap-2 align-items-center">
+                                <span className="badge bg-light text-muted">
+                                  {event.event_type || 'Event'}
                                 </span>
-                                {event.location && (
-                                  <span className="badge bg-info text-xs">
-                                    <i className="fas fa-map-marker-alt me-1"></i>
-                                    {event.location.length > 20 ? `${event.location.substring(0, 20)}...` : event.location}
+                                {isPastEvent && (
+                                  <span className="badge bg-secondary">
+                                    <i className="fas fa-history me-1"></i>
+                                    Past Event
                                   </span>
                                 )}
-                              </div>
-                              
-                              <div className="d-flex align-items-center gap-2">
-                                {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
-                                  <span className="text-muted small d-none d-md-inline">
-                                    {rsvpCounts.yes} going
-                                  </span>
-                                )}
-                                
-                                {!isPastEvent && (
-                                  <div className="btn-group" role="group">
-                                    <button
-                                      className={getRSVPButtonClass('yes', rsvps[event.id])}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleRSVP(event.id, 'yes');
-                                      }}
-                                    >
-                                      <i className="fas fa-check me-1"></i>
-                                      Going
-                                    </button>
-                                    <button
-                                      className={getRSVPButtonClass('maybe', rsvps[event.id])}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleRSVP(event.id, 'maybe');
-                                      }}
-                                    >
-                                      <i className="fas fa-question me-1"></i>
-                                      Maybe
-                                    </button>
-                                    <button
-                                      className={getRSVPButtonClass('no', rsvps[event.id])}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleRSVP(event.id, 'no');
-                                      }}
-                                    >
-                                      <i className="fas fa-times me-1"></i>
-                                      Can't Go
-                                    </button>
-                                  </div>
-                                )}
-                                
-                                <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'} text-white ms-2 fs-5`}></i>
                               </div>
                             </div>
                           </div>
+                          <button 
+                            className="btn btn-sm btn-light rounded-circle p-2"
+                            style={{ width: '40px', height: '40px' }}
+                          >
+                            <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+                          </button>
+                        </div>
+                        
+                        {/* Event Details Grid */}
+                        <div className="row g-3">
+                          <div className="col-md-6">
+                            <div className="d-flex align-items-center gap-2 p-2 bg-light rounded-3">
+                              <i className="fas fa-clock text-primary"></i>
+                              <div>
+                                <small className="text-muted d-block">When</small>
+                                <span className="fw-medium">{formatDateTime(event.dateTime)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {event.location && (
+                            <div className="col-md-6">
+                              <div className="d-flex align-items-center gap-2 p-2 bg-light rounded-3">
+                                <i className="fas fa-map-marker-alt text-danger"></i>
+                                <div>
+                                  <small className="text-muted d-block">Where</small>
+                                  <span className="fw-medium">
+                                    {event.location.length > 25 ? `${event.location.substring(0, 25)}...` : event.location}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
+                            <div className="col-md-6">
+                              <div className="d-flex align-items-center gap-2 p-2 bg-success bg-opacity-10 rounded-3">
+                                <i className="fas fa-users text-success"></i>
+                                <div>
+                                  <small className="text-muted d-block">Attending</small>
+                                  <span className="fw-bold text-success">{rsvpCounts.yes} members</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
                     
+                    {/* RSVP Buttons - Clean separator */}
+                    {!isPastEvent && (
+                      <div className="card-footer bg-white border-0" style={{ padding: '1rem 1.5rem' }}>
+                        <div className="d-flex gap-2">
+                          <button
+                            className={`btn flex-fill ${rsvps[event.id] === 'yes' ? 'btn-success' : 'btn-outline-success'}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRSVP(event.id, 'yes');
+                            }}
+                            style={{ borderRadius: '12px', fontWeight: '600', padding: '10px' }}
+                          >
+                            <i className="fas fa-check me-2"></i>
+                            Going
+                          </button>
+                          <button
+                            className={`btn flex-fill ${rsvps[event.id] === 'maybe' ? 'btn-warning' : 'btn-outline-warning'}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRSVP(event.id, 'maybe');
+                            }}
+                            style={{ borderRadius: '12px', fontWeight: '600', padding: '10px' }}
+                          >
+                            <i className="fas fa-question me-2"></i>
+                            Maybe
+                          </button>
+                          <button
+                            className={`btn flex-fill ${rsvps[event.id] === 'no' ? 'btn-danger' : 'btn-outline-danger'}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRSVP(event.id, 'no');
+                            }}
+                            style={{ borderRadius: '12px', fontWeight: '600', padding: '10px' }}
+                          >
+                            <i className="fas fa-times me-2"></i>
+                            Can't Go
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Event Description */}
                     {event.description && (
-                      <div className="card-body border-bottom">
-                        <p className="card-text text-muted mb-0">{event.description}</p>
+                      <div className="px-4 pb-3">
+                        <div className="alert alert-light mb-0" style={{ borderRadius: '12px' }}>
+                          <small className="text-muted">{event.description}</small>
+                        </div>
                       </div>
                     )}
 
+                    {/* Expandable Content */}
                     {isExpanded && (
-                      <div className="card-body border-top bg-light">
-                        {/* Event Details Section */}
-                        <div className="row">
+                      <div className="card-footer bg-light border-0" style={{ padding: '1.5rem', borderRadius: '0 0 20px 20px' }}>
+                        <div className="row g-3">
                           {/* Location with Map */}
                           {event.location && (
-                            <div className="col-md-6 mb-3">
-                              <h6 className="fw-bold text-dark mb-2">
-                                <i className="fas fa-map-marker-alt me-2 text-primary"></i>
-                                Location
-                              </h6>
-                              <p className="text-muted mb-2">{event.location}</p>
-                              <div className="mt-2">
-                                <iframe
-                                  width="100%"
-                                  height="200"
-                                  style={{ border: 0, borderRadius: '8px' }}
-                                  src={`https://www.google.com/maps/embed/v1/place?key=${getGoogleMapsApiKey()}&q=${encodeURIComponent(event.location)}`}
-                                  allowFullScreen
-                                ></iframe>
+                            <div className="col-lg-6">
+                              <div className="card border-0 shadow-sm">
+                                <div className="card-header bg-white border-0">
+                                  <h6 className="fw-bold text-dark mb-0">
+                                    <i className="fas fa-map-marker-alt me-2 text-danger"></i>
+                                    Location
+                                  </h6>
+                                </div>
+                                <div className="card-body">
+                                  <p className="text-muted mb-3">{event.location}</p>
+                                  <div style={{ borderRadius: '12px', overflow: 'hidden' }}>
+                                    <iframe
+                                      width="100%"
+                                      height="200"
+                                      style={{ border: 0 }}
+                                      src={`https://www.google.com/maps/embed/v1/place?key=${getGoogleMapsApiKey()}&q=${encodeURIComponent(event.location)}`}
+                                      allowFullScreen
+                                    ></iframe>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           )}
                           
                           {/* RSVP Responses for Admins */}
                           {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
-                            <div className="col-md-6 mb-3">
-                              <h6 className="fw-bold text-dark mb-2">
-                                <i className="fas fa-users me-2 text-primary"></i>
-                                Responses ({rsvpCounts.total})
-                              </h6>
-                              
-                              {console.log(`Rendering responses for event ${event.id}:`, { role, rsvpCounts, allRsvps: allRsvps[event.id] })}
-                              
-                              {/* Temporary Debug Info */}
-                              <div className="alert alert-info small mb-2">
-                                <strong>Debug:</strong> Role: {role}, Total RSVP Data Keys: {Object.keys(allRsvps).length}, 
-                                Users: {allUsers.length}, This Event RSVPs: {Object.keys(allRsvps[event.id] || {}).length}
+                            <div className="col-lg-6">
+                              <div className="card border-0 shadow-sm">
+                                <div className="card-header bg-white border-0">
+                                  <h6 className="fw-bold text-dark mb-0">
+                                    <i className="fas fa-users me-2 text-primary"></i>
+                                    Responses ({rsvpCounts.total})
+                                  </h6>
+                                </div>
+                                <div className="card-body">
+                                  {rsvpCounts.total > 0 ? (
+                                    <>
+                                      <div className="row g-2 mb-3">
+                                        <div className="col-4">
+                                          <div className="text-center p-3 bg-success bg-opacity-10 rounded-3">
+                                            <div className="h4 mb-1 text-success fw-bold">{rsvpCounts.yes}</div>
+                                            <small className="text-success fw-medium">Going</small>
+                                          </div>
+                                        </div>
+                                        <div className="col-4">
+                                          <div className="text-center p-3 bg-warning bg-opacity-10 rounded-3">
+                                            <div className="h4 mb-1 text-warning fw-bold">{rsvpCounts.maybe}</div>
+                                            <small className="text-warning fw-medium">Maybe</small>
+                                          </div>
+                                        </div>
+                                        <div className="col-4">
+                                          <div className="text-center p-3 bg-danger bg-opacity-10 rounded-3">
+                                            <div className="h4 mb-1 text-danger fw-bold">{rsvpCounts.no}</div>
+                                            <small className="text-danger fw-medium">Can't Go</small>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      
+                                      {getUsersForEvent(event.id, 'yes').length > 0 && (
+                                        <div>
+                                          <small className="text-muted d-block mb-2 fw-medium">Who's attending:</small>
+                                          <div className="d-flex flex-wrap gap-2">
+                                            {getUsersForEvent(event.id, 'yes').slice(0, 8).map(user => (
+                                              <UserAvatar 
+                                                key={user.id}
+                                                user={user} 
+                                                size="sm"
+                                                showTooltip={true}
+                                              />
+                                            ))}
+                                            {getUsersForEvent(event.id, 'yes').length > 8 && (
+                                              <span className="badge bg-secondary rounded-pill">
+                                                +{getUsersForEvent(event.id, 'yes').length - 8} more
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <div className="text-center py-3">
+                                      <i className="fas fa-inbox text-muted fs-1 mb-2"></i>
+                                      <p className="text-muted mb-0">No responses yet</p>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                              
-                              {rsvpCounts.total > 0 ? (
-                                <div className="row g-2">
-                                  <div className="col-4">
-                                    <div className="text-center p-2 bg-success bg-opacity-10 rounded">
-                                      <div className="h5 mb-1 text-success">{rsvpCounts.yes}</div>
-                                      <small className="text-success">Going</small>
-                                    </div>
-                                  </div>
-                                  <div className="col-4">
-                                    <div className="text-center p-2 bg-warning bg-opacity-10 rounded">
-                                      <div className="h5 mb-1 text-warning">{rsvpCounts.maybe}</div>
-                                      <small className="text-warning">Maybe</small>
-                                    </div>
-                                  </div>
-                                  <div className="col-4">
-                                    <div className="text-center p-2 bg-danger bg-opacity-10 rounded">
-                                      <div className="h5 mb-1 text-danger">{rsvpCounts.no}</div>
-                                      <small className="text-danger">Can't Go</small>
-                                    </div>
-                                  </div>
-                                </div>
-                              ) : (
-                                <p className="text-muted small">No responses yet</p>
-                              )}
-                              
-                              {getUsersForEvent(event.id, 'yes').length > 0 && (
-                                <div className="mt-3">
-                                  <small className="text-muted d-block mb-2">Who's going:</small>
-                                  <div className="d-flex flex-wrap gap-1">
-                                    {getUsersForEvent(event.id, 'yes').slice(0, 5).map(user => (
-                                      <UserAvatar 
-                                        key={user.id}
-                                        user={user} 
-                                        size="sm"
-                                        showTooltip={true}
-                                      />
-                                    ))}
-                                    {getUsersForEvent(event.id, 'yes').length > 5 && (
-                                      <span className="badge bg-secondary small">
-                                        +{getUsersForEvent(event.id, 'yes').length - 5} more
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-                              )}
                             </div>
                           )}
                         </div>
