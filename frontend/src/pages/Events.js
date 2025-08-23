@@ -484,192 +484,158 @@ function Events() {
               const isPastEvent = isEventPast(event.dateTime);
               
               return (
-                <div key={event.id} className="col-12 mb-4">
-                  <div className={`card border-0 shadow-lg h-100 overflow-hidden position-relative ${isPastEvent ? 'opacity-75' : ''}`} 
+                <div key={event.id} className="col-12 mb-2">
+                  <div className={`card border-0 shadow-sm ${isPastEvent ? 'opacity-75' : ''}`} 
                        style={{ 
-                         borderRadius: '20px', 
-                         transition: 'all 0.3s ease, transform 0.2s ease',
+                         borderRadius: '12px', 
+                         transition: 'all 0.2s ease, transform 0.1s ease',
                          cursor: 'pointer',
-                         border: `3px solid ${isPastEvent ? '#dee2e6' : (orgThemeColor || '#0d6efd')}33`
+                         borderLeft: `4px solid ${isPastEvent ? '#6c757d' : (orgThemeColor || '#0d6efd')}`
                        }}
-                       onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-3px)'}
+                       onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-1px)'}
                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0px)'}>
                     
-                    {/* Color accent top border */}
+                    {/* Compact Single-Line Layout */}
                     <div 
-                      style={{
-                        height: '6px',
-                        background: isPastEvent ? '#6c757d' : `linear-gradient(90deg, ${orgThemeColor || '#0d6efd'} 0%, ${orgThemeColor ? `${orgThemeColor}aa` : '#0851d4'} 100%)`,
-                        borderRadius: '20px 20px 0 0'
-                      }}
-                    ></div>
-                    
-                    {/* Main Event Content */}
-                    <div 
-                      className="card-body"
+                      className="card-body py-3 px-4"
                       onClick={(e) => {
                         // Only expand if clicking on the card body, not buttons
                         if (!e.target.closest('button')) {
                           toggleEventExpansion(event.id);
                         }
                       }}
-                      style={{ padding: '1.5rem', cursor: 'pointer' }}
+                      style={{ cursor: 'pointer' }}
                     >
-                      <div className="d-flex flex-column gap-3">
-                        {/* Event Title and Chevron */}
-                        <div className="d-flex justify-content-between align-items-start">
-                          <div className="d-flex align-items-start gap-3 flex-grow-1">
+                      <div className="d-flex align-items-center justify-content-between">
+                        {/* Left Side - Event Info */}
+                        <div className="d-flex align-items-center gap-4 flex-grow-1">
+                          {/* Event Icon & Name */}
+                          <div className="d-flex align-items-center gap-3">
                             <div 
                               className="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0"
                               style={{
-                                width: '50px',
-                                height: '50px',
+                                width: '35px',
+                                height: '35px',
                                 background: isPastEvent ? '#6c757d' : `linear-gradient(135deg, ${orgThemeColor || '#0d6efd'} 0%, ${orgThemeColor ? `${orgThemeColor}dd` : '#0851d4'} 100%)`,
                                 color: 'white'
                               }}
                             >
-                              <i className="fas fa-calendar-check fs-5"></i>
+                              <i className="fas fa-calendar-check"></i>
                             </div>
-                            <div className="flex-grow-1">
-                              <h5 className="card-title mb-1 fw-bold text-dark">
-                                {event.name}
-                              </h5>
-                              <div className="d-flex flex-wrap gap-2 align-items-center">
-                                <span className="badge bg-light text-muted">
-                                  {event.event_type || 'Event'}
-                                </span>
-                                {isPastEvent && (
-                                  <span className="badge bg-secondary">
-                                    <i className="fas fa-history me-1"></i>
-                                    Past Event
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                          <div className="d-flex gap-2">
-                            {/* Admin Action Buttons */}
-                            {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
-                              <>
-                                {/* Edit Button */}
-                                <button 
-                                  className="btn btn-sm btn-warning rounded-circle p-2"
-                                  style={{ width: '40px', height: '40px' }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openEditForm(event);
-                                  }}
-                                  title="Edit Event"
-                                >
-                                  <i className="fas fa-pencil-alt"></i>
-                                </button>
-                                {/* Delete Button */}
-                                <button 
-                                  className="btn btn-sm btn-danger rounded-circle p-2"
-                                  style={{ width: '40px', height: '40px' }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteEvent(event);
-                                  }}
-                                  title="Delete Event"
-                                >
-                                  <i className="fas fa-trash-alt"></i>
-                                </button>
-                              </>
-                            )}
-                            {/* Expand/Collapse Button */}
-                            <button 
-                              className="btn btn-sm btn-light rounded-circle p-2"
-                              style={{ width: '40px', height: '40px' }}
-                              onClick={() => toggleEventExpansion(event.id)}
-                              title={isExpanded ? 'Collapse' : 'Expand'}
-                            >
-                              <i className="fas fa-ellipsis-h"></i>
-                            </button>
-                          </div>
-                        </div>
-                        
-                        {/* Event Details Grid */}
-                        <div className="row g-3">
-                          <div className="col-md-6">
-                            <div className="d-flex align-items-center gap-2 p-2 bg-light rounded-3">
-                              <i className="fas fa-clock text-primary"></i>
-                              <div>
-                                <small className="text-muted d-block">When</small>
-                                <span className="fw-medium">{formatDateTime(event.dateTime)}</span>
-                              </div>
+                            <div>
+                              <h6 className="mb-0 fw-bold text-dark">{event.name}</h6>
+                              <small className="text-muted">{event.event_type || 'Event'}</small>
                             </div>
                           </div>
                           
+                          {/* Time */}
+                          <div className="d-flex align-items-center gap-2 text-muted">
+                            <i className="fas fa-clock"></i>
+                            <span className="fw-medium">{formatDateTime(event.dateTime)}</span>
+                          </div>
+                          
+                          {/* Location */}
                           {event.location && (
-                            <div className="col-md-6">
-                              <div className="d-flex align-items-center gap-2 p-2 bg-light rounded-3">
-                                <i className="fas fa-map-marker-alt text-danger"></i>
-                                <div>
-                                  <small className="text-muted d-block">Where</small>
-                                  <span className="fw-medium">
-                                    {event.location.length > 25 ? `${event.location.substring(0, 25)}...` : event.location}
-                                  </span>
-                                </div>
-                              </div>
+                            <div className="d-flex align-items-center gap-2 text-muted">
+                              <i className="fas fa-map-marker-alt"></i>
+                              <span className="fw-medium">
+                                {event.location.length > 25 ? `${event.location.substring(0, 25)}...` : event.location}
+                              </span>
                             </div>
                           )}
                           
+                          {/* Response Count - Admin Only */}
                           {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
-                            <div className="col-md-6">
-                              <div className="d-flex align-items-center gap-2 p-2 bg-success bg-opacity-10 rounded-3">
-                                <i className="fas fa-users text-success"></i>
-                                <div>
-                                  <small className="text-muted d-block">Attending</small>
-                                  <span className="fw-bold text-success">{rsvpCounts.yes} members</span>
-                                </div>
+                            <div className="d-flex align-items-center gap-2">
+                              <div 
+                                className="rounded-pill px-2 py-1 d-flex align-items-center gap-1"
+                                style={{ backgroundColor: '#e8f5e8', color: '#198754' }}
+                              >
+                                <i className="fas fa-users"></i>
+                                <span className="fw-semibold small">{rsvpCounts.yes}</span>
                               </div>
                             </div>
                           )}
+                        </div>
+
+                        {/* Right Side - RSVP Status & Actions */}
+                        <div className="d-flex align-items-center gap-2">
+                          {/* Current User's RSVP Status */}
+                          {!isPastEvent && (
+                            <div className="d-flex gap-1">
+                              <button
+                                className={`btn btn-sm ${rsvps[event.id] === 'yes' ? 'btn-success' : 'btn-outline-success'}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRSVP(event.id, 'yes');
+                                }}
+                                style={{ borderRadius: '8px', minWidth: '60px' }}
+                              >
+                                <i className="fas fa-check"></i>
+                              </button>
+                              <button
+                                className={`btn btn-sm ${rsvps[event.id] === 'maybe' ? 'btn-warning' : 'btn-outline-warning'}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRSVP(event.id, 'maybe');
+                                }}
+                                style={{ borderRadius: '8px', minWidth: '60px' }}
+                              >
+                                <i className="fas fa-question"></i>
+                              </button>
+                              <button
+                                className={`btn btn-sm ${rsvps[event.id] === 'no' ? 'btn-danger' : 'btn-outline-danger'}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleRSVP(event.id, 'no');
+                                }}
+                                style={{ borderRadius: '8px', minWidth: '60px' }}
+                              >
+                                <i className="fas fa-times"></i>
+                              </button>
+                            </div>
+                          )}
+                          
+                          {/* Admin Action Buttons */}
+                          {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
+                            <div className="d-flex gap-1">
+                              <button 
+                                className="btn btn-sm btn-warning rounded-circle"
+                                style={{ width: '32px', height: '32px' }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEditForm(event);
+                                }}
+                                title="Edit Event"
+                              >
+                                <i className="fas fa-pencil-alt"></i>
+                              </button>
+                              <button 
+                                className="btn btn-sm btn-danger rounded-circle"
+                                style={{ width: '32px', height: '32px' }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteEvent(event);
+                                }}
+                                title="Delete Event"
+                              >
+                                <i className="fas fa-trash-alt"></i>
+                              </button>
+                            </div>
+                          )}
+                          
+                          {/* Expand Button */}
+                          <button 
+                            className="btn btn-sm btn-light rounded-circle"
+                            style={{ width: '32px', height: '32px' }}
+                            onClick={() => toggleEventExpansion(event.id)}
+                            title={isExpanded ? 'Collapse' : 'Expand'}
+                          >
+                            <i className="fas fa-ellipsis-h"></i>
+                          </button>
                         </div>
                       </div>
                     </div>
-                    
-                    {/* RSVP Buttons - Clean separator */}
-                    {!isPastEvent && (
-                      <div className="card-footer bg-white border-0" style={{ padding: '1rem 1.5rem' }}>
-                        <div className="d-flex gap-2">
-                          <button
-                            className={`btn flex-fill ${rsvps[event.id] === 'yes' ? 'btn-success' : 'btn-outline-success'}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRSVP(event.id, 'yes');
-                            }}
-                            style={{ borderRadius: '12px', fontWeight: '600', padding: '10px' }}
-                          >
-                            <i className="fas fa-check me-2"></i>
-                            Going
-                          </button>
-                          <button
-                            className={`btn flex-fill ${rsvps[event.id] === 'maybe' ? 'btn-warning' : 'btn-outline-warning'}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRSVP(event.id, 'maybe');
-                            }}
-                            style={{ borderRadius: '12px', fontWeight: '600', padding: '10px' }}
-                          >
-                            <i className="fas fa-question me-2"></i>
-                            Maybe
-                          </button>
-                          <button
-                            className={`btn flex-fill ${rsvps[event.id] === 'no' ? 'btn-danger' : 'btn-outline-danger'}`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRSVP(event.id, 'no');
-                            }}
-                            style={{ borderRadius: '12px', fontWeight: '600', padding: '10px' }}
-                          >
-                            <i className="fas fa-times me-2"></i>
-                            Can't Go
-                          </button>
-                        </div>
-                      </div>
-                    )}
                     
                     {/* Event Description */}
                     {event.description && (
