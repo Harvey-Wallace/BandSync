@@ -180,6 +180,11 @@ function Events() {
         [eventId]: status
       }));
 
+      // Refresh the detailed RSVP data for admin view
+      if (role === 'Admin' || role === 'admin' || role === 'super_admin') {
+        await refreshEventRsvpData(eventId);
+      }
+
       // Show success message
       const statusMessages = {
         'yes': 'RSVP confirmed! See you there! 🎉',
@@ -201,11 +206,38 @@ function Events() {
     }
   };
 
-  const toggleEventExpansion = (eventId) => {
+  // Function to refresh RSVP data for a specific event
+  const refreshEventRsvpData = async (eventId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const rsvpRes = await axios.get(`${getApiUrl()}/events/${eventId}/rsvps`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      // Update the allRsvps state with fresh data for this event
+      setAllRsvps(prev => ({
+        ...prev,
+        [eventId]: rsvpRes.data
+      }));
+      
+      console.log(`Refreshed RSVP data for event ${eventId}:`, rsvpRes.data);
+    } catch (error) {
+      console.warn(`Error refreshing RSVP data for event ${eventId}:`, error);
+    }
+  };
+
+  const toggleEventExpansion = async (eventId) => {
+    const wasExpanded = expandedEvents[eventId];
+    
     setExpandedEvents(prev => ({
       ...prev,
       [eventId]: !prev[eventId]
     }));
+
+    // If expanding the event and user is admin, refresh RSVP data
+    if (!wasExpanded && (role === 'Admin' || role === 'admin' || role === 'super_admin')) {
+      await refreshEventRsvpData(eventId);
+    }
   };
 
   const isEventPast = (eventDateTime) => {
