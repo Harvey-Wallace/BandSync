@@ -342,6 +342,10 @@ function Events() {
                   <i className="fas fa-chart-line me-2"></i>
                   Analytics Dashboard
                 </a>
+                {/* Temporary Debug Info */}
+                <div className="text-muted small">
+                  Role: {role || 'none'} | OrgID: {localStorage.getItem('organization_id') || 'none'}
+                </div>
               </div>
             </div>
           </div>
@@ -522,6 +526,12 @@ function Events() {
                               </h6>
                               
                               {console.log(`Rendering responses for event ${event.id}:`, { role, rsvpCounts, allRsvps: allRsvps[event.id] })}
+                              
+                              {/* Temporary Debug Info */}
+                              <div className="alert alert-info small mb-2">
+                                <strong>Debug:</strong> Role: {role}, Total RSVP Data Keys: {Object.keys(allRsvps).length}, 
+                                Users: {allUsers.length}, This Event RSVPs: {Object.keys(allRsvps[event.id] || {}).length}
+                              </div>
                               
                               {rsvpCounts.total > 0 ? (
                                 <div className="row g-2">
