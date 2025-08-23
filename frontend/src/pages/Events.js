@@ -28,6 +28,8 @@ function Events() {
   const [filter, setFilter] = useState('upcoming'); // Default to 'upcoming'
   const [expandedEvents, setExpandedEvents] = useState({}); // Track which events are expanded
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showEditForm, setShowEditForm] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
   const [categories, setCategories] = useState([]);
   const { orgThemeColor } = useTheme();
   const role = localStorage.getItem('role');
@@ -299,6 +301,69 @@ function Events() {
     }
   };
 
+  // Edit event handler
+  const handleEditEvent = async (eventData) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.put(`${getApiUrl()}/events/${editingEvent.id}`, eventData, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Refresh events list
+      const eventsResponse = await axios.get(`${getApiUrl()}/events/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const sortedEvents = eventsResponse.data.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setEvents(sortedEvents);
+      
+      setShowEditForm(false);
+      setEditingEvent(null);
+      showSuccessMessage('Event updated successfully! ✅');
+      
+    } catch (error) {
+      console.error('Error updating event:', error);
+      showErrorMessage(error.response?.data?.error || 'Failed to update event. Please try again.');
+      throw error; // Re-throw so the form can handle it
+    }
+  };
+
+  // Open edit form with event data
+  const openEditForm = (event) => {
+    setEditingEvent(event);
+    setShowEditForm(true);
+  };
+
+  // Delete event handler
+  const handleDeleteEvent = async (event) => {
+    if (!window.confirm(`Are you sure you want to delete "${event.name}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      await axios.delete(`${getApiUrl()}/events/${event.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Refresh events list
+      const eventsResponse = await axios.get(`${getApiUrl()}/events/`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const sortedEvents = eventsResponse.data.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setEvents(sortedEvents);
+      
+      showSuccessMessage('Event deleted successfully! 🗑️');
+      
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      showErrorMessage(error.response?.data?.error || 'Failed to delete event. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-vh-100 bg-light">
@@ -442,8 +507,13 @@ function Events() {
                     {/* Main Event Content */}
                     <div 
                       className="card-body"
-                      onClick={() => toggleEventExpansion(event.id)}
-                      style={{ padding: '1.5rem' }}
+                      onClick={(e) => {
+                        // Only expand if clicking on the card body, not buttons
+                        if (!e.target.closest('button')) {
+                          toggleEventExpansion(event.id);
+                        }
+                      }}
+                      style={{ padding: '1.5rem', cursor: 'pointer' }}
                     >
                       <div className="d-flex flex-column gap-3">
                         {/* Event Title and Chevron */}
@@ -477,12 +547,46 @@ function Events() {
                               </div>
                             </div>
                           </div>
-                          <button 
-                            className="btn btn-sm btn-light rounded-circle p-2"
-                            style={{ width: '40px', height: '40px' }}
-                          >
-                            <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
-                          </button>
+                          <div className="d-flex gap-2">
+                            {/* Admin Action Buttons */}
+                            {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
+                              <>
+                                {/* Edit Button */}
+                                <button 
+                                  className="btn btn-sm btn-warning rounded-circle p-2"
+                                  style={{ width: '40px', height: '40px' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openEditForm(event);
+                                  }}
+                                  title="Edit Event"
+                                >
+                                  <i className="fas fa-edit"></i>
+                                </button>
+                                {/* Delete Button */}
+                                <button 
+                                  className="btn btn-sm btn-danger rounded-circle p-2"
+                                  style={{ width: '40px', height: '40px' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteEvent(event);
+                                  }}
+                                  title="Delete Event"
+                                >
+                                  <i className="fas fa-trash"></i>
+                                </button>
+                              </>
+                            )}
+                            {/* Expand/Collapse Button */}
+                            <button 
+                              className="btn btn-sm btn-light rounded-circle p-2"
+                              style={{ width: '40px', height: '40px' }}
+                              onClick={() => toggleEventExpansion(event.id)}
+                              title={isExpanded ? 'Collapse' : 'Expand'}
+                            >
+                              <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+                            </button>
+                          </div>
                         </div>
                         
                         {/* Event Details Grid */}
@@ -686,6 +790,18 @@ function Events() {
           show={showCreateForm}
           onHide={() => setShowCreateForm(false)}
           onSave={handleCreateEvent}
+          categories={categories}
+        />
+
+        {/* Edit Event Modal */}
+        <EnhancedEventForm
+          show={showEditForm}
+          onHide={() => {
+            setShowEditForm(false);
+            setEditingEvent(null);
+          }}
+          onSave={handleEditEvent}
+          event={editingEvent}
           categories={categories}
         />
       </div>
