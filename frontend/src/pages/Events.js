@@ -88,6 +88,7 @@ function Events() {
         if (role === 'admin' || role === 'super_admin') {
           try {
             const organizationId = localStorage.getItem('organization_id');
+            console.log('Admin data fetch attempt:', { role, organizationId });
             if (organizationId) {
               const [allRsvpsResponse, sectionsResponse, usersResponse] = await Promise.all([
                 axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, {
@@ -115,6 +116,11 @@ function Events() {
 
               setSections(sectionsResponse.data || []);
               setAllUsers(usersResponse.data || []);
+              console.log('Admin data loaded:', { 
+                allRsvps: allRsvpsMap, 
+                sections: sectionsResponse.data?.length || 0, 
+                users: usersResponse.data?.length || 0 
+              });
             }
           } catch (adminError) {
             console.warn('Error fetching admin data:', adminError);
@@ -137,7 +143,7 @@ function Events() {
     };
 
     fetchData();
-  }, []);
+  }, [role]);
 
   const handleRSVP = async (eventId, status) => {
     try {
@@ -227,6 +233,7 @@ function Events() {
       }
     });
     
+    console.log(`RSVP counts for event ${eventId}:`, counts, 'Raw data:', eventRsvps);
     return counts;
   };
 
@@ -494,17 +501,15 @@ function Events() {
                                 Location
                               </h6>
                               <p className="text-muted mb-2">{event.location}</p>
-                              {event.coordinates && (
-                                <div className="mt-2">
-                                  <iframe
-                                    width="100%"
-                                    height="200"
-                                    style={{ border: 0, borderRadius: '8px' }}
-                                    src={`https://www.google.com/maps/embed/v1/place?key=${getGoogleMapsApiKey()}&q=${encodeURIComponent(event.location)}`}
-                                    allowFullScreen
-                                  ></iframe>
-                                </div>
-                              )}
+                              <div className="mt-2">
+                                <iframe
+                                  width="100%"
+                                  height="200"
+                                  style={{ border: 0, borderRadius: '8px' }}
+                                  src={`https://www.google.com/maps/embed/v1/place?key=${getGoogleMapsApiKey()}&q=${encodeURIComponent(event.location)}`}
+                                  allowFullScreen
+                                ></iframe>
+                              </div>
                             </div>
                           )}
                           
@@ -515,6 +520,8 @@ function Events() {
                                 <i className="fas fa-users me-2 text-primary"></i>
                                 Responses ({rsvpCounts.total})
                               </h6>
+                              
+                              {console.log(`Rendering responses for event ${event.id}:`, { role, rsvpCounts, allRsvps: allRsvps[event.id] })}
                               
                               {rsvpCounts.total > 0 ? (
                                 <div className="row g-2">
