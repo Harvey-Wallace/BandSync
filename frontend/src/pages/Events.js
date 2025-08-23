@@ -24,6 +24,7 @@ function Events() {
   const [allRsvps, setAllRsvps] = useState({}); // Store all member responses
   const [sections, setSections] = useState([]); // Store sections
   const [allUsers, setAllUsers] = useState([]); // Store all users with section info
+  const [organizationMembers, setOrganizationMembers] = useState([]); // Store all organization members
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filter, setFilter] = useState('upcoming'); // Default to 'upcoming'
@@ -108,6 +109,17 @@ function Events() {
           }
           setAllRsvps(eventRsvpData);
           console.log('All event RSVP data loaded:', eventRsvpData);
+
+          // Fetch organization members for admin view
+          try {
+            const orgMembersRes = await axios.get(`${getApiUrl()}/organizations/current/members`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            setOrganizationMembers(orgMembersRes.data);
+            console.log('Organization members loaded:', orgMembersRes.data);
+          } catch (error) {
+            console.warn('Error loading organization members:', error);
+          }
         }
 
       } catch (error) {
@@ -236,6 +248,41 @@ function Events() {
         }
       });
       return allUsers;
+    }
+  };
+
+  // Get all organization members with their RSVP status for a specific event
+  const getAllMembersWithRsvpStatus = (eventId) => {
+    const eventRsvps = allRsvps[eventId] || {};
+    
+    return organizationMembers.map(member => {
+      // Find which RSVP status this member has
+      let rsvpStatus = 'no_response';
+      for (const [status, users] of Object.entries(eventRsvps)) {
+        if (Array.isArray(users) && users.some(user => user.id === member.id)) {
+          rsvpStatus = status;
+          break;
+        }
+      }
+      
+      return {
+        ...member,
+        rsvpStatus
+      };
+    });
+  };
+
+  // Get RSVP status badge styling
+  const getRsvpStatusStyle = (status) => {
+    switch (status) {
+      case 'yes':
+        return { bg: 'success', text: 'Going', icon: 'fa-check' };
+      case 'maybe':
+        return { bg: 'warning', text: 'Maybe', icon: 'fa-question' };
+      case 'no':
+        return { bg: 'danger', text: "Can't Go", icon: 'fa-times' };
+      default:
+        return { bg: 'secondary', text: 'No Response', icon: 'fa-minus' };
     }
   };
 
@@ -795,63 +842,81 @@ function Events() {
                           
                           {/* RSVP Responses for Admins */}
                           {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
-                            <div className="col-lg-6">
+                            <div className="col-12">
                               <div className="card border-0 shadow-sm">
                                 <div className="card-header bg-white border-0">
                                   <h6 className="fw-bold text-dark mb-0">
                                     <i className="fas fa-users me-2 text-primary"></i>
-                                    Responses ({rsvpCounts.total})
+                                    Member Responses ({organizationMembers.length} members)
                                   </h6>
                                 </div>
                                 <div className="card-body">
-                                  {rsvpCounts.total > 0 ? (
+                                  {organizationMembers.length > 0 ? (
                                     <>
-                                      <div className="row g-2 mb-3">
-                                        <div className="col-4">
+                                      {/* Response Summary */}
+                                      <div className="row g-2 mb-4">
+                                        <div className="col-3">
                                           <div className="text-center p-3 bg-success bg-opacity-10 rounded-3">
                                             <div className="h4 mb-1 text-success fw-bold">{rsvpCounts.yes}</div>
                                             <small className="text-success fw-medium">Going</small>
                                           </div>
                                         </div>
-                                        <div className="col-4">
+                                        <div className="col-3">
                                           <div className="text-center p-3 bg-warning bg-opacity-10 rounded-3">
                                             <div className="h4 mb-1 text-warning fw-bold">{rsvpCounts.maybe}</div>
                                             <small className="text-warning fw-medium">Maybe</small>
                                           </div>
                                         </div>
-                                        <div className="col-4">
+                                        <div className="col-3">
                                           <div className="text-center p-3 bg-danger bg-opacity-10 rounded-3">
                                             <div className="h4 mb-1 text-danger fw-bold">{rsvpCounts.no}</div>
                                             <small className="text-danger fw-medium">Can't Go</small>
                                           </div>
                                         </div>
-                                      </div>
-                                      
-                                      {getUsersForEvent(event.id, 'yes').length > 0 && (
-                                        <div>
-                                          <small className="text-muted d-block mb-2 fw-medium">Who's attending:</small>
-                                          <div className="d-flex flex-wrap gap-2">
-                                            {getUsersForEvent(event.id, 'yes').slice(0, 8).map(user => (
-                                              <UserAvatar 
-                                                key={user.id}
-                                                user={user} 
-                                                size="sm"
-                                                showTooltip={true}
-                                              />
-                                            ))}
-                                            {getUsersForEvent(event.id, 'yes').length > 8 && (
-                                              <span className="badge bg-secondary rounded-pill">
-                                                +{getUsersForEvent(event.id, 'yes').length - 8} more
-                                              </span>
-                                            )}
+                                        <div className="col-3">
+                                          <div className="text-center p-3 bg-secondary bg-opacity-10 rounded-3">
+                                            <div className="h4 mb-1 text-secondary fw-bold">
+                                              {organizationMembers.length - rsvpCounts.total}
+                                            </div>
+                                            <small className="text-secondary fw-medium">No Response</small>
                                           </div>
                                         </div>
-                                      )}
+                                      </div>
+
+                                      {/* Detailed Member List */}
+                                      <div className="row g-2">
+                                        {getAllMembersWithRsvpStatus(event.id).map(member => {
+                                          const statusStyle = getRsvpStatusStyle(member.rsvpStatus);
+                                          return (
+                                            <div key={member.id} className="col-md-6 col-lg-4">
+                                              <div className="d-flex align-items-center justify-content-between p-2 border rounded-3 bg-light">
+                                                <div className="d-flex align-items-center gap-2">
+                                                  <UserAvatar 
+                                                    user={member} 
+                                                    size="sm"
+                                                    showTooltip={false}
+                                                  />
+                                                  <div>
+                                                    <div className="fw-medium text-dark">{member.name || member.username}</div>
+                                                    {member.section && (
+                                                      <small className="text-muted">{member.section}</small>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                                <span className={`badge bg-${statusStyle.bg} d-flex align-items-center gap-1`}>
+                                                  <i className={`fas ${statusStyle.icon}`}></i>
+                                                  <span className="d-none d-sm-inline">{statusStyle.text}</span>
+                                                </span>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
+                                      </div>
                                     </>
                                   ) : (
                                     <div className="text-center py-3">
-                                      <i className="fas fa-inbox text-muted fs-1 mb-2"></i>
-                                      <p className="text-muted mb-0">No responses yet</p>
+                                      <i className="fas fa-users text-muted fs-1 mb-2"></i>
+                                      <p className="text-muted mb-0">Loading member list...</p>
                                     </div>
                                   )}
                                 </div>
