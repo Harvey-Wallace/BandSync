@@ -112,13 +112,30 @@ function Events() {
 
           // Fetch organization members for admin view
           try {
-            const orgMembersRes = await axios.get(`${getApiUrl()}/api/organization/members/`, {
+            const orgMembersRes = await axios.get(`${getApiUrl()}/admin/users`, {
               headers: { Authorization: `Bearer ${token}` }
             });
-            setOrganizationMembers(orgMembersRes.data.members || []);
-            console.log('Organization members loaded:', orgMembersRes.data.members);
+            console.log('Raw admin users response:', orgMembersRes.data);
+            
+            // The admin endpoint returns the array directly, not wrapped in { members: [] }
+            const members = Array.isArray(orgMembersRes.data) ? orgMembersRes.data : [];
+            
+            // Transform the data to match expected format
+            const transformedMembers = members.map(user => ({
+              id: user.id,
+              username: user.username,
+              name: user.name || user.username,
+              email: user.email,
+              section: user.section_name || 'Unassigned',
+              role: user.role,
+              avatar_url: user.avatar_url
+            }));
+            
+            setOrganizationMembers(transformedMembers);
+            console.log('Organization members loaded:', transformedMembers);
           } catch (error) {
-            console.warn('Error loading organization members:', error);
+            console.error('Error loading organization members:', error);
+            console.error('Error response:', error.response?.data);
           }
         }
 
