@@ -561,7 +561,7 @@ function Events() {
                                   }}
                                   title="Edit Event"
                                 >
-                                  <i className="fas fa-edit"></i>
+                                  <i className="fas fa-pencil-alt"></i>
                                 </button>
                                 {/* Delete Button */}
                                 <button 
@@ -573,7 +573,7 @@ function Events() {
                                   }}
                                   title="Delete Event"
                                 >
-                                  <i className="fas fa-trash"></i>
+                                  <i className="fas fa-trash-alt"></i>
                                 </button>
                               </>
                             )}
@@ -584,7 +584,7 @@ function Events() {
                               onClick={() => toggleEventExpansion(event.id)}
                               title={isExpanded ? 'Collapse' : 'Expand'}
                             >
-                              <i className={`fas ${isExpanded ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+                              <i className="fas fa-ellipsis-h"></i>
                             </button>
                           </div>
                         </div>
