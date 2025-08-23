@@ -157,6 +157,8 @@ function Events() {
   }, [role]);
 
   const handleRSVP = async (eventId, status) => {
+    console.log(`Starting RSVP update for event ${eventId} with status: ${status}`);
+    
     try {
       const token = localStorage.getItem('token');
       
@@ -165,7 +167,10 @@ function Events() {
         return;
       }
 
-      await axios.post(`${getApiUrl()}/events/${eventId}/rsvp`, {
+      console.log(`Sending RSVP request to: ${getApiUrl()}/events/${eventId}/rsvp`);
+      console.log(`Request payload:`, { status: status });
+
+      const response = await axios.post(`${getApiUrl()}/events/${eventId}/rsvp`, {
         status: status
       }, {
         headers: { 
@@ -174,14 +179,19 @@ function Events() {
         }
       });
 
+      console.log('RSVP API response:', response.data);
+
       // Update local state immediately for better UX
       setRsvps(prev => ({
         ...prev,
         [eventId]: status
       }));
 
+      console.log(`Updated local RSVP state for event ${eventId} to ${status}`);
+
       // Refresh the detailed RSVP data for admin view
       if (role === 'Admin' || role === 'admin' || role === 'super_admin') {
+        console.log('User is admin, refreshing detailed RSVP data...');
         await refreshEventRsvpData(eventId);
       }
 
@@ -196,12 +206,16 @@ function Events() {
 
     } catch (error) {
       console.error('Error updating RSVP:', error);
+      console.error('Error response:', error.response?.data);
+      console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
+      
       if (error.response?.status === 401) {
         showErrorMessage('Session expired. Please log in again.');
         localStorage.removeItem('token');
         window.location.href = '/login';
       } else {
-        showErrorMessage(error.response?.data?.message || 'Failed to update RSVP. Please try again.');
+        showErrorMessage(error.response?.data?.message || error.response?.data?.msg || 'Failed to update RSVP. Please try again.');
       }
     }
   };
