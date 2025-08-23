@@ -84,48 +84,24 @@ function Events() {
         }
         setRsvps(rsvpMap);
 
-        // Fetch additional data for admin users
-        if (role === 'admin' || role === 'super_admin') {
-          try {
-            const organizationId = localStorage.getItem('organization_id');
-            console.log('Admin data fetch attempt:', { role, organizationId });
-            if (organizationId) {
-              const [allRsvpsResponse, sectionsResponse, usersResponse] = await Promise.all([
-                axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, {
-                  headers: { Authorization: `Bearer ${token}` }
-                }),
-                axios.get(`${getApiUrl()}/sections/organization/${organizationId}`, {
-                  headers: { Authorization: `Bearer ${token}` }
-                }),
-                axios.get(`${getApiUrl()}/users/organization/${organizationId}`, {
-                  headers: { Authorization: `Bearer ${token}` }
-                })
-              ]);
-
-              // Process all RSVPs data
-              const allRsvpsMap = {};
-              if (allRsvpsResponse.data && Array.isArray(allRsvpsResponse.data)) {
-                allRsvpsResponse.data.forEach(rsvp => {
-                  if (!allRsvpsMap[rsvp.eventId]) {
-                    allRsvpsMap[rsvp.eventId] = {};
-                  }
-                  allRsvpsMap[rsvp.eventId][rsvp.userId] = rsvp.status;
-                });
-              }
-              setAllRsvps(allRsvpsMap);
-
-              setSections(sectionsResponse.data || []);
-              setAllUsers(usersResponse.data || []);
-              console.log('Admin data loaded:', { 
-                allRsvps: allRsvpsMap, 
-                sections: sectionsResponse.data?.length || 0, 
-                users: usersResponse.data?.length || 0 
+        // Fetch RSVP details for each event (for admin response counts)
+        if (role === 'Admin' || role === 'admin' || role === 'super_admin') {
+          const eventRsvpData = {};
+          for (const event of sortedEvents) {
+            try {
+              const rsvpRes = await axios.get(`${getApiUrl()}/events/${event.id}/rsvps`, {
+                headers: { Authorization: `Bearer ${token}` }
               });
+              
+              // Store the full RSVP data for this event
+              eventRsvpData[event.id] = rsvpRes.data;
+              console.log(`Loaded RSVP data for event ${event.id}:`, rsvpRes.data);
+            } catch (error) {
+              console.warn(`Error loading RSVP details for event ${event.id}:`, error);
             }
-          } catch (adminError) {
-            console.warn('Error fetching admin data:', adminError);
-            // Continue without admin data
           }
+          setAllRsvps(eventRsvpData);
+          console.log('All event RSVP data loaded:', eventRsvpData);
         }
 
       } catch (error) {
@@ -224,12 +200,14 @@ function Events() {
       yes: 0,
       no: 0,
       maybe: 0,
-      total: Object.keys(eventRsvps).length
+      total: 0
     };
     
-    Object.values(eventRsvps).forEach(status => {
-      if (counts.hasOwnProperty(status)) {
-        counts[status]++;
+    // The data structure from /events/{id}/rsvps is: { "yes": [users], "no": [users], "maybe": [users] }
+    Object.entries(eventRsvps).forEach(([status, users]) => {
+      if (Array.isArray(users)) {
+        counts[status] = users.length;
+        counts.total += users.length;
       }
     });
     
@@ -239,20 +217,20 @@ function Events() {
 
   const getUsersForEvent = (eventId, status = null) => {
     const eventRsvps = allRsvps[eventId] || {};
-    const userIds = status 
-      ? Object.keys(eventRsvps).filter(userId => eventRsvps[userId] === status)
-      : Object.keys(eventRsvps);
     
-    return userIds.map(userId => {
-      const user = allUsers.find(u => u.id === parseInt(userId));
-      if (!user) return null;
-      
-      const section = sections.find(s => s.id === user.sectionId);
-      return {
-        ...user,
-        sectionName: section?.name || 'No Section'
-      };
-    }).filter(Boolean);
+    if (status) {
+      // Return users for a specific status
+      return eventRsvps[status] || [];
+    } else {
+      // Return all users for the event
+      const allUsers = [];
+      Object.values(eventRsvps).forEach(users => {
+        if (Array.isArray(users)) {
+          allUsers.push(...users);
+        }
+      });
+      return allUsers;
+    }
   };
 
   const formatDateTime = (dateTimeString) => {
@@ -438,7 +416,7 @@ function Events() {
                               </div>
                               
                               <div className="d-flex align-items-center gap-2">
-                                {(role === 'admin' || role === 'super_admin') && (
+                                {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
                                   <span className="text-muted small d-none d-md-inline">
                                     {rsvpCounts.yes} going
                                   </span>
@@ -518,7 +496,7 @@ function Events() {
                           )}
                           
                           {/* RSVP Responses for Admins */}
-                          {(role === 'admin' || role === 'super_admin') && (
+                          {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
                             <div className="col-md-6 mb-3">
                               <h6 className="fw-bold text-dark mb-2">
                                 <i className="fas fa-users me-2 text-primary"></i>
