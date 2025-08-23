@@ -12,6 +12,9 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
     description: '',
     date: '',
     end_date: '',
+    arrive_by_time: '',
+    start_time: '',
+    end_time: '',
     location_address: '',
     category_id: '',
     is_template: false,
@@ -27,6 +30,9 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
         description: event.description || '',
         date: event.date ? new Date(event.date).toISOString().slice(0, 16) : '',
         end_date: event.end_date ? new Date(event.end_date).toISOString().slice(0, 16) : '',
+        arrive_by_time: event.arrive_by_time || '',
+        start_time: event.start_time || '',
+        end_time: event.end_time || '',
         location_address: event.location_address || '',
         category_id: event.category_id || '',
         is_template: event.is_template || false,
@@ -40,6 +46,9 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
         description: '',
         date: '',
         end_date: '',
+        arrive_by_time: '',
+        start_time: '',
+        end_time: '',
         location_address: '',
         category_id: '',
         is_template: false,
@@ -187,31 +196,80 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
               )}
 
               {!formData.is_template && (
-                <Row>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>Start Date & Time *</Form.Label>
-                      <Form.Control
-                        type="datetime-local"
-                        name="date"
-                        value={formData.date}
-                        onChange={handleInputChange}
-                        required
-                      />
-                    </Form.Group>
-                  </Col>
-                  <Col md={6}>
-                    <Form.Group className="mb-3">
-                      <Form.Label>End Date & Time</Form.Label>
-                      <Form.Control
-                        type="datetime-local"
-                        name="end_date"
-                        value={formData.end_date}
-                        onChange={handleInputChange}
-                      />
-                    </Form.Group>
-                  </Col>
-                </Row>
+                <>
+                  <Row>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>Start Date & Time *</Form.Label>
+                        <Form.Control
+                          type="datetime-local"
+                          name="date"
+                          value={formData.date}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </Form.Group>
+                    </Col>
+                    <Col md={6}>
+                      <Form.Group className="mb-3">
+                        <Form.Label>End Date & Time</Form.Label>
+                        <Form.Control
+                          type="datetime-local"
+                          name="end_date"
+                          value={formData.end_date}
+                          onChange={handleInputChange}
+                        />
+                      </Form.Group>
+                    </Col>
+                  </Row>
+
+                  <Card className="mb-3">
+                    <Card.Header>
+                      <h6 className="mb-0">Detailed Timing</h6>
+                      <small className="text-muted">Set specific times for different parts of the event</small>
+                    </Card.Header>
+                    <Card.Body>
+                      <Row>
+                        <Col md={4}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>Arrive By Time</Form.Label>
+                            <Form.Control
+                              type="time"
+                              name="arrive_by_time"
+                              value={formData.arrive_by_time}
+                              onChange={handleInputChange}
+                            />
+                            <Form.Text className="text-muted">When members should arrive</Form.Text>
+                          </Form.Group>
+                        </Col>
+                        <Col md={4}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>Start Time</Form.Label>
+                            <Form.Control
+                              type="time"
+                              name="start_time"
+                              value={formData.start_time}
+                              onChange={handleInputChange}
+                            />
+                            <Form.Text className="text-muted">When the event officially starts</Form.Text>
+                          </Form.Group>
+                        </Col>
+                        <Col md={4}>
+                          <Form.Group className="mb-3">
+                            <Form.Label>End Time</Form.Label>
+                            <Form.Control
+                              type="time"
+                              name="end_time"
+                              value={formData.end_time}
+                              onChange={handleInputChange}
+                            />
+                            <Form.Text className="text-muted">When the event ends</Form.Text>
+                          </Form.Group>
+                        </Col>
+                      </Row>
+                    </Card.Body>
+                  </Card>
+                </>
               )}
 
               <Form.Group className="mb-3">

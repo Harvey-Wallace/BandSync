@@ -245,20 +245,69 @@ function Events() {
     
     try {
       const date = new Date(dateTimeString);
-      const now = new Date();
-      const isToday = date.toDateString() === now.toDateString();
       
-      if (isToday) {
-        return `Today at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
-      }
+      // Format date
+      const dateOptions = { 
+        weekday: 'short', 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+      };
+      const timeOptions = { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      };
       
-      const dayOptions = { weekday: 'short', month: 'short', day: 'numeric' };
-      const timeOptions = { hour: '2-digit', minute: '2-digit' };
-      
-      return `${date.toLocaleDateString([], dayOptions)} at ${date.toLocaleTimeString([], timeOptions)}`;
+      return `${date.toLocaleDateString('en-US', dateOptions)} ${date.toLocaleTimeString('en-US', timeOptions)}`;
     } catch (error) {
+      console.error('Date parsing error:', error);
       return dateTimeString;
     }
+  };
+
+  const formatTime = (timeString) => {
+    if (!timeString) return null;
+    
+    try {
+      // Handle time string in format "HH:MM:SS" or "HH:MM"
+      const [hours, minutes] = timeString.split(':');
+      const date = new Date();
+      date.setHours(parseInt(hours), parseInt(minutes), 0, 0);
+      
+      return date.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit', 
+        hour12: true 
+      });
+    } catch (error) {
+      return timeString;
+    }
+  };
+
+  const formatEventTiming = (event) => {
+    const date = event.date ? new Date(event.date) : null;
+    const dateStr = date ? date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      month: 'short', 
+      day: 'numeric' 
+    }) : 'TBD';
+
+    const arriveBy = formatTime(event.arrive_by_time);
+    const startTime = formatTime(event.start_time);
+    const endTime = formatTime(event.end_time);
+
+    if (arriveBy || startTime || endTime) {
+      const times = [];
+      if (arriveBy) times.push(`Arrive: ${arriveBy}`);
+      if (startTime) times.push(`Start: ${startTime}`);
+      if (endTime) times.push(`End: ${endTime}`);
+      
+      return `${dateStr} • ${times.join(' • ')}`;
+    }
+
+    // Fallback to original dateTime if no separate time fields
+    return event.dateTime ? formatDateTime(event.dateTime) : dateStr;
   };
 
   const getRSVPButtonClass = (status, currentStatus) => {
@@ -531,7 +580,7 @@ function Events() {
                           {/* Time */}
                           <div className="d-flex align-items-center gap-2 text-muted">
                             <i className="fas fa-clock"></i>
-                            <span className="fw-medium">{formatDateTime(event.dateTime)}</span>
+                            <span className="fw-medium">{formatEventTiming(event)}</span>
                           </div>
                           
                           {/* Location */}
@@ -570,6 +619,7 @@ function Events() {
                                   handleRSVP(event.id, 'yes');
                                 }}
                                 style={{ borderRadius: '8px', minWidth: '60px' }}
+                                title="Going"
                               >
                                 <i className="fas fa-check"></i>
                               </button>
@@ -580,6 +630,7 @@ function Events() {
                                   handleRSVP(event.id, 'maybe');
                                 }}
                                 style={{ borderRadius: '8px', minWidth: '60px' }}
+                                title="Maybe"
                               >
                                 <i className="fas fa-question"></i>
                               </button>
@@ -590,6 +641,7 @@ function Events() {
                                   handleRSVP(event.id, 'no');
                                 }}
                                 style={{ borderRadius: '8px', minWidth: '60px' }}
+                                title="Can't Go"
                               >
                                 <i className="fas fa-times"></i>
                               </button>
