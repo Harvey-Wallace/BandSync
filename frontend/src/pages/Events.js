@@ -112,11 +112,11 @@ function Events() {
 
           // Fetch organization members for admin view
           try {
-            const orgMembersRes = await axios.get(`${getApiUrl()}/organizations/current/members`, {
+            const orgMembersRes = await axios.get(`${getApiUrl()}/api/organization/members/`, {
               headers: { Authorization: `Bearer ${token}` }
             });
-            setOrganizationMembers(orgMembersRes.data);
-            console.log('Organization members loaded:', orgMembersRes.data);
+            setOrganizationMembers(orgMembersRes.data.members || []);
+            console.log('Organization members loaded:', orgMembersRes.data.members);
           } catch (error) {
             console.warn('Error loading organization members:', error);
           }
@@ -255,11 +255,19 @@ function Events() {
   const getAllMembersWithRsvpStatus = (eventId) => {
     const eventRsvps = allRsvps[eventId] || {};
     
+    console.log(`Getting members for event ${eventId}:`, {
+      organizationMembers: organizationMembers.length,
+      eventRsvps: Object.keys(eventRsvps),
+      rsvpData: eventRsvps
+    });
+    
     return organizationMembers.map(member => {
       // Find which RSVP status this member has
       let rsvpStatus = 'no_response';
       for (const [status, users] of Object.entries(eventRsvps)) {
-        if (Array.isArray(users) && users.some(user => user.id === member.id)) {
+        if (Array.isArray(users) && users.some(user => 
+          user.id === member.id || user.username === member.username
+        )) {
           rsvpStatus = status;
           break;
         }
@@ -885,38 +893,50 @@ function Events() {
 
                                       {/* Detailed Member List */}
                                       <div className="row g-2">
-                                        {getAllMembersWithRsvpStatus(event.id).map(member => {
-                                          const statusStyle = getRsvpStatusStyle(member.rsvpStatus);
-                                          return (
-                                            <div key={member.id} className="col-md-6 col-lg-4">
-                                              <div className="d-flex align-items-center justify-content-between p-2 border rounded-3 bg-light">
-                                                <div className="d-flex align-items-center gap-2">
-                                                  <UserAvatar 
-                                                    user={member} 
-                                                    size="sm"
-                                                    showTooltip={false}
-                                                  />
-                                                  <div>
-                                                    <div className="fw-medium text-dark">{member.name || member.username}</div>
-                                                    {member.section && (
-                                                      <small className="text-muted">{member.section}</small>
-                                                    )}
+                                        {getAllMembersWithRsvpStatus(event.id).length > 0 ? 
+                                          getAllMembersWithRsvpStatus(event.id).map(member => {
+                                            const statusStyle = getRsvpStatusStyle(member.rsvpStatus);
+                                            return (
+                                              <div key={member.id} className="col-md-6 col-lg-4">
+                                                <div className="d-flex align-items-center justify-content-between p-2 border rounded-3 bg-light">
+                                                  <div className="d-flex align-items-center gap-2">
+                                                    <UserAvatar 
+                                                      user={member} 
+                                                      size="sm"
+                                                      showTooltip={false}
+                                                    />
+                                                    <div>
+                                                      <div className="fw-medium text-dark">{member.name || member.username}</div>
+                                                      {member.section && member.section !== 'Unassigned' && (
+                                                        <small className="text-muted">{member.section}</small>
+                                                      )}
+                                                    </div>
                                                   </div>
+                                                  <span className={`badge bg-${statusStyle.bg} d-flex align-items-center gap-1`}>
+                                                    <i className={`fas ${statusStyle.icon}`}></i>
+                                                    <span className="d-none d-sm-inline">{statusStyle.text}</span>
+                                                  </span>
                                                 </div>
-                                                <span className={`badge bg-${statusStyle.bg} d-flex align-items-center gap-1`}>
-                                                  <i className={`fas ${statusStyle.icon}`}></i>
-                                                  <span className="d-none d-sm-inline">{statusStyle.text}</span>
-                                                </span>
                                               </div>
-                                            </div>
-                                          );
-                                        })}
+                                            );
+                                          }) :
+                                          <div className="col-12 text-center py-3">
+                                            <p className="text-muted">No member data available for this event.</p>
+                                          </div>
+                                        }
                                       </div>
                                     </>
                                   ) : (
                                     <div className="text-center py-3">
                                       <i className="fas fa-users text-muted fs-1 mb-2"></i>
-                                      <p className="text-muted mb-0">Loading member list...</p>
+                                      <p className="text-muted mb-0">
+                                        {loading ? 'Loading member list...' : 'No organization members found'}
+                                      </p>
+                                      {!loading && (
+                                        <small className="text-muted">
+                                          Check console for debugging information
+                                        </small>
+                                      )}
                                     </div>
                                   )}
                                 </div>
