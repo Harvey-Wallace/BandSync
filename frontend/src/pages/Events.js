@@ -16,6 +16,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getGoogleMapsApiKey } from '../config/constants';
 import { getApiUrl } from '../utils/apiUrl';
 import axios from 'axios';
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 function Events() {
   const [events, setEvents] = useState([]);
@@ -293,21 +294,34 @@ function Events() {
       day: 'numeric' 
     }) : 'TBD';
 
+    // For the main display, only show arrive by time if available
+    const arriveBy = formatTime(event.arrive_by_time);
+    
+    if (arriveBy) {
+      return `${dateStr} • Arrive: ${arriveBy}`;
+    }
+
+    // Fallback to start time if no arrive by time
+    const startTime = formatTime(event.start_time);
+    if (startTime) {
+      return `${dateStr} • ${startTime}`;
+    }
+
+    // Final fallback to original dateTime
+    return event.dateTime ? formatDateTime(event.dateTime) : dateStr;
+  };
+
+  const formatDetailedTiming = (event) => {
+    const times = [];
     const arriveBy = formatTime(event.arrive_by_time);
     const startTime = formatTime(event.start_time);
     const endTime = formatTime(event.end_time);
 
-    if (arriveBy || startTime || endTime) {
-      const times = [];
-      if (arriveBy) times.push(`Arrive: ${arriveBy}`);
-      if (startTime) times.push(`Start: ${startTime}`);
-      if (endTime) times.push(`End: ${endTime}`);
-      
-      return `${dateStr} • ${times.join(' • ')}`;
-    }
-
-    // Fallback to original dateTime if no separate time fields
-    return event.dateTime ? formatDateTime(event.dateTime) : dateStr;
+    if (arriveBy) times.push(`Arrive: ${arriveBy}`);
+    if (startTime) times.push(`Start: ${startTime}`);
+    if (endTime) times.push(`End: ${endTime}`);
+    
+    return times.length > 0 ? times.join(' • ') : null;
   };
 
   const getRSVPButtonClass = (status, currentStatus) => {
@@ -557,7 +571,7 @@ function Events() {
                     >
                       <div className="d-flex align-items-center justify-content-between">
                         {/* Left Side - Event Info */}
-                        <div className="d-flex align-items-center gap-4 flex-grow-1">
+                        <div className="d-flex align-items-center gap-3 flex-grow-1">
                           {/* Event Icon & Name */}
                           <div className="d-flex align-items-center gap-3">
                             <div 
@@ -577,21 +591,21 @@ function Events() {
                             </div>
                           </div>
                           
-                          {/* Time */}
-                          <div className="d-flex align-items-center gap-2 text-muted">
-                            <i className="fas fa-clock"></i>
-                            <span className="fw-medium">{formatEventTiming(event)}</span>
-                          </div>
-                          
-                          {/* Location */}
+                          {/* Location - More prominent */}
                           {event.location && (
                             <div className="d-flex align-items-center gap-2 text-muted">
                               <i className="fas fa-map-marker-alt"></i>
                               <span className="fw-medium">
-                                {event.location.length > 25 ? `${event.location.substring(0, 25)}...` : event.location}
+                                {event.location.length > 40 ? `${event.location.substring(0, 40)}...` : event.location}
                               </span>
                             </div>
                           )}
+                          
+                          {/* Simple Time Display */}
+                          <div className="d-flex align-items-center gap-2 text-muted">
+                            <i className="fas fa-clock"></i>
+                            <span className="fw-medium">{formatEventTiming(event)}</span>
+                          </div>
                           
                           {/* Response Count - Admin Only */}
                           {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
@@ -702,6 +716,57 @@ function Events() {
                     {isExpanded && (
                       <div className="card-footer bg-light border-0" style={{ padding: '1.5rem', borderRadius: '0 0 20px 20px' }}>
                         <div className="row g-3">
+                          {/* Detailed Timing */}
+                          {formatDetailedTiming(event) && (
+                            <div className="col-12">
+                              <div className="card border-0 shadow-sm">
+                                <div className="card-header bg-white border-0">
+                                  <h6 className="fw-bold text-dark mb-0">
+                                    <i className="fas fa-clock me-2 text-primary"></i>
+                                    Event Schedule
+                                  </h6>
+                                </div>
+                                <div className="card-body">
+                                  <div className="d-flex flex-wrap gap-4">
+                                    {formatTime(event.arrive_by_time) && (
+                                      <div className="d-flex align-items-center gap-2">
+                                        <div className="bg-primary bg-opacity-10 rounded-circle p-2">
+                                          <i className="fas fa-door-open text-primary"></i>
+                                        </div>
+                                        <div>
+                                          <small className="text-muted d-block">Arrive By</small>
+                                          <span className="fw-bold">{formatTime(event.arrive_by_time)}</span>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {formatTime(event.start_time) && (
+                                      <div className="d-flex align-items-center gap-2">
+                                        <div className="bg-success bg-opacity-10 rounded-circle p-2">
+                                          <i className="fas fa-play text-success"></i>
+                                        </div>
+                                        <div>
+                                          <small className="text-muted d-block">Start Time</small>
+                                          <span className="fw-bold">{formatTime(event.start_time)}</span>
+                                        </div>
+                                      </div>
+                                    )}
+                                    {formatTime(event.end_time) && (
+                                      <div className="d-flex align-items-center gap-2">
+                                        <div className="bg-danger bg-opacity-10 rounded-circle p-2">
+                                          <i className="fas fa-stop text-danger"></i>
+                                        </div>
+                                        <div>
+                                          <small className="text-muted d-block">End Time</small>
+                                          <span className="fw-bold">{formatTime(event.end_time)}</span>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
                           {/* Location with Map */}
                           {event.location && (
                             <div className="col-lg-6">
