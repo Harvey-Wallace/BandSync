@@ -47,9 +47,8 @@ function Events() {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const organizationId = localStorage.getItem('organizationId');
         
-        if (!token || !organizationId) {
+        if (!token) {
           setError('Authentication required. Please log in.');
           setLoading(false);
           return;
@@ -63,9 +62,9 @@ function Events() {
           }
         };
 
-        // Fetch events and RSVPs in parallel
+        // Fetch events and RSVPs in parallel - using the same endpoints as EventsPage
         const [eventsResponse, rsvpResponse] = await Promise.all([
-          axios.get(`${getApiUrl()}/events/organization/${organizationId}`, config),
+          axios.get(`${getApiUrl()}/events/`, config),
           axios.get(`${getApiUrl()}/rsvps/user`, config)
         ]);
 
@@ -83,6 +82,7 @@ function Events() {
         // Fetch additional data for admin users
         if (role === 'admin' || role === 'super_admin') {
           try {
+            const organizationId = localStorage.getItem('organization_id'); // Fix: use organization_id
             const [allRsvpsResponse, sectionsResponse, usersResponse] = await Promise.all([
               axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, config),
               axios.get(`${getApiUrl()}/sections/organization/${organizationId}`, config),
@@ -129,7 +129,7 @@ function Events() {
   const handleRSVP = async (eventId, status) => {
     try {
       const token = localStorage.getItem('token');
-      const organizationId = localStorage.getItem('organizationId');
+      const organizationId = localStorage.getItem('organization_id'); // Fix: use organization_id
       
       if (!token || !organizationId) {
         showErrorMessage('Authentication required. Please log in.');
@@ -166,6 +166,7 @@ function Events() {
       // Refresh admin data if user is admin
       if (role === 'admin' || role === 'super_admin') {
         try {
+          const organizationId = localStorage.getItem('organization_id'); // Fix: use organization_id
           const allRsvpsResponse = await axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, config);
           const allRsvpsMap = {};
           if (allRsvpsResponse.data && Array.isArray(allRsvpsResponse.data)) {

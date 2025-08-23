@@ -41,7 +41,7 @@ function AnalyticsDashboard() {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
-        const organizationId = localStorage.getItem('organizationId');
+        const organizationId = localStorage.getItem('organization_id'); // Fix: use organization_id
         
         if (!token || !organizationId) {
           setError('Authentication required. Please log in.');
