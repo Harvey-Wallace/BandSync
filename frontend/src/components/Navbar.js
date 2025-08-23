@@ -242,15 +242,15 @@ function Navbar() {
           <ul className="navbar-nav me-auto mb-2 mb-lg-0"
               style={{flexWrap: 'nowrap', overflowX: 'auto'}}>
             <li className="nav-item">
-              <Link className="nav-link text-white px-2" to="/dashboard">
+              <Link className="nav-link text-white px-2" to="/events">
                 <i className="bi bi-house-door me-1"></i>
-                <span>Dashboard</span>
+                <span>Events</span>
               </Link>
             </li>
             <li className="nav-item">
-              <Link className="nav-link text-white px-2" to="/events">
-                <i className="bi bi-calendar-event me-1"></i>
-                <span>Events</span>
+              <Link className="nav-link text-white px-2" to="/analytics">
+                <i className="bi bi-graph-up me-1"></i>
+                <span>Analytics</span>
               </Link>
             </li>
             {(role === 'Admin' || isSuperAdmin) && (
