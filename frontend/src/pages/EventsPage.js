@@ -732,7 +732,7 @@ function EventsPage() {
                       <span className="me-2" style={{ fontSize: '1.2em' }}>
                         {getEventTypeIcon(event)}
                       </span>
-                      <h6 className="mb-0">{event.title}</h6>
+                      <h6 className="mb-0">{typeof event.title === 'string' ? event.title : 'Untitled Event'}</h6>
                       {event.is_recurring && (
                         <i className="bi bi-arrow-repeat ms-2 text-muted" title="Recurring Event"></i>
                       )}
@@ -744,7 +744,7 @@ function EventsPage() {
                           CANCELLED
                         </span>
                       )}
-                      {event.category && (
+                      {event.category && typeof event.category === 'string' && (
                         <span 
                           className={typeof getEventTypeBadge(event) === 'string' ? `badge bg-${getEventTypeBadge(event)} me-2` : 'badge me-2'}
                           style={typeof getEventTypeBadge(event) === 'object' ? getEventTypeBadge(event) : {}}
@@ -753,7 +753,7 @@ function EventsPage() {
                         </span>
                       )}
                       <span className={`badge bg-${typeof getEventTypeBadge(event) === 'string' ? getEventTypeBadge(event) : 'secondary'}`}>
-                        {event.type && event.type !== 'other' ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : 'Rehearsal'}
+                        {event.type && event.type !== 'other' && typeof event.type === 'string' ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : 'Rehearsal'}
                       </span>
                     </div>
                   </div>
@@ -763,16 +763,16 @@ function EventsPage() {
                         <small>
                           <strong>⚠️ This event has been cancelled</strong>
                           <br />
-                          <em>Reason: {event.cancellation_reason}</em>
+                          <em>Reason: {typeof event.cancellation_reason === 'string' ? event.cancellation_reason : 'No reason provided'}</em>
                           <br />
                           <small className="text-muted">
                             Cancelled {event.cancelled_at ? new Date(event.cancelled_at).toLocaleDateString() : 'recently'}
-                            {event.canceller_name && ` by ${event.canceller_name}`}
+                            {event.canceller_name && typeof event.canceller_name === 'string' && ` by ${event.canceller_name}`}
                           </small>
                         </small>
                       </div>
                     )}
-                    <p className="card-text">{event.description}</p>
+                    <p className="card-text">{typeof event.description === 'string' ? event.description : ''}</p>
                     <div className="mb-2">
                       <small className="text-muted">
                         <i className="bi bi-calendar me-1"></i>
@@ -787,7 +787,7 @@ function EventsPage() {
                         </small>
                       </div>
                     )}
-                    {event.location_address && (
+                    {event.location_address && typeof event.location_address === 'string' && (
                       <div className="mb-3">
                         <small className="text-muted">
                           <i className="bi bi-geo-alt me-1"></i>
