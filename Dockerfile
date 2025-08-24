@@ -14,7 +14,7 @@ ENV REACT_APP_API_URL=$REACT_APP_API_URL
 RUN echo "🔍 Build-time environment variables:" && \
     echo "REACT_APP_API_URL: $REACT_APP_API_URL" && \
     echo "REACT_APP_GOOGLE_MAPS_API_KEY: ${REACT_APP_GOOGLE_MAPS_API_KEY:0:20}..." && \
-    echo "📦 Starting frontend build..."
+    echo "📦 Starting frontend build (force rebuild)..."
 
 # Force cache invalidation with a comment
 WORKDIR /app/frontend
