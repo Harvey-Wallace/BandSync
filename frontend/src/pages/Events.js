@@ -161,12 +161,14 @@ function Events() {
     
     try {
       const token = localStorage.getItem('token');
+      const username = localStorage.getItem('username');
       
       if (!token) {
         showErrorMessage('Authentication required. Please log in.');
         return;
       }
 
+      console.log(`Current user: ${username}`);
       console.log(`Sending RSVP request to: ${getApiUrl()}/events/${eventId}/rsvp`);
       console.log(`Request payload:`, { status: status });
 
@@ -180,6 +182,7 @@ function Events() {
       });
 
       console.log('RSVP API response:', response.data);
+      console.log('RSVP API response status:', response.status);
 
       // Update local state immediately for better UX - normalize to lowercase for UI consistency
       const normalizedStatus = status.toLowerCase();
@@ -195,6 +198,39 @@ function Events() {
         console.log('User is admin, refreshing detailed RSVP data...');
         await refreshEventRsvpData(eventId);
       }
+
+      // Also refresh current user's RSVP status from server to verify it persisted
+      console.log('Verifying RSVP persistence by fetching fresh data...');
+      setTimeout(async () => {
+        try {
+          const verifyResponse = await axios.get(`${getApiUrl()}/events/${eventId}/rsvps`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          console.log('Verification response:', verifyResponse.data);
+          
+          // Check if our RSVP is in the response
+          let foundOurRsvp = false;
+          for (const [rsvpStatus, users] of Object.entries(verifyResponse.data)) {
+            if (users.some(user => user.username === username)) {
+              console.log(`✅ RSVP verified! User ${username} found in ${rsvpStatus} list`);
+              foundOurRsvp = true;
+              // Update local state to match server
+              setRsvps(prev => ({
+                ...prev,
+                [eventId]: rsvpStatus.toLowerCase()
+              }));
+              break;
+            }
+          }
+          
+          if (!foundOurRsvp) {
+            console.error(`❌ RSVP NOT FOUND! User ${username} not found in any RSVP list`);
+            console.log('Full verification response:', verifyResponse.data);
+          }
+        } catch (verifyError) {
+          console.error('Error verifying RSVP:', verifyError);
+        }
+      }, 1000); // Wait 1 second then verify
 
       // Show success message
       const statusMessages = {
