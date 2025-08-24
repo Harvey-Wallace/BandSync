@@ -392,16 +392,6 @@ def serve_frontend():
         print(f"Error serving index.html: {e}")
         return f"<h1>BandSync Backend is Running</h1><p>Error serving frontend: {e}</p><p>Try <a href='/health'>/health</a> endpoint</p>", 200
 
-# Debug route to test specific static file access
-@app.route('/debug/css')
-def debug_css():
-    """Test direct CSS file access"""
-    try:
-        # Try to serve the CSS file directly
-        return send_from_directory('static/static/css', 'main.e3bc04ff.css')
-    except Exception as e:
-        return f"<h1>Error serving CSS</h1><p>{e}</p>"
-
 # Debug route to check static files
 @app.route('/debug/static')
 def debug_static():
@@ -415,28 +405,9 @@ def debug_static():
             "static_files": static_files,
             "current_dir": os.getcwd(),
             "static_dir_exists": os.path.exists('static'),
-            "index_html_exists": os.path.exists('static/index.html')
+            "index_html_exists": os.path.exists('static/index.html'),
+            "static_static_exists": os.path.exists('static/static')
         }
-    except Exception as e:
-        return {"error": str(e)}
-
-# Test CSS file access directly
-@app.route('/test-css')
-def test_css():
-    """Test if we can access the CSS file"""
-    try:
-        # Test both possible paths
-        paths_to_try = [
-            'static/css/main.e3bc04ff.css',
-            'static/static/css/main.e3bc04ff.css'
-        ]
-        results = {}
-        for path in paths_to_try:
-            try:
-                return send_from_directory('static', path.replace('static/', ''))
-            except Exception as e:
-                results[path] = str(e)
-        return {"tested_paths": results, "message": "None of the CSS paths worked"}
     except Exception as e:
         return {"error": str(e)}
 
@@ -478,31 +449,42 @@ def serve_static_files(path):
     
     print(f"Requested path: {path}")
     
-    # Handle static file requests - React is looking for files like:
-    # /static/js/main.be6581e9.js but they're at /static/static/js/main.be6581e9.js
+    # Handle static file requests more systematically
     if path.startswith('static/'):
-        # The built React app creates a nested static structure
-        # So /static/css/file.css should be served from static/static/css/file.css
-        nested_path = 'static/' + path
+        # React build creates /static/js/main.xyz.js, /static/css/main.xyz.css etc.
+        # These are copied to our static folder as static/static/js/main.xyz.js
+        nested_path = os.path.join('static', path)
         print(f"Trying nested path: {nested_path}")
-        try:
-            return send_from_directory('.', nested_path)
-        except Exception as e:
-            print(f"Error serving nested static file {nested_path}: {e}")
-            # If nested path fails, return 404 instead of falling back to index.html
-            from flask import abort
-            abort(404)
+        
+        # Check if file exists before attempting to serve
+        if os.path.isfile(nested_path):
+            try:
+                return send_from_directory('static', path)
+            except Exception as e:
+                print(f"Error serving nested static file {path}: {e}")
+        else:
+            print(f"File not found: {nested_path}")
+        
+        # If nested path fails, return 404 for static files
+        from flask import abort
+        abort(404)
     
-    # For static file extensions, try to serve them directly
+    # For other static file extensions in root, try to serve them directly
     static_extensions = ['.js', '.css', '.html', '.ico', '.png', '.jpg', '.svg', '.woff', '.woff2', '.ttf', '.json', '.txt', '.map']
-    if any(path.endswith(ext) for ext in static_extensions) or path in ['manifest.json', 'sw.js', 'favicon.ico', 'robots.txt']:
-        try:
-            return send_from_directory('static', path)
-        except Exception as e:
-            print(f"Error serving static file {path}: {e}")
-            # For missing static files, return 404 instead of index.html
-            from flask import abort
-            abort(404)
+    if any(path.endswith(ext) for ext in static_extensions) or path in ['manifest.json', 'sw.js', 'favicon.ico', 'robots.txt', 'env-config.js']:
+        # Try root level files first (like manifest.json, env-config.js)
+        root_path = os.path.join('static', path)
+        if os.path.isfile(root_path):
+            try:
+                return send_from_directory('static', path)
+            except Exception as e:
+                print(f"Error serving root static file {path}: {e}")
+        else:
+            print(f"Root static file not found: {root_path}")
+        
+        # For missing static files, return 404 instead of index.html
+        from flask import abort
+        abort(404)
     
     # For everything else (React Router paths), serve index.html
     try:
