@@ -321,11 +321,21 @@ function Events() {
       total: 0
     };
     
-    // The data structure from /events/{id}/rsvps is: { "yes": [users], "no": [users], "maybe": [users] }
+    // The data structure from /events/{id}/rsvps is: { "Yes": [users], "No": [users], "Maybe": [users] }
+    // Backend returns capitalized keys, so we need to map them to lowercase for consistency
+    const statusMapping = {
+      'Yes': 'yes',
+      'No': 'no', 
+      'Maybe': 'maybe'
+    };
+    
     Object.entries(eventRsvps).forEach(([status, users]) => {
       if (Array.isArray(users)) {
-        counts[status] = users.length;
-        counts.total += users.length;
+        const normalizedStatus = statusMapping[status] || status.toLowerCase();
+        if (counts.hasOwnProperty(normalizedStatus)) {
+          counts[normalizedStatus] = users.length;
+          counts.total += users.length;
+        }
       }
     });
     
@@ -337,8 +347,10 @@ function Events() {
     const eventRsvps = allRsvps[eventId] || {};
     
     if (status) {
-      // Return users for a specific status
-      return eventRsvps[status] || [];
+      // Convert lowercase status to capitalized for backend compatibility
+      const capitalizedStatus = status.charAt(0).toUpperCase() + status.slice(1);
+      // Try both capitalized and lowercase versions
+      return eventRsvps[capitalizedStatus] || eventRsvps[status] || [];
     } else {
       // Return all users for the event
       const allUsers = [];
@@ -368,7 +380,8 @@ function Events() {
         if (Array.isArray(users) && users.some(user => 
           user.id === member.id || user.username === member.username
         )) {
-          rsvpStatus = status;
+          // Normalize the status to lowercase for UI consistency
+          rsvpStatus = status.toLowerCase();
           break;
         }
       }
