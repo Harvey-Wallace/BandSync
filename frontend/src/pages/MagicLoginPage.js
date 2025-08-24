@@ -166,7 +166,7 @@ function MagicLoginPage() {
                     <option value="">Choose an organization...</option>
                     {multipleOrgs?.map(org => (
                       <option key={org.id} value={org.id}>
-                        {org.name} ({org.role})
+                        {typeof org.name === 'string' ? org.name : 'Unknown Organization'} ({typeof org.role === 'string' ? org.role : 'Unknown Role'})
                       </option>
                     ))}
                   </select>

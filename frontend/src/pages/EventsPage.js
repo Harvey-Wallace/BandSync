@@ -644,7 +644,7 @@ function EventsPage() {
               <option value="">All Categories</option>
               {categories.map(category => (
                 <option key={category.id} value={category.id}>
-                  {category.name}
+                  {typeof category.name === 'string' ? category.name : 'Unknown Category'}
                 </option>
               ))}
             </select>
@@ -678,9 +678,9 @@ function EventsPage() {
                     <div key={template.id} className="col-md-4 mb-3">
                       <div className="card">
                         <div className="card-body">
-                          <h6 className="card-title">{template.template_name}</h6>
-                          <p className="card-text small text-muted">{template.description}</p>
-                          <span className="badge bg-secondary me-2">{template.category || 'No category'}</span>
+                          <h6 className="card-title">{typeof template.template_name === 'string' ? template.template_name : 'Untitled Template'}</h6>
+                          <p className="card-text small text-muted">{typeof template.description === 'string' ? template.description : ''}</p>
+                          <span className="badge bg-secondary me-2">{typeof template.category === 'string' ? template.category : 'No category'}</span>
                           <button 
                             className="btn btn-sm btn-primary touch-target mobile-button"
                             onClick={() => openTemplateModal(template)}
