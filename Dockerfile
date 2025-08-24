@@ -20,7 +20,7 @@ RUN echo "🔍 Build-time environment variables:" && \
 # Force cache invalidation with a comment - Build 2025-08-24-16:40
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm ci --only=production
+RUN npm install --only=production
 
 COPY frontend/ ./
 # Force rebuild with timestamp to bust Docker cache
