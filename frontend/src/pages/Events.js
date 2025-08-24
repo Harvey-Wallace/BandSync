@@ -62,7 +62,7 @@ function Events() {
         }
 
         // Fetch events using the same approach as EventsPage
-        const eventsResponse = await axios.get(`${getApiUrl()}/events/`, {
+        const eventsResponse = await axios.get(`${getApiUrl()}/events`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -523,7 +523,7 @@ function Events() {
       console.log('Event creation response:', response.data);
 
       // Refresh events list
-      const eventsResponse = await axios.get(`${getApiUrl()}/events/`, {
+      const eventsResponse = await axios.get(`${getApiUrl()}/events`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -571,7 +571,7 @@ function Events() {
       console.log('Event update response:', response.data);
 
       // Refresh events list
-      const eventsResponse = await axios.get(`${getApiUrl()}/events/`, {
+      const eventsResponse = await axios.get(`${getApiUrl()}/events`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -622,7 +622,7 @@ function Events() {
       });
 
       // Refresh events list
-      const eventsResponse = await axios.get(`${getApiUrl()}/events/`, {
+      const eventsResponse = await axios.get(`${getApiUrl()}/events`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       

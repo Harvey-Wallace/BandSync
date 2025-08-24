@@ -56,7 +56,7 @@ function AnalyticsDashboard() {
         };
 
         // First get events using the basic endpoint (like EventsPage)
-        const eventsResponse = await axios.get(`${getApiUrl()}/events/`, config);
+        const eventsResponse = await axios.get(`${getApiUrl()}/events`, config);
         const sortedEvents = eventsResponse.data.sort((a, b) => new Date(a.date) - new Date(b.date));
         setEvents(sortedEvents);
 

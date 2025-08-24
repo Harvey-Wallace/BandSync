@@ -128,7 +128,7 @@ function EventsPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      let url = `${getApiUrl()}/events/`;
+      let url = `${getApiUrl()}/events`;
       
       // Add category filter if selected
       const params = new URLSearchParams();
@@ -226,7 +226,7 @@ function EventsPage() {
   const handleCreate = async (data) => {
     const token = localStorage.getItem('token');
     try {
-      await axios.post(`${getApiUrl()}/events/`, data, {
+      await axios.post(`${getApiUrl()}/events`, data, {
         headers: { Authorization: `Bearer ${token}` }
       });
       showSuccessMessage('Event created successfully');

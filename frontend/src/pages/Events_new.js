@@ -38,7 +38,7 @@ function Events() {
         }
 
         // Fetch events using the same approach as EventsPage
-        const eventsResponse = await axios.get(`${getApiUrl()}/events/`, {
+        const eventsResponse = await axios.get(`${getApiUrl()}/events`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
