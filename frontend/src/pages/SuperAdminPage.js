@@ -626,7 +626,7 @@ function SuperAdminPage() {
       {/* Analytics Tab */}
       {activeTab === 'analytics' && (
         <>
-          {analyticsData && (
+          {analyticsData && analyticsData.overview && (
             <>
               {/* Advanced Analytics Overview */}
               <div className="row mb-4">
@@ -643,36 +643,36 @@ function SuperAdminPage() {
                         <div className="col-md-3">
                           <div className="text-center p-3">
                             <h6 className="text-muted">User Growth (30d)</h6>
-                            <h3 className="text-success">+{analyticsData.overview.users.new_30d}</h3>
+                            <h3 className="text-success">+{analyticsData.overview.users?.new_30d || 0}</h3>
                             <small className="text-muted">
-                              {analyticsData.overview.users.growth_rate_30d}% growth rate
+                              {analyticsData.overview.users?.growth_rate_30d || 0}% growth rate
                             </small>
                           </div>
                         </div>
                         <div className="col-md-3">
                           <div className="text-center p-3">
                             <h6 className="text-muted">Active Users (30d)</h6>
-                            <h3 className="text-info">{analyticsData.overview.users.active_30d}</h3>
+                            <h3 className="text-info">{analyticsData.overview.users?.active_30d || 0}</h3>
                             <small className="text-muted">
-                              {Math.round((analyticsData.overview.users.active_30d / analyticsData.overview.users.total) * 100)}% of total
+                              {analyticsData.overview.users?.total ? Math.round((analyticsData.overview.users.active_30d / analyticsData.overview.users.total) * 100) : 0}% of total
                             </small>
                           </div>
                         </div>
                         <div className="col-md-3">
                           <div className="text-center p-3">
                             <h6 className="text-muted">Org Activity Rate</h6>
-                            <h3 className="text-warning">{analyticsData.overview.organizations.activity_rate}%</h3>
+                            <h3 className="text-warning">{analyticsData.overview.organizations?.activity_rate || 0}%</h3>
                             <small className="text-muted">
-                              {analyticsData.overview.organizations.active_30d} of {analyticsData.overview.organizations.total} active
+                              {analyticsData.overview.organizations?.active_30d || 0} of {analyticsData.overview.organizations?.total || 0} active
                             </small>
                           </div>
                         </div>
                         <div className="col-md-3">
                           <div className="text-center p-3">
                             <h6 className="text-muted">Engagement Rate</h6>
-                            <h3 className="text-primary">{analyticsData.overview.engagement.rsvp_rate}%</h3>
+                            <h3 className="text-primary">{analyticsData.overview.engagement?.rsvp_rate || 0}%</h3>
                             <small className="text-muted">
-                              {analyticsData.overview.events.rsvps_30d} RSVPs in 30d
+                              {analyticsData.overview.events?.rsvps_30d || 0} RSVPs in 30d
                             </small>
                           </div>
                         </div>
@@ -693,48 +693,48 @@ function SuperAdminPage() {
                       <div className="mb-3">
                         <div className="d-flex justify-content-between">
                           <span>Events per User</span>
-                          <strong>{analyticsData.overview.engagement.events_per_user}</strong>
+                          <strong>{analyticsData.overview.engagement?.events_per_user || 0}</strong>
                         </div>
                         <div className="progress" style={{height: '6px'}}>
                           <div 
                             className="progress-bar bg-success" 
-                            style={{width: `${Math.min(analyticsData.overview.engagement.events_per_user * 20, 100)}%`}}
+                            style={{width: `${Math.min((analyticsData.overview.engagement?.events_per_user || 0) * 20, 100)}%`}}
                           ></div>
                         </div>
                       </div>
                       <div className="mb-3">
                         <div className="d-flex justify-content-between">
                           <span>Avg RSVPs per Event</span>
-                          <strong>{analyticsData.overview.engagement.avg_rsvps_per_event}</strong>
+                          <strong>{analyticsData.overview.engagement?.avg_rsvps_per_event || 0}</strong>
                         </div>
                         <div className="progress" style={{height: '6px'}}>
                           <div 
                             className="progress-bar bg-info" 
-                            style={{width: `${Math.min(analyticsData.overview.engagement.avg_rsvps_per_event * 10, 100)}%`}}
+                            style={{width: `${Math.min((analyticsData.overview.engagement?.avg_rsvps_per_event || 0) * 10, 100)}%`}}
                           ></div>
                         </div>
                       </div>
                       <div className="mb-3">
                         <div className="d-flex justify-content-between">
                           <span>Avg Users per Org</span>
-                          <strong>{analyticsData.overview.organizations.avg_users_per_org}</strong>
+                          <strong>{analyticsData.overview.organizations?.avg_users_per_org || 0}</strong>
                         </div>
                         <div className="progress" style={{height: '6px'}}>
                           <div 
                             className="progress-bar bg-warning" 
-                            style={{width: `${Math.min(analyticsData.overview.organizations.avg_users_per_org * 5, 100)}%`}}
+                            style={{width: `${Math.min((analyticsData.overview.organizations?.avg_users_per_org || 0) * 5, 100)}%`}}
                           ></div>
                         </div>
                       </div>
                       <div className="mb-0">
                         <div className="d-flex justify-content-between">
                           <span>Avg Events per Org</span>
-                          <strong>{analyticsData.overview.events.avg_per_org}</strong>
+                          <strong>{analyticsData.overview.events?.avg_per_org || 0}</strong>
                         </div>
                         <div className="progress" style={{height: '6px'}}>
                           <div 
                             className="progress-bar bg-primary" 
-                            style={{width: `${Math.min(analyticsData.overview.events.avg_per_org * 5, 100)}%`}}
+                            style={{width: `${Math.min((analyticsData.overview.events?.avg_per_org || 0) * 5, 100)}%`}}
                           ></div>
                         </div>
                       </div>
