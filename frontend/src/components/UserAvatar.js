@@ -95,7 +95,7 @@ function UserAvatar({
       return (
         <img
           src={user.avatar_url}
-          alt={`${user.display_name || user.name || user.username} avatar`}
+          alt={`${typeof user.display_name === 'string' ? user.display_name : typeof user.name === 'string' ? user.name : typeof user.username === 'string' ? user.username : 'User'} avatar`}
           className={`rounded-circle ${className}`}
           style={{ 
             width: size, 
@@ -159,7 +159,7 @@ function UserAvatar({
               <div className="modal-content">
                 <div className="modal-header">
                   <h5 className="modal-title">
-                    Upload Avatar for {user.display_name || user.name || user.username}
+                    Upload Avatar for {typeof user.display_name === 'string' ? user.display_name : typeof user.name === 'string' ? user.name : typeof user.username === 'string' ? user.username : 'User'}
                   </h5>
                   <button 
                     type="button" 

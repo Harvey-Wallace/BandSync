@@ -979,21 +979,21 @@ function EventsPage() {
                                         <strong>Yes ({event.rsvp_stats.responses.filter(r => r.status === 'Yes').length}):</strong> 
                                         {event.rsvp_stats.responses
                                           .filter(r => r.status === 'Yes')
-                                          .map(user => `${user.name} (${user.section})`)
+                                          .map(user => `${typeof user.name === 'string' ? user.name : 'Unknown User'} (${typeof user.section === 'string' ? user.section : 'Unknown Section'})`)
                                           .join(', ') || 'None'}
                                       </div>
                                       <div className="text-danger">
                                         <strong>No ({event.rsvp_stats.responses.filter(r => r.status === 'No').length}):</strong> 
                                         {event.rsvp_stats.responses
                                           .filter(r => r.status === 'No')
-                                          .map(user => `${user.name} (${user.section})`)
+                                          .map(user => `${typeof user.name === 'string' ? user.name : 'Unknown User'} (${typeof user.section === 'string' ? user.section : 'Unknown Section'})`)
                                           .join(', ') || 'None'}
                                       </div>
                                       <div className="text-warning">
                                         <strong>Maybe ({event.rsvp_stats.responses.filter(r => r.status === 'Maybe').length}):</strong> 
                                         {event.rsvp_stats.responses
                                           .filter(r => r.status === 'Maybe')
-                                          .map(user => `${user.name} (${user.section})`)
+                                          .map(user => `${typeof user.name === 'string' ? user.name : 'Unknown User'} (${typeof user.section === 'string' ? user.section : 'Unknown Section'})`)
                                           .join(', ') || 'None'}
                                       </div>
                                     </>

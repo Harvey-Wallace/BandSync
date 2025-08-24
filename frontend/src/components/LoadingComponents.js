@@ -295,7 +295,7 @@ export const EmptyState = ({
               onClick={action.onClick}
             >
               {action.icon && <i className={`bi bi-${action.icon} me-1`}></i>}
-              {action.label}
+              {typeof action.label === 'string' ? action.label : 'Action'}
             </button>
           ) : (
             React.isValidElement(action) ? action : null
@@ -327,7 +327,7 @@ export const SuccessState = ({
               onClick={action.onClick}
             >
               {action.icon && <i className={`bi bi-${action.icon} me-1`}></i>}
-              {action.label}
+              {typeof action.label === 'string' ? action.label : 'Action'}
             </button>
           ) : (
             React.isValidElement(action) ? action : null
