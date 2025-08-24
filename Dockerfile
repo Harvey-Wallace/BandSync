@@ -1,4 +1,4 @@
-# Multi-stage build for BandSync
+# Multi-stage build for BandSync - FORCED REBUILD 2025-08-24-17:00
 # Stage 1: Build frontend
 FROM node:18-alpine AS frontend-builder
 
