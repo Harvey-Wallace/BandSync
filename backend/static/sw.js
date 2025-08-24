@@ -1,5 +1,5 @@
 // Service Worker for BandSync PWA
-const CACHE_NAME = 'bandsync-v1';
+const CACHE_NAME = 'bandsync-v2'; // Updated version to force cache refresh
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
@@ -45,6 +45,16 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Skip cross-origin requests
   if (!event.request.url.startsWith(self.location.origin)) {
+    return;
+  }
+
+  // Skip API requests - let them go directly to the network
+  if (event.request.url.includes('/api/')) {
+    return;
+  }
+
+  // Skip POST, PUT, DELETE requests - only cache GET requests
+  if (event.request.method !== 'GET') {
     return;
   }
 
