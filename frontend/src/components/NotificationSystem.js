@@ -215,16 +215,16 @@ const NotificationSystem = () => {
                   <div className="flex-grow-1">
                     {notification.title && (
                       <div className="notification-title fw-bold mb-1">
-                        {notification.title}
+                        {typeof notification.title === 'string' ? notification.title : 'Notification'}
                       </div>
                     )}
                     <div className="notification-message">
-                      {notification.message}
+                      {typeof notification.message === 'string' ? notification.message : 'New notification'}
                     </div>
                     <small className="text-muted d-block mt-1">
                       {notification.timestamp.toLocaleTimeString()}
                       {notification.category && notification.category !== 'general' && (
-                        <> • {notification.category}</>
+                        <> • {typeof notification.category === 'string' ? notification.category : 'notification'}</>
                       )}
                     </small>
                   </div>
@@ -256,7 +256,7 @@ const NotificationSystem = () => {
                         onClick={() => handleNotificationAction(notification, action)}
                         style={{ minHeight: '32px' }}
                       >
-                        {action.title}
+                        {typeof action.title === 'string' ? action.title : `Action ${index + 1}`}
                       </button>
                     ))}
                   </div>
