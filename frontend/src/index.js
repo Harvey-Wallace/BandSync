@@ -17,10 +17,18 @@ root.render(
 
 console.log('✅ React app rendered');
 
-// Temporarily disable service worker for iOS debugging
-/*
-// iOS-specific service worker registration
+// Unregister existing service worker and disable for testing
 if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    for(let registration of registrations) {
+      console.log('Unregistering service worker...');
+      registration.unregister();
+    } 
+  });
+}
+
+// Temporarily disable service worker to test API calls  
+if (false && 'serviceWorker' in navigator) {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   
   if (isIOS) {
@@ -31,6 +39,20 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
         console.log('SW registered: ', registration);
+        
+        // Force service worker update
+        registration.addEventListener('updatefound', () => {
+          const newWorker = registration.installing;
+          newWorker.addEventListener('statechange', () => {
+            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+              console.log('New service worker available, reloading...');
+              window.location.reload();
+            }
+          });
+        });
+        
+        // Check for updates immediately
+        registration.update();
         
         // Register for background sync (if supported)
         if ('sync' in window.ServiceWorkerRegistration.prototype) {
@@ -61,4 +83,3 @@ if ('serviceWorker' in navigator) {
 } else {
   console.log('Service workers not supported in this browser');
 }
-*/
