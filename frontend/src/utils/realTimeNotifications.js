@@ -44,6 +44,10 @@ class RealTimeNotificationManager {
       return false;
     }
 
+    // Disable WebSocket connections entirely until WebSocket server is implemented
+    console.log('WebSocket server not yet implemented, disabling real-time notifications');
+    return false;
+
     // Check if we're in development and likely don't have a WebSocket server
     if (window.location.hostname === 'localhost' && !window.location.search.includes('ws=true')) {
       console.log('Development mode detected, real-time notifications disabled (add ?ws=true to enable)');
