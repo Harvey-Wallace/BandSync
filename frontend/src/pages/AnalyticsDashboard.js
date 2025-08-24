@@ -83,23 +83,19 @@ function AnalyticsDashboard() {
         const organizationId = localStorage.getItem('organization_id');
         if (organizationId) {
           try {
-            const [allRsvpsResponse, usersResponse] = await Promise.all([
-              axios.get(`${getApiUrl()}/rsvps/all/${organizationId}`, config),
-              axios.get(`${getApiUrl()}/users/organization/${organizationId}`, config)
-            ]);
-
-            // Process all RSVPs data for analytics
-            const allRsvpsMap = {};
-            if (allRsvpsResponse.data && Array.isArray(allRsvpsResponse.data)) {
-              allRsvpsResponse.data.forEach(rsvp => {
-                if (!allRsvpsMap[rsvp.eventId]) {
-                  allRsvpsMap[rsvp.eventId] = {};
-                }
-                allRsvpsMap[rsvp.eventId][rsvp.userId] = rsvp.status;
-              });
-            }
-            setAllRsvps(allRsvpsMap);
+            // Use correct endpoints - admin/users for organization users
+            const usersResponse = await axios.get(`${getApiUrl()}/admin/users`, config);
+            
+            console.log('Successfully loaded organization users for analytics');
+            // Process the users data if needed for analytics
+            // Note: All RSVPs data is already loaded per event above
+            
+            console.log('Successfully loaded organization users for analytics');
             setAllUsers(usersResponse.data || []);
+            
+            // All RSVPs are already loaded per event above in the main events loop
+            // No need for a separate all RSVPs endpoint
+            setAllRsvps({});
           } catch (orgError) {
             console.warn('Organization data not available:', orgError);
             // Continue with basic analytics
