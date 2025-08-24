@@ -510,9 +510,17 @@ function Events() {
     try {
       const token = localStorage.getItem('token');
       
-      await axios.post(`${getApiUrl()}/events`, eventData, {
-        headers: { Authorization: `Bearer ${token}` }
+      console.log('Creating event with data:', eventData);
+      console.log(`POST request to: ${getApiUrl()}/events`);
+      
+      const response = await axios.post(`${getApiUrl()}/events`, eventData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+
+      console.log('Event creation response:', response.data);
 
       // Refresh events list
       const eventsResponse = await axios.get(`${getApiUrl()}/events/`, {
@@ -527,7 +535,20 @@ function Events() {
       
     } catch (error) {
       console.error('Error creating event:', error);
-      showErrorMessage(error.response?.data?.error || 'Failed to create event. Please try again.');
+      console.error('Error response data:', error.response?.data);
+      console.error('Error response status:', error.response?.status);
+      console.error('Error response headers:', error.response?.headers);
+      
+      let errorMessage = 'Failed to create event. Please try again.';
+      if (error.response?.status === 405) {
+        errorMessage = 'Event creation endpoint not available. Please contact support.';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'You do not have permission to create events.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.error || 'Invalid event data. Please check all fields.';
+      }
+      
+      showErrorMessage(errorMessage);
       throw error; // Re-throw so the form can handle it
     }
   };
@@ -537,9 +558,17 @@ function Events() {
     try {
       const token = localStorage.getItem('token');
       
-      await axios.put(`${getApiUrl()}/events/${editingEvent.id}`, eventData, {
-        headers: { Authorization: `Bearer ${token}` }
+      console.log('Updating event with data:', eventData);
+      console.log(`PUT request to: ${getApiUrl()}/events/${editingEvent.id}`);
+      
+      const response = await axios.put(`${getApiUrl()}/events/${editingEvent.id}`, eventData, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
       });
+
+      console.log('Event update response:', response.data);
 
       // Refresh events list
       const eventsResponse = await axios.get(`${getApiUrl()}/events/`, {
@@ -555,7 +584,20 @@ function Events() {
       
     } catch (error) {
       console.error('Error updating event:', error);
-      showErrorMessage(error.response?.data?.error || 'Failed to update event. Please try again.');
+      console.error('Error response data:', error.response?.data);
+      console.error('Error response status:', error.response?.status);
+      console.error('Error response headers:', error.response?.headers);
+      
+      let errorMessage = 'Failed to update event. Please try again.';
+      if (error.response?.status === 405) {
+        errorMessage = 'Event update endpoint not available. Please contact support.';
+      } else if (error.response?.status === 403) {
+        errorMessage = 'You do not have permission to update events.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.error || 'Invalid event data. Please check all fields.';
+      }
+      
+      showErrorMessage(errorMessage);
       throw error; // Re-throw so the form can handle it
     }
   };
