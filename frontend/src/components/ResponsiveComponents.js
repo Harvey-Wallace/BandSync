@@ -95,7 +95,7 @@ export const ResponsiveTabNav = ({ tabs = [], activeTab, onTabChange, className 
                 JSON.stringify(tab.shortLabel || tab.label)
               }
             </span>
-            {tab.badge && (
+            {tab.badge && tab.badge.value !== null && tab.badge.value !== undefined && (
               <span className={`badge bg-${tab.badge.type || 'primary'} ms-2`}>
                 {typeof tab.badge.value === 'string' || typeof tab.badge.value === 'number' ? 
                   tab.badge.value : 

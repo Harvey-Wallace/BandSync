@@ -464,7 +464,7 @@ function SuperAdminPage() {
                   label: 'Analytics', 
                   shortLabel: 'Analytics',
                   icon: 'bar-chart',
-                  badge: analyticsData ? { value: '✓', type: 'success' } : null
+                  badge: (analyticsData && typeof analyticsData === 'object') ? { value: '✓', type: 'success' } : null
                 },
                 { 
                   id: 'users', 
@@ -477,7 +477,7 @@ function SuperAdminPage() {
                   label: 'System Health', 
                   shortLabel: 'Health',
                   icon: 'heart-pulse',
-                  badge: systemHealth?.status === 'healthy' ? { value: '✓', type: 'success' } : null
+                  badge: (systemHealth && systemHealth.status === 'healthy') ? { value: '✓', type: 'success' } : null
                 },
                 { 
                   id: 'security', 
