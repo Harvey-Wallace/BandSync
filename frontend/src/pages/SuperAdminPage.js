@@ -163,6 +163,12 @@ function SuperAdminPage() {
 
   // Enhanced API functions with better UX
   const loadSystemHealth = async () => {
+    // Double-check super admin status before making the call
+    if (!isSuperAdmin) {
+      console.warn('User is not super admin, skipping system health call');
+      return;
+    }
+    
     const data = await enhancedApiCall(
       `${getApiUrl()}/super-admin/system/health`,
       'systemHealth'
@@ -173,6 +179,12 @@ function SuperAdminPage() {
   };
 
   const loadOverview = async () => {
+    // Double-check super admin status before making the call
+    if (!isSuperAdmin) {
+      console.warn('User is not super admin, skipping overview call');
+      return;
+    }
+    
     const data = await enhancedApiCall(
       `${getApiUrl()}/super-admin/overview`,
       'overview'
@@ -184,6 +196,12 @@ function SuperAdminPage() {
   };
 
   const loadAnalytics = async () => {
+    // Double-check super admin status before making the call
+    if (!isSuperAdmin) {
+      console.warn('User is not super admin, skipping analytics call');
+      return;
+    }
+    
     const data = await enhancedApiCall(
       `${getApiUrl()}/super-admin/analytics/overview`,
       'analytics'
