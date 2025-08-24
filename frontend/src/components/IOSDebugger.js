@@ -78,7 +78,7 @@ function IOSDebugger() {
       setDebugInfo(prev => ({
         ...prev,
         errors: [...prev.errors, {
-          message: event.message,
+          message: typeof event.message === 'string' ? event.message : String(event.message || 'Unknown error'),
           filename: event.filename,
           lineno: event.lineno,
           colno: event.colno,
@@ -91,7 +91,7 @@ function IOSDebugger() {
       setDebugInfo(prev => ({
         ...prev,
         errors: [...prev.errors, {
-          message: `Unhandled Promise Rejection: ${event.reason}`,
+          message: `Unhandled Promise Rejection: ${typeof event.reason === 'object' ? JSON.stringify(event.reason) : String(event.reason || 'Unknown reason')}`,
           type: 'promise'
         }]
       }));
@@ -186,9 +186,9 @@ function IOSDebugger() {
           <strong>❌ Errors ({debugInfo.errors.length}):</strong><br />
           {debugInfo.errors.map((error, index) => (
             <div key={index} style={{ background: '#800', padding: '5px', margin: '2px 0' }}>
-              {error.message}<br />
+              {typeof error.message === 'string' ? error.message : JSON.stringify(error.message)}<br />
               {error.filename && <small>File: {error.filename}:{error.lineno}</small>}<br />
-              {error.stack && <small>Stack: {error.stack.substring(0, 200)}...</small>}
+              {error.stack && <small>Stack: {String(error.stack).substring(0, 200)}...</small>}
             </div>
           ))}
         </div>
@@ -203,7 +203,7 @@ function IOSDebugger() {
               fontSize: '10px',
               marginBottom: '2px'
             }}>
-              [{entry.timestamp.split('T')[1].split('.')[0]}] {entry.type.toUpperCase()}: {entry.message}
+              [{entry.timestamp.split('T')[1].split('.')[0]}] {entry.type.toUpperCase()}: {typeof entry.message === 'string' ? entry.message : JSON.stringify(entry.message)}
             </div>
           ))}
         </div>
