@@ -5,6 +5,7 @@ FROM node:18-alpine AS frontend-builder
 # Accept build-time arguments for React environment variables
 ARG REACT_APP_GOOGLE_MAPS_API_KEY
 ARG REACT_APP_API_URL
+ARG BUILD_HASH=default
 
 # Set environment variables for the build
 ENV REACT_APP_GOOGLE_MAPS_API_KEY=$REACT_APP_GOOGLE_MAPS_API_KEY
@@ -16,13 +17,14 @@ RUN echo "🔍 Build-time environment variables:" && \
     echo "REACT_APP_GOOGLE_MAPS_API_KEY: ${REACT_APP_GOOGLE_MAPS_API_KEY:0:20}..." && \
     echo "📦 Starting frontend build (force rebuild)..."
 
-# Force cache invalidation with a comment
+# Force cache invalidation with a comment - Build 2025-08-24-16:40
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 RUN npm ci --only=production
 
 COPY frontend/ ./
-RUN BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') && echo "Build triggered at $BUILD_DATE" && npm run build
+# Force rebuild with timestamp to bust Docker cache
+RUN echo "BUILD_HASH: $BUILD_HASH" && echo "Forcing frontend rebuild at $(date)" && BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') && echo "Build triggered at $BUILD_DATE" && npm run build
 
 # Stage 2: Setup backend
 FROM python:3.11-slim AS backend
