@@ -32,8 +32,8 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
       setFormData({
         title: event.title || '',
         description: event.description || '',
-        date: event.date ? new Date(event.date).toISOString().slice(0, 16) : '',
-        end_date: event.end_date ? new Date(event.end_date).toISOString().slice(0, 16) : '',
+        date: event.date ? new Date(event.date).toISOString().slice(0, 10) : '',
+        end_date: event.end_date ? new Date(event.end_date).toISOString().slice(0, 10) : '',
         arrive_by_time: event.arrive_by_time || '',
         start_time: event.start_time || '',
         end_time: event.end_time || '',
@@ -227,9 +227,9 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
                   <Row>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label>Start Date & Time *</Form.Label>
+                        <Form.Label>Start Date *</Form.Label>
                         <Form.Control
-                          type="datetime-local"
+                          type="date"
                           name="date"
                           value={formData.date}
                           onChange={handleInputChange}
@@ -239,9 +239,9 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
                     </Col>
                     <Col md={6}>
                       <Form.Group className="mb-3">
-                        <Form.Label>End Date & Time</Form.Label>
+                        <Form.Label>End Date</Form.Label>
                         <Form.Control
-                          type="datetime-local"
+                          type="date"
                           name="end_date"
                           value={formData.end_date}
                           onChange={handleInputChange}
