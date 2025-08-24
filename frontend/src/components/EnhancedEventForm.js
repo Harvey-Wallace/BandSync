@@ -3,7 +3,6 @@ import { Modal, Form, Button, Alert, Spinner, Tabs, Card, Row, Col } from 'react
 import { Tab } from 'react-bootstrap';
 import CustomFields from './CustomFields';
 import LocationPicker from './LocationPicker';
-import axios from 'axios';
 
 const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = [] }) => {
   const [loading, setLoading] = useState(false);
