@@ -953,27 +953,27 @@ function EventsPage() {
                           ) : (
                             <div className="small">
                               {/* Use enhanced responses data if available, otherwise fallback to rsvpSummary */}
-                              {event.rsvp_stats ? (
+                              {event.rsvp_stats && typeof event.rsvp_stats === 'object' ? (
                                 // Enhanced display with privacy-aware logic
                                 <>
                                   {/* Always show summary counts */}
                                   <div className="mb-2">
                                     <span className="text-success me-3">
-                                      <strong>Yes: {event.rsvp_stats.yes_count}</strong>
+                                      <strong>Yes: {event.rsvp_stats.yes_count || 0}</strong>
                                     </span>
                                     <span className="text-danger me-3">
-                                      <strong>No: {event.rsvp_stats.no_count}</strong>
+                                      <strong>No: {event.rsvp_stats.no_count || 0}</strong>
                                     </span>
                                     <span className="text-warning me-3">
-                                      <strong>Maybe: {event.rsvp_stats.maybe_count}</strong>
+                                      <strong>Maybe: {event.rsvp_stats.maybe_count || 0}</strong>
                                     </span>
                                     <span className="text-muted">
-                                      <strong>No Response: {event.rsvp_stats.no_response_count}</strong>
+                                      <strong>No Response: {event.rsvp_stats.no_response_count || 0}</strong>
                                     </span>
                                   </div>
                                   
                                   {/* Show detailed responses only if user can view them */}
-                                  {event.rsvp_stats.can_view_details && event.rsvp_stats.responses ? (
+                                  {event.rsvp_stats.can_view_details && event.rsvp_stats.responses && Array.isArray(event.rsvp_stats.responses) ? (
                                     <>
                                       <div className="text-success">
                                         <strong>Yes ({event.rsvp_stats.responses.filter(r => r.status === 'Yes').length}):</strong> 
