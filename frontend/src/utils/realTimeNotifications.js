@@ -326,7 +326,7 @@ class RealTimeNotificationManager {
     const notification = {
       id: `rsvp-${data.event_id}-${data.user_id}-${Date.now()}`,
       title: '🎵 RSVP Update',
-      message: `${data.user_name} changed their RSVP for "${data.event_title}" to ${data.new_status}`,
+      message: `${String(data.user_name || 'Someone')} changed their RSVP for "${String(data.event_title || 'an event')}" to ${String(data.new_status || 'unknown')}`,
       type: 'info',
       category: 'rsvp',
       timestamp: new Date(),
@@ -352,7 +352,7 @@ class RealTimeNotificationManager {
     const notification = {
       id: `event-${data.event_id}-${Date.now()}`,
       title: '📅 New Event Created',
-      message: `"${data.event_title}" has been scheduled for ${new Date(data.event_date).toLocaleDateString()}`,
+      message: `"${String(data.event_title || 'New Event')}" has been scheduled for ${new Date(data.event_date).toLocaleDateString()}`,
       type: 'success',
       category: 'event',
       timestamp: new Date(),
@@ -375,7 +375,7 @@ class RealTimeNotificationManager {
     const notification = {
       id: `event-update-${data.event_id}-${Date.now()}`,
       title: '✏️ Event Updated',
-      message: `"${data.event_title}" has been updated. ${data.changes_summary}`,
+      message: `"${String(data.event_title || 'Event')}" has been updated. ${String(data.changes_summary || 'Changes made')}`,
       type: 'warning',
       category: 'event',
       timestamp: new Date(),
@@ -398,8 +398,8 @@ class RealTimeNotificationManager {
 
     const notification = {
       id: `message-${data.thread_id}-${data.message_id}`,
-      title: `💬 New Message from ${data.sender_name}`,
-      message: data.subject || data.preview || 'New message received',
+      title: `💬 New Message from ${String(data.sender_name || 'Someone')}`,
+      message: String(data.subject || data.preview || 'New message received'),
       type: 'info',
       category: 'message',
       timestamp: new Date(data.timestamp),
@@ -425,7 +425,7 @@ class RealTimeNotificationManager {
     const notification = {
       id: `reminder-${data.event_id}-${Date.now()}`,
       title: `⏰ Event Reminder`,
-      message: `"${data.event_title}" is coming up ${data.time_until}`,
+      message: `"${String(data.event_title || 'Event')}" is coming up ${String(data.time_until || 'soon')}`,
       type: 'warning',
       category: 'reminder',
       timestamp: new Date(),
@@ -449,8 +449,8 @@ class RealTimeNotificationManager {
 
     const notification = {
       id: `admin-${data.notification_id || Date.now()}`,
-      title: `🔧 Admin: ${data.title}`,
-      message: data.message,
+      title: `🔧 Admin: ${String(data.title || 'Notification')}`,
+      message: String(data.message || 'Admin notification'),
       type: data.severity || 'info',
       category: 'admin',
       timestamp: new Date(data.timestamp),
