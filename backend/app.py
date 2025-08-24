@@ -270,6 +270,10 @@ def auto_migrate_time_fields():
 # Disable Flask's default static file serving to use our custom route
 app = Flask(__name__, static_folder=None)
 app.config.from_object(Config)
+
+# Disable automatic trailing slash redirects to prevent CORS issues
+app.url_map.strict_slashes = False
+
 CORS(app)
 db.init_app(app)
 jwt = JWTManager(app)
