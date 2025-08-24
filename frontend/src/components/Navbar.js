@@ -293,31 +293,31 @@ function Navbar() {
           <div className="profile-bubble-header d-flex align-items-center mb-3">
             <UserAvatar user={user} size={40} />
             <div className="ms-3">
-              <h6 className="mb-0 text-dark fw-bold">{profileData.name || username}</h6>
+              <h6 className="mb-0 text-dark fw-bold">{typeof profileData.name === 'string' ? profileData.name : username}</h6>
               <small className="text-muted">{username}</small>
             </div>
           </div>
           
           <div className="profile-info mb-3">
-            {profileData.email && (
+            {profileData.email && typeof profileData.email === 'string' && (
               <div className="info-item mb-2">
                 <i className="bi bi-envelope text-muted me-2"></i>
                 <span className="text-dark">{profileData.email}</span>
               </div>
             )}
-            {profileData.phone && (
+            {profileData.phone && typeof profileData.phone === 'string' && (
               <div className="info-item mb-2">
                 <i className="bi bi-telephone text-muted me-2"></i>
                 <span className="text-dark">{profileData.phone}</span>
               </div>
             )}
-            {currentOrganization && (
+            {currentOrganization && typeof currentOrganization.name === 'string' && (
               <div className="info-item mb-2">
                 <i className="bi bi-building text-muted me-2"></i>
                 <span className="text-dark">{currentOrganization.name}</span>
               </div>
             )}
-            {profileData.address && (
+            {profileData.address && typeof profileData.address === 'string' && (
               <div className="info-item mb-2">
                 <i className="bi bi-geo-alt text-muted me-2"></i>
                 <span className="text-dark">{profileData.address}</span>
