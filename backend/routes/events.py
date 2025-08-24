@@ -284,7 +284,9 @@ def get_events():
         print(f"❌ Fatal error in get_events(): {e}")
         import traceback
         traceback.print_exc()
-        return jsonify({'error': 'Failed to load events', 'details': str(e)}), 500@events_bp.route('/', methods=['POST'])
+        return jsonify({'error': 'Failed to load events', 'details': str(e)}), 500
+
+@events_bp.route('/', methods=['POST'])
 @jwt_required()
 def create_event():
     claims = get_jwt()
