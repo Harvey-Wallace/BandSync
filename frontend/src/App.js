@@ -5,6 +5,7 @@ import { OrganizationProvider } from './contexts/OrganizationContext';
 import SessionTimeout from './components/SessionTimeout';
 import IOSDebugger from './components/IOSDebugger';
 import IOSErrorBoundary from './components/IOSErrorBoundary';
+import ErrorBoundary from './components/ErrorBoundary';
 import { realTimeNotifications } from './utils/realTimeNotifications';
 import './utils/superAdminHelper'; // Import super admin helper for global access
 import LoginPage from './pages/LoginPage';
@@ -77,76 +78,80 @@ function App() {
     
     // Simple iOS fallback - just show a basic login for now
     return (
-      <IOSErrorBoundary>
-        <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-          <h1>BandSync</h1>
-          <p>iOS Version Loading...</p>
-          <div style={{ marginTop: '20px' }}>
-            <ThemeProvider>
-              <OrganizationProvider>
-                <Router>
-                  <Routes>
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/register" element={<RegisterPage />} />
-                    <Route path="/reset-password" element={<PasswordResetPage />} />
-                    <Route path="/change-password" element={<ChangePasswordPage />} />
-                    <Route path="/magic-login" element={<MagicLoginPage />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/analytics" element={<AnalyticsDashboard />} />
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/super-admin" element={<SuperAdminPage />} />
-                    <Route path="/events" element={<Events />} />
-                    <Route path="/events-old" element={<EventsPage />} />
-                    <Route path="/profile" element={<ProfilePage />} />
-                    <Route path="/email-preferences" element={<EmailPreferencesPage />} />
-                    <Route path="/calendar" element={<CalendarIntegrationPage />} />
-                    <Route path="/messaging" element={<MessagingPage />} />
-                    <Route path="/substitution" element={<SubstitutionPage />} />
-                    <Route path="/bulk-operations" element={<BulkOperationsPage />} />
-                    <Route path="/polls" element={<QuickPollsPage />} />
-                    <Route path="*" element={<LoginPage />} />
-                  </Routes>
-                </Router>
-              </OrganizationProvider>
-            </ThemeProvider>
+      <ErrorBoundary>
+        <IOSErrorBoundary>
+          <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
+            <h1>BandSync</h1>
+            <p>iOS Version Loading...</p>
+            <div style={{ marginTop: '20px' }}>
+              <ThemeProvider>
+                <OrganizationProvider>
+                  <Router>
+                    <Routes>
+                      <Route path="/login" element={<LoginPage />} />
+                      <Route path="/register" element={<RegisterPage />} />
+                      <Route path="/reset-password" element={<PasswordResetPage />} />
+                      <Route path="/change-password" element={<ChangePasswordPage />} />
+                      <Route path="/magic-login" element={<MagicLoginPage />} />
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/analytics" element={<AnalyticsDashboard />} />
+                      <Route path="/admin" element={<AdminDashboard />} />
+                      <Route path="/super-admin" element={<SuperAdminPage />} />
+                      <Route path="/events" element={<Events />} />
+                      <Route path="/events-old" element={<EventsPage />} />
+                      <Route path="/profile" element={<ProfilePage />} />
+                      <Route path="/email-preferences" element={<EmailPreferencesPage />} />
+                      <Route path="/calendar" element={<CalendarIntegrationPage />} />
+                      <Route path="/messaging" element={<MessagingPage />} />
+                      <Route path="/substitution" element={<SubstitutionPage />} />
+                      <Route path="/bulk-operations" element={<BulkOperationsPage />} />
+                      <Route path="/polls" element={<QuickPollsPage />} />
+                      <Route path="*" element={<LoginPage />} />
+                    </Routes>
+                  </Router>
+                </OrganizationProvider>
+              </ThemeProvider>
+            </div>
           </div>
-        </div>
-      </IOSErrorBoundary>
+        </IOSErrorBoundary>
+      </ErrorBoundary>
     );
   }
   
   return (
-    <IOSErrorBoundary>
-      <ThemeProvider>
-        <OrganizationProvider>
-          <IOSDebugger />
-          <Router>
-            <SessionTimeout />
-            <Routes>
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/reset-password" element={<PasswordResetPage />} />
-              <Route path="/change-password" element={<ChangePasswordPage />} />
-              <Route path="/magic-login" element={<MagicLoginPage />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/analytics" element={<AnalyticsDashboard />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/super-admin" element={<SuperAdminPage />} />
-              <Route path="/events" element={<Events />} />
-              <Route path="/events-old" element={<EventsPage />} />
-              <Route path="/profile" element={<ProfilePage />} />
-              <Route path="/email-preferences" element={<EmailPreferencesPage />} />
-              <Route path="/calendar" element={<CalendarIntegrationPage />} />
-              <Route path="/messaging" element={<MessagingPage />} />
-              <Route path="/substitution" element={<SubstitutionPage />} />
-              <Route path="/bulk-operations" element={<BulkOperationsPage />} />
-              <Route path="/polls" element={<QuickPollsPage />} />
-              <Route path="*" element={<LoginPage />} />
-            </Routes>
-          </Router>
-        </OrganizationProvider>
-      </ThemeProvider>
-    </IOSErrorBoundary>
+    <ErrorBoundary>
+      <IOSErrorBoundary>
+        <ThemeProvider>
+          <OrganizationProvider>
+            <IOSDebugger />
+            <Router>
+              <SessionTimeout />
+              <Routes>
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/reset-password" element={<PasswordResetPage />} />
+                <Route path="/change-password" element={<ChangePasswordPage />} />
+                <Route path="/magic-login" element={<MagicLoginPage />} />
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/analytics" element={<AnalyticsDashboard />} />
+                <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/super-admin" element={<SuperAdminPage />} />
+                <Route path="/events" element={<Events />} />
+                <Route path="/events-old" element={<EventsPage />} />
+                <Route path="/profile" element={<ProfilePage />} />
+                <Route path="/email-preferences" element={<EmailPreferencesPage />} />
+                <Route path="/calendar" element={<CalendarIntegrationPage />} />
+                <Route path="/messaging" element={<MessagingPage />} />
+                <Route path="/substitution" element={<SubstitutionPage />} />
+                <Route path="/bulk-operations" element={<BulkOperationsPage />} />
+                <Route path="/polls" element={<QuickPollsPage />} />
+                <Route path="*" element={<LoginPage />} />
+              </Routes>
+            </Router>
+          </OrganizationProvider>
+        </ThemeProvider>
+      </IOSErrorBoundary>
+    </ErrorBoundary>
   );
 }
 
