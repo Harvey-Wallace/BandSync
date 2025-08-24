@@ -29,11 +29,24 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
 
   useEffect(() => {
     if (event) {
+      // Helper function to safely format date
+      const formatDateForInput = (dateString) => {
+        if (!dateString) return '';
+        try {
+          const date = new Date(dateString);
+          if (isNaN(date.getTime())) return '';
+          return date.toISOString().slice(0, 10);
+        } catch (error) {
+          console.warn('Date formatting error:', error);
+          return '';
+        }
+      };
+
       setFormData({
         title: event.title || '',
         description: event.description || '',
-        date: event.date ? new Date(event.date).toISOString().slice(0, 10) : '',
-        end_date: event.end_date ? new Date(event.end_date).toISOString().slice(0, 10) : '',
+        date: formatDateForInput(event.date),
+        end_date: formatDateForInput(event.end_date),
         arrive_by_time: event.arrive_by_time || '',
         start_time: event.start_time || '',
         end_time: event.end_time || '',
@@ -116,8 +129,22 @@ const EnhancedEventForm = ({ show, onHide, onSave, event = null, categories = []
       // Format data for API
       const eventData = {
         ...formData,
-        date: formData.date ? new Date(formData.date).toISOString() : null,
-        end_date: formData.end_date ? new Date(formData.end_date).toISOString() : null,
+        date: formData.date ? (() => {
+          try {
+            return new Date(formData.date).toISOString();
+          } catch (error) {
+            console.error('Date formatting error:', error);
+            return formData.date;
+          }
+        })() : null,
+        end_date: formData.end_date ? (() => {
+          try {
+            return new Date(formData.end_date).toISOString();
+          } catch (error) {
+            console.error('End date formatting error:', error);
+            return formData.end_date;
+          }
+        })() : null,
         category_id: formData.category_id || null
       };
 
