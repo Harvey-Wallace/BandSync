@@ -48,8 +48,8 @@ const DebugEnv = () => {
                     {value ? (
                       <span className="text-success">
                         {key.includes('API_KEY') ? 
-                          `${value.substring(0, 8)}...` : 
-                          value
+                          `${String(value).substring(0, 8)}...` : 
+                          (typeof value === 'object' ? JSON.stringify(value) : String(value))
                         }
                       </span>
                     ) : (
@@ -88,7 +88,7 @@ const DebugEnv = () => {
                       <span className="text-success">
                         {key.includes('API_KEY') || key.includes('GOOGLE_MAPS') ? 
                           `${String(value).substring(0, 8)}...` : 
-                          String(value)
+                          (typeof value === 'object' ? JSON.stringify(value) : String(value))
                         }
                       </span>
                     ) : (
