@@ -64,7 +64,7 @@ function Events() {
         };
 
         // Fetch events first - using the same approach as EventsPage
-        const eventsResponse = await axios.get(`${getApiUrl()}/events/`, config);
+        const eventsResponse = await axios.get(`${getApiUrl()}/events`, config);
         
         // Sort events by date
         const sortedEvents = eventsResponse.data.sort((a, b) => new Date(a.date) - new Date(b.date));
