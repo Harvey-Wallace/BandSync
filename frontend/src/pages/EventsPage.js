@@ -509,7 +509,11 @@ function EventsPage() {
     if (event.category && categories.length > 0) {
       const category = categories.find(cat => cat.id === event.category_id);
       if (category) {
-        return { color: 'white', backgroundColor: category.color };
+        return { 
+          type: 'custom',
+          style: { color: 'white', backgroundColor: category.color },
+          className: 'custom'
+        };
       }
     }
     
@@ -521,7 +525,12 @@ function EventsPage() {
       'social': 'success',
       'other': 'secondary'
     };
-    return colors[event.type] || colors['other'];
+    const colorClass = colors[event.type] || colors['other'];
+    return {
+      type: 'bootstrap',
+      style: {},
+      className: colorClass
+    };
   };
 
   // Helper function to get RSVP stats from event data
@@ -746,13 +755,13 @@ function EventsPage() {
                       )}
                       {event.category && typeof event.category === 'string' && (
                         <span 
-                          className={typeof getEventTypeBadge(event) === 'string' ? `badge bg-${getEventTypeBadge(event)} me-2` : 'badge me-2'}
-                          style={typeof getEventTypeBadge(event) === 'object' ? getEventTypeBadge(event) : {}}
+                          className={`badge me-2 ${getEventTypeBadge(event).type === 'custom' ? '' : `bg-${getEventTypeBadge(event).className}`}`}
+                          style={getEventTypeBadge(event).style}
                         >
                           {event.category}
                         </span>
                       )}
-                      <span className={`badge bg-${typeof getEventTypeBadge(event) === 'string' ? getEventTypeBadge(event) : 'secondary'}`}>
+                      <span className={`badge bg-${getEventTypeBadge(event).className}`}>
                         {event.type && event.type !== 'other' && typeof event.type === 'string' ? event.type.charAt(0).toUpperCase() + event.type.slice(1) : 'Rehearsal'}
                       </span>
                     </div>
