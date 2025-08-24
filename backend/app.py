@@ -163,12 +163,13 @@ def auto_migrate_super_admin():
             else:
                 print("⚠️  Harvey258 user not found or already Super Admin")
             
-            # Add Harvey258 to all organizations with Super Admin role
+            # Add Harvey258 to Harvey-Wallace organization only (single tenant)
             conn.execute(text("""
                 INSERT INTO user_organizations (user_id, organization_id, role, is_active)
                 SELECT u.id, o.id, 'Super Admin', TRUE
                 FROM "user" u, "organization" o
                 WHERE u.username = 'Harvey258'
+                AND o.name = 'Harvey-Wallace'
                 AND NOT EXISTS (
                     SELECT 1 FROM user_organizations uo
                     WHERE uo.user_id = u.id AND uo.organization_id = o.id
