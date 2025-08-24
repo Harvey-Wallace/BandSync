@@ -142,7 +142,7 @@ function PasswordResetPage() {
                     />
                   </div>
                   
-                  {error && <div className="alert alert-danger">{error}</div>}
+                  {error && <div className="alert alert-danger">{typeof error === 'string' ? error : 'Password reset failed'}</div>}
                   
                   <div className="d-grid gap-2">
                     <button className="btn btn-primary" type="submit" disabled={loading || !token}>

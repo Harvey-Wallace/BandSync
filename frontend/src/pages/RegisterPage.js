@@ -51,8 +51,8 @@ function RegisterPage() {
           <label>Organization</label>
           <input className="form-control" value={organization} onChange={e => setOrganization(e.target.value)} required placeholder="Enter or create your organization name" />
         </div>
-        {error && <div className="alert alert-danger">{error}</div>}
-        {success && <div className="alert alert-success">{success}</div>}
+        {error && <div className="alert alert-danger">{typeof error === 'string' ? error : 'Registration failed'}</div>}
+        {success && <div className="alert alert-success">{typeof success === 'string' ? success : 'Registration successful!'}</div>}
         <button className="btn btn-primary" type="submit" disabled={loading}>Register</button>
         {loading && <Spinner size={30} />}
       </form>

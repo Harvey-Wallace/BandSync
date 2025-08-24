@@ -106,7 +106,7 @@ function ChangePasswordPage() {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           {error && (
             <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-              {error}
+              {typeof error === 'string' ? error : 'An error occurred'}
             </div>
           )}
           
