@@ -1,11 +1,11 @@
-# Multi-stage build for BandSync - CACHE BREAK 2025-08-25
+# Multi-stage build for BandSync - REACT ERROR #130 FIX DEPLOYMENT
 # Stage 1: Build frontend
 FROM node:18-alpine AS frontend-builder
 
 # Accept build-time arguments for React environment variables
 ARG REACT_APP_GOOGLE_MAPS_API_KEY
 ARG REACT_APP_API_URL
-ARG BUILD_HASH=default
+ARG BUILD_HASH=anonymous-export-fix
 
 # Set environment variables for the build
 ENV REACT_APP_GOOGLE_MAPS_API_KEY=$REACT_APP_GOOGLE_MAPS_API_KEY
@@ -17,7 +17,7 @@ RUN echo "🔍 Build-time environment variables:" && \
     echo "REACT_APP_GOOGLE_MAPS_API_KEY: ${REACT_APP_GOOGLE_MAPS_API_KEY:0:20}..." && \
     echo "📦 Starting frontend build (force rebuild)..."
 
-# Force cache invalidation - FIXED BUILD 2025-08-25-08:00
+# Force cache invalidation - REACT ERROR #130 FIX DEPLOYMENT 2025-08-25
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 # Use npm install to resolve version conflicts (not npm ci)
