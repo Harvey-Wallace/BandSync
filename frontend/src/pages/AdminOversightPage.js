@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Table, Modal, Form, Alert, Spinner } from 'react-bootstrap';
+import Navbar from '../components/Navbar';
+import NotificationSystem from '../components/NotificationSystem';
 import { getApiUrl } from '../utils/apiUrl';
 import axios from 'axios';
 
@@ -174,18 +176,25 @@ const AdminOversightPage = () => {
 
     if (loading && !dashboardData) {
         return (
-            <Container className="mt-5 text-center">
-                <Spinner animation="border" variant="primary" />
-                <p className="mt-3">Loading admin oversight...</p>
-            </Container>
+            <div className="min-vh-100 bg-light">
+                <Navbar />
+                <NotificationSystem />
+                <Container className="mt-5 text-center">
+                    <Spinner animation="border" variant="primary" />
+                    <p className="mt-3">Loading admin oversight...</p>
+                </Container>
+            </div>
         );
     }
 
     return (
-        <Container fluid className="mt-4">
-            <h2 className="mb-4">🔍 Admin Oversight Dashboard</h2>
-            
-            {error && <Alert variant="danger" dismissible onClose={() => setError('')}>{error}</Alert>}
+        <div className="min-vh-100 bg-light">
+            <Navbar />
+            <NotificationSystem />
+            <Container fluid className="mt-4">
+                <h2 className="mb-4">🔍 Admin Oversight Dashboard</h2>
+                
+                {error && <Alert variant="danger" dismissible onClose={() => setError('')}>{error}</Alert>}
 
             {/* Navigation Tabs */}
             <Row className="mb-4">
@@ -572,7 +581,8 @@ const AdminOversightPage = () => {
                     </Button>
                 </Modal.Footer>
             </Modal>
-        </Container>
+            </Container>
+        </div>
     );
 };
 
