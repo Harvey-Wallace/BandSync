@@ -259,7 +259,7 @@ app.register_blueprint(substitutes_bp, url_prefix='/api/substitutes')
 app.register_blueprint(bulk_ops_bp, url_prefix='/api/bulk-ops')
 app.register_blueprint(quick_polls_bp, url_prefix='/api/quick-polls')
 app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
-app.register_blueprint(admin_oversight)
+app.register_blueprint(admin_oversight, url_prefix='/api')
 app.register_blueprint(debug_bp, url_prefix='/api/debug')
 
 # JWT error handlers

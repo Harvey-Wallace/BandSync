@@ -11,7 +11,7 @@ from datetime import datetime
 
 admin_oversight = Blueprint('admin_oversight', __name__)
 
-@admin_oversight.route('/api/admin-oversight/health', methods=['GET'])
+@admin_oversight.route('/admin-oversight/health', methods=['GET'])
 def health_check():
     """Simple health check for admin oversight routes."""
     return jsonify({'status': 'healthy', 'service': 'admin_oversight'})
@@ -29,7 +29,7 @@ def is_harvey_admin():
         print(f"Error in is_harvey_admin: {e}")
         return False
 
-@admin_oversight.route('/api/admin-oversight/dashboard', methods=['GET'])
+@admin_oversight.route('/admin-oversight/dashboard', methods=['GET'])
 @jwt_required()
 def get_oversight_dashboard():
     """Get system overview dashboard for Harvey258."""
@@ -97,7 +97,7 @@ def get_oversight_dashboard():
         traceback.print_exc()
         return jsonify({'error': f'Dashboard error: {str(e)}'}), 500
 
-@admin_oversight.route('/api/admin-oversight/organizations', methods=['GET'])
+@admin_oversight.route('/admin-oversight/organizations', methods=['GET'])
 @jwt_required()
 def get_all_organizations():
     """Get all organizations with their users."""
@@ -142,7 +142,7 @@ def get_all_organizations():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@admin_oversight.route('/api/admin-oversight/organizations/<int:org_id>', methods=['PUT'])
+@admin_oversight.route('/admin-oversight/organizations/<int:org_id>', methods=['PUT'])
 @jwt_required()
 def update_organization(org_id):
     """Update organization information."""
@@ -178,7 +178,7 @@ def update_organization(org_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@admin_oversight.route('/api/admin-oversight/organizations/<int:org_id>', methods=['DELETE'])
+@admin_oversight.route('/admin-oversight/organizations/<int:org_id>', methods=['DELETE'])
 @jwt_required()
 def delete_organization(org_id):
     """Delete an organization and all related data."""
@@ -208,7 +208,7 @@ def delete_organization(org_id):
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
 
-@admin_oversight.route('/api/admin-oversight/users', methods=['GET'])
+@admin_oversight.route('/admin-oversight/users', methods=['GET'])
 @jwt_required()
 def get_all_users():
     """Get all users in the system."""
