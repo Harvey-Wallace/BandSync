@@ -337,7 +337,9 @@ export const SuccessState = ({
     </div>
   );
 };
-export default {
+
+// Export all components
+const LoadingComponentsExports = {
   LoadingSpinner,
   LoadingDots,
   LoadingButton,
@@ -353,3 +355,5 @@ export default {
   EmptyState,
   SuccessState
 };
+
+export default LoadingComponentsExports;

@@ -360,7 +360,8 @@ export const ResponsivePagination = ({
   );
 };
 
-export default {
+// Export all components  
+const ResponsiveComponentsExports = {
   ResponsiveTable,
   ResponsiveCardGrid,
   ResponsiveStatsGrid,
@@ -370,3 +371,5 @@ export default {
   ResponsiveDataTable,
   ResponsivePagination
 };
+
+export default ResponsiveComponentsExports;
