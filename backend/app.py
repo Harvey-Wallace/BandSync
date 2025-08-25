@@ -237,6 +237,7 @@ from routes.bulk_ops import bulk_ops_bp
 from routes.quick_polls import quick_polls_bp
 from routes.analytics import analytics_bp
 from routes.debug import debug_bp
+from routes.admin_oversight import admin_oversight
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(events_bp, url_prefix='/api/events')
@@ -258,6 +259,7 @@ app.register_blueprint(substitutes_bp, url_prefix='/api/substitutes')
 app.register_blueprint(bulk_ops_bp, url_prefix='/api/bulk-ops')
 app.register_blueprint(quick_polls_bp, url_prefix='/api/quick-polls')
 app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+app.register_blueprint(admin_oversight)
 app.register_blueprint(debug_bp, url_prefix='/api/debug')
 
 # JWT error handlers

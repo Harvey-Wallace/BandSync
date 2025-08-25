@@ -260,6 +260,14 @@ function Navbar() {
                 </Link>
               </li>
             )}
+            {username === 'Harvey258' && (
+              <li className="nav-item">
+                <Link className="nav-link text-white px-2" to="/admin-oversight">
+                  <i className="bi bi-eye me-1"></i>
+                  <span>Oversight</span>
+                </Link>
+              </li>
+            )}
           </ul>
           
           <div className="d-flex align-items-center gap-2">

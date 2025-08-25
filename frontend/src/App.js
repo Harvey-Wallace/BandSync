@@ -24,6 +24,7 @@ import MessagingPage from './pages/MessagingPage';
 import SubstitutionPage from './pages/SubstitutionPage';
 import BulkOperationsPage from './pages/BulkOperationsPage';
 import QuickPollsPage from './pages/QuickPollsPage';
+import AdminOversightPage from './pages/AdminOversightPage';
 import './styles/custom.css';
 
 console.log('🎯 App.js loading...');
@@ -103,6 +104,7 @@ function App() {
                       <Route path="/substitution" element={<SubstitutionPage />} />
                       <Route path="/bulk-operations" element={<BulkOperationsPage />} />
                       <Route path="/polls" element={<QuickPollsPage />} />
+                      <Route path="/admin-oversight" element={<AdminOversightPage />} />
                       <Route path="*" element={<LoginPage />} />
                     </Routes>
                   </Router>
@@ -141,6 +143,7 @@ function App() {
                 <Route path="/substitution" element={<SubstitutionPage />} />
                 <Route path="/bulk-operations" element={<BulkOperationsPage />} />
                 <Route path="/polls" element={<QuickPollsPage />} />
+                <Route path="/admin-oversight" element={<AdminOversightPage />} />
                 <Route path="*" element={<LoginPage />} />
               </Routes>
             </Router>

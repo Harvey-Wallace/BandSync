@@ -1,0 +1,420 @@
+import React, { useState, useEffect } from 'react';
+import { Container, Row, Col, Card, Button, Table, Modal, Form, Alert, Spinner } from 'react-bootstrap';
+import { getApiUrl } from '../utils/apiUrl';
+import axios from 'axios';
+
+const AdminOversightPage = () => {
+    const [dashboardData, setDashboardData] = useState(null);
+    const [organizations, setOrganizations] = useState([]);
+    const [users, setUsers] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
+    const [activeTab, setActiveTab] = useState('dashboard');
+    
+    // Modal states
+    const [showEditModal, setShowEditModal] = useState(false);
+    const [editingOrg, setEditingOrg] = useState(null);
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [deletingOrg, setDeletingOrg] = useState(null);
+
+    useEffect(() => {
+        loadDashboardData();
+    }, []);
+
+    const getAuthHeaders = () => {
+        const token = localStorage.getItem('token');
+        return {
+            headers: { Authorization: `Bearer ${token}` }
+        };
+    };
+
+    const loadDashboardData = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get(`${getApiUrl()}/api/admin-oversight/dashboard`, getAuthHeaders());
+            setDashboardData(response.data);
+        } catch (err) {
+            console.error('Dashboard load error:', err);
+            setError(err.response?.data?.error || 'Failed to load dashboard');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadOrganizations = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get(`${getApiUrl()}/api/admin-oversight/organizations`, getAuthHeaders());
+            setOrganizations(response.data.organizations);
+        } catch (err) {
+            console.error('Organizations load error:', err);
+            setError(err.response?.data?.error || 'Failed to load organizations');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const loadUsers = async () => {
+        try {
+            setLoading(true);
+            const response = await axios.get(`${getApiUrl()}/api/admin-oversight/users`, getAuthHeaders());
+            setUsers(response.data.users);
+        } catch (err) {
+            console.error('Users load error:', err);
+            setError(err.response?.data?.error || 'Failed to load users');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        if (tab === 'organizations' && organizations.length === 0) {
+            loadOrganizations();
+        } else if (tab === 'users' && users.length === 0) {
+            loadUsers();
+        }
+    };
+
+    const handleEditOrg = (org) => {
+        setEditingOrg({ ...org });
+        setShowEditModal(true);
+    };
+
+    const handleSaveOrg = async () => {
+        try {
+            await axios.put(
+                `${getApiUrl()}/api/admin-oversight/organizations/${editingOrg.id}`,
+                {
+                    name: editingOrg.name,
+                    description: editingOrg.description
+                },
+                getAuthHeaders()
+            );
+            setShowEditModal(false);
+            setEditingOrg(null);
+            loadOrganizations(); // Reload data
+        } catch (err) {
+            setError(err.response?.data?.error || 'Failed to update organization');
+        }
+    };
+
+    const handleDeleteOrg = async () => {
+        try {
+            await axios.delete(
+                `${getApiUrl()}/api/admin-oversight/organizations/${deletingOrg.id}`,
+                getAuthHeaders()
+            );
+            setShowDeleteModal(false);
+            setDeletingOrg(null);
+            loadOrganizations(); // Reload data
+            loadDashboardData(); // Update stats
+        } catch (err) {
+            setError(err.response?.data?.error || 'Failed to delete organization');
+        }
+    };
+
+    if (loading && !dashboardData) {
+        return (
+            <Container className="mt-5 text-center">
+                <Spinner animation="border" variant="primary" />
+                <p className="mt-3">Loading admin oversight...</p>
+            </Container>
+        );
+    }
+
+    return (
+        <Container fluid className="mt-4">
+            <h2 className="mb-4">🔍 Admin Oversight Dashboard</h2>
+            
+            {error && <Alert variant="danger" dismissible onClose={() => setError('')}>{error}</Alert>}
+
+            {/* Navigation Tabs */}
+            <Row className="mb-4">
+                <Col>
+                    <div className="d-flex gap-2">
+                        <Button 
+                            variant={activeTab === 'dashboard' ? 'primary' : 'outline-primary'}
+                            onClick={() => handleTabChange('dashboard')}
+                        >
+                            📊 Dashboard
+                        </Button>
+                        <Button 
+                            variant={activeTab === 'organizations' ? 'primary' : 'outline-primary'}
+                            onClick={() => handleTabChange('organizations')}
+                        >
+                            🏢 Organizations
+                        </Button>
+                        <Button 
+                            variant={activeTab === 'users' ? 'primary' : 'outline-primary'}
+                            onClick={() => handleTabChange('users')}
+                        >
+                            👥 Users
+                        </Button>
+                    </div>
+                </Col>
+            </Row>
+
+            {/* Dashboard Tab */}
+            {activeTab === 'dashboard' && dashboardData && (
+                <>
+                    <Row className="mb-4">
+                        <Col md={4}>
+                            <Card className="h-100">
+                                <Card.Body>
+                                    <Card.Title>📈 System Stats</Card.Title>
+                                    <h3 className="text-primary">{dashboardData.stats.total_organizations}</h3>
+                                    <p className="text-muted">Total Organizations</p>
+                                    <h3 className="text-success">{dashboardData.stats.total_users}</h3>
+                                    <p className="text-muted">Total Users</p>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                        <Col md={8}>
+                            <Card className="h-100">
+                                <Card.Body>
+                                    <Card.Title>🏢 Recent Organizations</Card.Title>
+                                    {dashboardData.recent_organizations.length > 0 ? (
+                                        <Table striped size="sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>Name</th>
+                                                    <th>Created</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {dashboardData.recent_organizations.map(org => (
+                                                    <tr key={org.id}>
+                                                        <td>{org.name}</td>
+                                                        <td>{new Date(org.created_at).toLocaleDateString()}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </Table>
+                                    ) : (
+                                        <p className="text-muted">No organizations found</p>
+                                    )}
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    </Row>
+
+                    <Row>
+                        <Col>
+                            <Card>
+                                <Card.Body>
+                                    <Card.Title>📊 Organization Statistics</Card.Title>
+                                    {dashboardData.organization_stats.length > 0 ? (
+                                        <Table striped hover>
+                                            <thead>
+                                                <tr>
+                                                    <th>Organization</th>
+                                                    <th>Members</th>
+                                                    <th>Created</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {dashboardData.organization_stats.map(org => (
+                                                    <tr key={org.id}>
+                                                        <td>{org.name}</td>
+                                                        <td>{org.user_count}</td>
+                                                        <td>{new Date(org.created_at).toLocaleDateString()}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </Table>
+                                    ) : (
+                                        <p className="text-muted">No organization data available</p>
+                                    )}
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    </Row>
+                </>
+            )}
+
+            {/* Organizations Tab */}
+            {activeTab === 'organizations' && (
+                <Card>
+                    <Card.Body>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                            <Card.Title>🏢 All Organizations ({organizations.length})</Card.Title>
+                            <Button variant="outline-primary" onClick={loadOrganizations}>
+                                🔄 Refresh
+                            </Button>
+                        </div>
+                        
+                        {loading ? (
+                            <div className="text-center">
+                                <Spinner animation="border" />
+                            </div>
+                        ) : organizations.length > 0 ? (
+                            <Table striped hover responsive>
+                                <thead>
+                                    <tr>
+                                        <th>Name</th>
+                                        <th>Members</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {organizations.map(org => (
+                                        <tr key={org.id}>
+                                            <td>
+                                                <strong>{org.name}</strong>
+                                                {org.description && (
+                                                    <div className="text-muted small">{org.description}</div>
+                                                )}
+                                            </td>
+                                            <td>{org.user_count}</td>
+                                            <td>{new Date(org.created_at).toLocaleDateString()}</td>
+                                            <td>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline-primary"
+                                                    className="me-2"
+                                                    onClick={() => handleEditOrg(org)}
+                                                >
+                                                    ✏️ Edit
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline-danger"
+                                                    onClick={() => {
+                                                        setDeletingOrg(org);
+                                                        setShowDeleteModal(true);
+                                                    }}
+                                                >
+                                                    🗑️ Delete
+                                                </Button>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        ) : (
+                            <p className="text-muted">No organizations found</p>
+                        )}
+                    </Card.Body>
+                </Card>
+            )}
+
+            {/* Users Tab */}
+            {activeTab === 'users' && (
+                <Card>
+                    <Card.Body>
+                        <div className="d-flex justify-content-between align-items-center mb-3">
+                            <Card.Title>👥 All Users ({users.length})</Card.Title>
+                            <Button variant="outline-primary" onClick={loadUsers}>
+                                🔄 Refresh
+                            </Button>
+                        </div>
+                        
+                        {loading ? (
+                            <div className="text-center">
+                                <Spinner animation="border" />
+                            </div>
+                        ) : users.length > 0 ? (
+                            <Table striped hover responsive>
+                                <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Name</th>
+                                        <th>Email</th>
+                                        <th>Organizations</th>
+                                        <th>Joined</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {users.map(user => (
+                                        <tr key={user.id}>
+                                            <td><strong>{user.username}</strong></td>
+                                            <td>{user.first_name} {user.last_name}</td>
+                                            <td>{user.email}</td>
+                                            <td>
+                                                {user.organizations.map((org, index) => (
+                                                    <div key={index} className="small">
+                                                        {org.name} ({org.role})
+                                                    </div>
+                                                ))}
+                                            </td>
+                                            <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </Table>
+                        ) : (
+                            <p className="text-muted">No users found</p>
+                        )}
+                    </Card.Body>
+                </Card>
+            )}
+
+            {/* Edit Organization Modal */}
+            <Modal show={showEditModal} onHide={() => setShowEditModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>✏️ Edit Organization</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {editingOrg && (
+                        <Form>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Name</Form.Label>
+                                <Form.Control
+                                    type="text"
+                                    value={editingOrg.name}
+                                    onChange={(e) => setEditingOrg({...editingOrg, name: e.target.value})}
+                                />
+                            </Form.Group>
+                            <Form.Group className="mb-3">
+                                <Form.Label>Description</Form.Label>
+                                <Form.Control
+                                    as="textarea"
+                                    rows={3}
+                                    value={editingOrg.description || ''}
+                                    onChange={(e) => setEditingOrg({...editingOrg, description: e.target.value})}
+                                />
+                            </Form.Group>
+                        </Form>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowEditModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button variant="primary" onClick={handleSaveOrg}>
+                        Save Changes
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Delete Organization Modal */}
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>🗑️ Delete Organization</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {deletingOrg && (
+                        <div>
+                            <p>Are you sure you want to delete <strong>{deletingOrg.name}</strong>?</p>
+                            <Alert variant="warning">
+                                <strong>Warning:</strong> This action cannot be undone. All events, RSVPs, and user memberships for this organization will be permanently deleted.
+                            </Alert>
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button variant="danger" onClick={handleDeleteOrg}>
+                        Delete Organization
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+        </Container>
+    );
+};
+
+export default AdminOversightPage;
