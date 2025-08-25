@@ -5,7 +5,7 @@ Clean, minimal implementation without super admin complexity
 
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
-from backend.models import db, User, Organization, UserOrganization
+from models import db, User, Organization, UserOrganization
 from sqlalchemy import func
 from datetime import datetime
 
