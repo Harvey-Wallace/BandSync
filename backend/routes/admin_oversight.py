@@ -16,6 +16,90 @@ def health_check():
     """Simple health check for admin oversight routes."""
     return jsonify({'status': 'healthy', 'service': 'admin_oversight'})
 
+@admin_oversight.route('/admin-oversight/debug/user/<username>', methods=['GET'])
+@jwt_required()
+def debug_user_organizations(username):
+    """Debug endpoint to check specific user's organization relationships."""
+    
+    if not is_harvey_admin():
+        return jsonify({'error': 'Access denied - Harvey258 only'}), 403
+    
+    try:
+        print(f"Debugging user: {username}")
+        
+        # Find the user
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({'error': f'User {username} not found'}), 404
+        
+        # Get user's organization relationships
+        user_orgs = db.session.query(
+            UserOrganization.id,
+            UserOrganization.role,
+            UserOrganization.joined_at,
+            UserOrganization.is_active,
+            Organization.name.label('org_name'),
+            Organization.id.label('org_id')
+        ).join(Organization).filter(UserOrganization.user_id == user.id).all()
+        
+        # Get all organizations (to see what exists)
+        all_orgs = Organization.query.all()
+        
+        # Check legacy organization fields
+        legacy_org = None
+        if user.organization_id:
+            legacy_org = Organization.query.get(user.organization_id)
+        
+        current_org = None
+        if user.current_organization_id:
+            current_org = Organization.query.get(user.current_organization_id)
+            
+        primary_org = None
+        if user.primary_organization_id:
+            primary_org = Organization.query.get(user.primary_organization_id)
+        
+        debug_data = {
+            'user': {
+                'id': user.id,
+                'username': user.username,
+                'name': user.name,
+                'email': user.email,
+                'organization_id': user.organization_id,
+                'current_organization_id': user.current_organization_id,
+                'primary_organization_id': user.primary_organization_id
+            },
+            'legacy_organization': legacy_org.name if legacy_org else None,
+            'current_organization': current_org.name if current_org else None,
+            'primary_organization': primary_org.name if primary_org else None,
+            'user_organization_relationships': [
+                {
+                    'id': uo.id,
+                    'organization_name': uo.org_name,
+                    'organization_id': uo.org_id,
+                    'role': uo.role,
+                    'joined_at': uo.joined_at.isoformat() if uo.joined_at else None,
+                    'is_active': uo.is_active
+                }
+                for uo in user_orgs
+            ],
+            'all_organizations': [
+                {
+                    'id': org.id,
+                    'name': org.name
+                }
+                for org in all_orgs
+            ]
+        }
+        
+        print(f"Debug data for {username}:", debug_data)
+        return jsonify(debug_data)
+        
+    except Exception as e:
+        print(f"Error debugging user {username}: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Debug error: {str(e)}'}), 500
+
 def is_harvey_admin():
     """Check if current user is Harvey258 with admin oversight privileges."""
     try:
@@ -246,4 +330,75 @@ def get_all_users():
         })
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@admin_oversight.route('/admin-oversight/fix/add-user-to-org', methods=['POST'])
+@jwt_required()
+def add_user_to_organization():
+    """Add a user to an organization - Harvey258 only."""
+    
+    if not is_harvey_admin():
+        return jsonify({'error': 'Access denied - Harvey258 only'}), 403
+    
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        org_name = data.get('organization_name')
+        role = data.get('role', 'Member')
+        
+        if not username or not org_name:
+            return jsonify({'error': 'Username and organization_name required'}), 400
+        
+        # Find user
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({'error': f'User {username} not found'}), 404
+        
+        # Find organization
+        organization = Organization.query.filter_by(name=org_name).first()
+        if not organization:
+            return jsonify({'error': f'Organization {org_name} not found'}), 404
+        
+        # Check if relationship already exists
+        existing = UserOrganization.query.filter_by(
+            user_id=user.id, 
+            organization_id=organization.id
+        ).first()
+        
+        if existing:
+            return jsonify({
+                'message': f'{username} is already in {org_name}',
+                'existing_role': existing.role,
+                'is_active': existing.is_active
+            })
+        
+        # Create new relationship
+        user_org = UserOrganization(
+            user_id=user.id,
+            organization_id=organization.id,
+            role=role,
+            is_active=True
+        )
+        
+        db.session.add(user_org)
+        
+        # Update user's current organization if they don't have one
+        if not user.current_organization_id:
+            user.current_organization_id = organization.id
+        
+        # Update user's primary organization if they don't have one
+        if not user.primary_organization_id:
+            user.primary_organization_id = organization.id
+            
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Successfully added {username} to {org_name} as {role}',
+            'user_id': user.id,
+            'organization_id': organization.id,
+            'role': role
+        })
+        
+    except Exception as e:
+        db.session.rollback()
         return jsonify({'error': str(e)}), 500
