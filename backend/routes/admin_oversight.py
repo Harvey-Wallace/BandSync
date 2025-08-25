@@ -402,3 +402,60 @@ def add_user_to_organization():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@admin_oversight.route('/admin-oversight/fix/update-user-role', methods=['POST'])
+@jwt_required()
+def update_user_role():
+    """Update a user's role in their organization."""
+    
+    if not is_harvey_admin():
+        return jsonify({'error': 'Access denied - Harvey258 only'}), 403
+    
+    try:
+        data = request.get_json()
+        username = data.get('username')
+        org_name = data.get('organization_name')
+        new_role = data.get('role', 'Admin')
+        
+        if not username or not org_name:
+            return jsonify({'error': 'Username and organization name required'}), 400
+        
+        # Find user
+        user = User.query.filter_by(username=username).first()
+        if not user:
+            return jsonify({'error': f'User {username} not found'}), 404
+        
+        # Find organization
+        organization = Organization.query.filter_by(name=org_name).first()
+        if not organization:
+            return jsonify({'error': f'Organization {org_name} not found'}), 404
+        
+        # Find existing user-organization relationship
+        user_org = UserOrganization.query.filter_by(
+            user_id=user.id,
+            organization_id=organization.id
+        ).first()
+        
+        if not user_org:
+            return jsonify({'error': f'User {username} is not a member of {org_name}'}), 404
+        
+        old_role = user_org.role
+        user_org.role = new_role
+        
+        # Also update the user's main role if this is their primary org
+        if user.primary_organization_id == organization.id or user.organization_id == organization.id:
+            user.role = new_role
+        
+        db.session.commit()
+        
+        return jsonify({
+            'message': f'Successfully updated {username} role from {old_role} to {new_role} in {org_name}',
+            'user_id': user.id,
+            'organization_id': organization.id,
+            'old_role': old_role,
+            'new_role': new_role
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

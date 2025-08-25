@@ -174,6 +174,26 @@ const AdminOversightPage = () => {
         }
     };
 
+    const updateUserRole = async (username, orgName, newRole) => {
+        try {
+            const response = await axios.post(
+                `${getApiUrl()}/admin-oversight/fix/update-user-role`,
+                {
+                    username: username,
+                    organization_name: orgName,
+                    role: newRole
+                },
+                getAuthHeaders()
+            );
+            alert(response.data.message);
+            // Refresh debug data
+            debugUserOrganizations();
+        } catch (err) {
+            console.error('Role update error:', err);
+            setError(err.response?.data?.error || 'Role update failed');
+        }
+    };
+
     if (loading && !dashboardData) {
         return (
             <div className="min-vh-100 bg-light">
@@ -482,9 +502,22 @@ const AdminOversightPage = () => {
                                         {debugResult.user_organization_relationships.length > 0 ? (
                                             <ul>
                                                 {debugResult.user_organization_relationships.map((rel, index) => (
-                                                    <li key={index}>
-                                                        {rel.organization_name} ({rel.role}) 
-                                                        {rel.is_active ? ' ✅' : ' ❌'}
+                                                    <li key={index} className="mb-2">
+                                                        <div className="d-flex align-items-center justify-content-between">
+                                                            <span>
+                                                                {rel.organization_name} ({rel.role}) 
+                                                                {rel.is_active ? ' ✅' : ' ❌'}
+                                                            </span>
+                                                            {rel.role !== 'Admin' && (
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="warning"
+                                                                    onClick={() => updateUserRole(debugResult.user.username, rel.organization_name, 'Admin')}
+                                                                >
+                                                                    Make Admin
+                                                                </Button>
+                                                            )}
+                                                        </div>
                                                     </li>
                                                 ))}
                                             </ul>
