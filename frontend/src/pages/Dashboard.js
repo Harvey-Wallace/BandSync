@@ -35,6 +35,14 @@ const Dashboard = () => {
             ]);
 
             setUser(userResponse.data);
+            
+            // If user is an admin, redirect to admin dashboard
+            if (userResponse.data.role === 'Admin') {
+                console.log('Admin user detected, redirecting to admin dashboard...');
+                window.location.href = '/admin';
+                return;
+            }
+            
             setEvents(Array.isArray(eventsResponse.data) ? eventsResponse.data.slice(0, 5) : []);
             
         } catch (err) {

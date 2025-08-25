@@ -1,12 +1,12 @@
-# Multi-stage build for BandSync - UNIQUE BUILD 1756105151
+# Multi-stage build for BandSync - UNIQUE BUILD 1756105152
 # Stage 1: Build frontend
 FROM node:18-alpine AS frontend-builder
 
 # Accept build-time arguments for React environment variables
 ARG REACT_APP_GOOGLE_MAPS_API_KEY
 ARG REACT_APP_API_URL
-ARG BUILD_HASH=unique-build-1756105151
-ARG CACHE_BUST=1756105151
+ARG BUILD_HASH=unique-build-1756105152
+ARG CACHE_BUST=1756105152
 
 # Set environment variables for the build
 ENV REACT_APP_GOOGLE_MAPS_API_KEY=$REACT_APP_GOOGLE_MAPS_API_KEY
@@ -14,13 +14,13 @@ ENV REACT_APP_API_URL=$REACT_APP_API_URL
 ENV CACHE_BUST=$CACHE_BUST
 
 # Debug: Print environment variables during build
-RUN echo "🔍 Build-time environment variables (UNIQUE BUILD 1756105151):" && \
+RUN echo "🔍 Build-time environment variables (UNIQUE BUILD 1756105152):" && \
     echo "REACT_APP_API_URL: $REACT_APP_API_URL" && \
     echo "REACT_APP_GOOGLE_MAPS_API_KEY: ${REACT_APP_GOOGLE_MAPS_API_KEY:0:20}..." && \
     echo "CACHE_BUST: $CACHE_BUST" && \
     echo "📦 Starting frontend build (UNIQUE BUILD)..."
 
-# Force cache invalidation - UNIQUE BUILD 1756105151
+# Force cache invalidation - UNIQUE BUILD 1756105152
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
 # Complete cache invalidation with unique timestamp
