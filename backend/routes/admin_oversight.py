@@ -11,24 +11,46 @@ from datetime import datetime
 
 admin_oversight = Blueprint('admin_oversight', __name__)
 
+@admin_oversight.route('/api/admin-oversight/health', methods=['GET'])
+def health_check():
+    """Simple health check for admin oversight routes."""
+    return jsonify({'status': 'healthy', 'service': 'admin_oversight'})
+
 def is_harvey_admin():
     """Check if current user is Harvey258 with admin oversight privileges."""
-    current_user_id = get_jwt_identity()
-    user = User.query.get(current_user_id)
-    return user and user.username == 'Harvey258'
+    try:
+        current_user_id = get_jwt_identity()
+        if not current_user_id:
+            return False
+        
+        user = User.query.get(current_user_id)
+        return user and user.username == 'Harvey258'
+    except Exception as e:
+        print(f"Error in is_harvey_admin: {e}")
+        return False
 
 @admin_oversight.route('/api/admin-oversight/dashboard', methods=['GET'])
 @jwt_required()
 def get_oversight_dashboard():
     """Get system overview dashboard for Harvey258."""
     
-    if not is_harvey_admin():
-        return jsonify({'error': 'Access denied'}), 403
-    
     try:
+        current_user_id = get_jwt_identity()
+        print(f"Admin oversight dashboard request from user ID: {current_user_id}")
+        
+        if not is_harvey_admin():
+            user = User.query.get(current_user_id) if current_user_id else None
+            username = user.username if user else "unknown"
+            print(f"Access denied for user: {username} (ID: {current_user_id})")
+            return jsonify({'error': 'Access denied - Harvey258 only'}), 403
+        
+        print("Harvey258 access granted, fetching dashboard data...")
+        
         # Get overview statistics
         total_orgs = Organization.query.count()
         total_users = User.query.count()
+        
+        print(f"Found {total_orgs} orgs, {total_users} users")
         
         # Get recent organizations
         recent_orgs = Organization.query.order_by(Organization.created_at.desc()).limit(5).all()
@@ -66,10 +88,14 @@ def get_oversight_dashboard():
             ]
         }
         
+        print(f"Dashboard data prepared successfully")
         return jsonify(dashboard_data)
         
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        print(f"Error in get_oversight_dashboard: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Dashboard error: {str(e)}'}), 500
 
 @admin_oversight.route('/api/admin-oversight/organizations', methods=['GET'])
 @jwt_required()
