@@ -622,7 +622,7 @@ function Events() {
 
   // Delete event handler
   const handleDeleteEvent = async (event) => {
-    if (!window.confirm(`Are you sure you want to delete "${event.name}"? This action cannot be undone.`)) {
+    if (!window.confirm(`Are you sure you want to delete "${event.title || event.name || 'this event'}"? This action cannot be undone.`)) {
       return;
     }
 
@@ -808,17 +808,20 @@ function Events() {
                               <i className="fas fa-calendar-check"></i>
                             </div>
                             <div>
-                              <h6 className="mb-0 fw-bold text-dark">{event.name}</h6>
-                              <small className="text-muted">{event.event_type || 'Event'}</small>
+                              <h6 className="mb-1 fw-bold text-dark">{event.title || event.name || 'Untitled Event'}</h6>
+                              <small className="text-muted">{event.type || event.event_type || 'Event'}</small>
                             </div>
                           </div>
                           
                           {/* Location - More prominent */}
-                          {event.location && (
+                          {(event.location_address || event.location) && (
                             <div className="d-flex align-items-center gap-2 text-muted">
                               <i className="fas fa-map-marker-alt"></i>
                               <span className="fw-medium">
-                                {event.location.length > 40 ? `${event.location.substring(0, 40)}...` : event.location}
+                                {(() => {
+                                  const location = event.location_address || event.location;
+                                  return location.length > 40 ? `${location.substring(0, 40)}...` : location;
+                                })()}
                               </span>
                             </div>
                           )}
