@@ -891,6 +891,17 @@ function AdminDashboard() {
       return;
     }
 
+    // Check for duplicate names
+    const trimmedName = newCategory.name.trim();
+    const existingCategory = categories.find(cat => 
+      cat.name.toLowerCase() === trimmedName.toLowerCase()
+    );
+    
+    if (existingCategory) {
+      showErrorMessage(`A category named "${trimmedName}" already exists`);
+      return;
+    }
+
     try {
       setCreateCategoryLoading(true);
       const token = localStorage.getItem('token');
@@ -929,6 +940,17 @@ function AdminDashboard() {
   const handleUpdateCategory = async () => {
     if (!editingCategory.name.trim()) {
       showErrorMessage('Category name is required');
+      return;
+    }
+
+    // Check for duplicate names (excluding the current category being edited)
+    const trimmedName = editingCategory.name.trim();
+    const existingCategory = categories.find(cat => 
+      cat.name.toLowerCase() === trimmedName.toLowerCase() && cat.id !== editingCategory.id
+    );
+    
+    if (existingCategory) {
+      showErrorMessage(`A category named "${trimmedName}" already exists`);
       return;
     }
 

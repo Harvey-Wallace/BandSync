@@ -991,10 +991,23 @@ def create_event_category():
     org_id = claims.get('organization_id')
     data = request.get_json()
     
+    # Validate required fields
+    if not data.get('name', '').strip():
+        return jsonify({'error': 'Category name is required'}), 400
+    
+    # Check if category name already exists for this organization
+    existing_category = EventCategory.query.filter_by(
+        name=data['name'].strip(),
+        organization_id=org_id
+    ).first()
+    
+    if existing_category:
+        return jsonify({'error': f'A category named "{data["name"].strip()}" already exists'}), 400
+    
     try:
         category = EventCategory(
-            name=data['name'],
-            description=data.get('description', ''),
+            name=data['name'].strip(),
+            description=data.get('description', '').strip(),
             color=data.get('color', '#007bff'),
             icon=data.get('icon', '📅'),
             organization_id=org_id,
@@ -1022,7 +1035,15 @@ def create_event_category():
         
     except Exception as e:
         db.session.rollback()
-        return jsonify({'error': str(e)}), 400
+        
+        # Handle specific database errors
+        error_message = str(e)
+        if 'duplicate key value violates unique constraint' in error_message:
+            if 'event_category_name_organization_id_key' in error_message:
+                return jsonify({'error': f'A category named "{data.get("name", "")}" already exists'}), 400
+        
+        # Generic error fallback
+        return jsonify({'error': 'Failed to create category. Please try again.'}), 400
 
 @events_bp.route('/categories/<int:category_id>', methods=['PUT'])
 @jwt_required()
