@@ -9,7 +9,6 @@ import { getApiUrl } from '../utils/apiUrl';
 function Navbar() {
   const role = localStorage.getItem('role');
   const username = localStorage.getItem('username');
-  const isSuperAdmin = localStorage.getItem('super_admin') === 'true';
   
   const { isDark, toggleTheme, orgThemeColor, updateOrgThemeColor } = useTheme();
   const { currentOrganization } = useOrganization();
@@ -253,19 +252,11 @@ function Navbar() {
                 <span>Analytics</span>
               </Link>
             </li>
-            {(role === 'Admin' || isSuperAdmin) && (
+            {role === 'Admin' && (
               <li className="nav-item">
                 <Link className="nav-link text-white px-2" to="/admin">
                   <i className="bi bi-gear me-1"></i>
                   <span>Admin</span>
-                </Link>
-              </li>
-            )}
-            {isSuperAdmin && (
-              <li className="nav-item">
-                <Link className="nav-link text-white px-2" to="/super-admin">
-                  <i className="bi bi-shield-check me-1"></i>
-                  <span>Super Admin</span>
                 </Link>
               </li>
             )}

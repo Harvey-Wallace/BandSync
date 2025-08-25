@@ -7,7 +7,6 @@ import IOSDebugger from './components/IOSDebugger';
 import IOSErrorBoundary from './components/IOSErrorBoundary';
 import ErrorBoundary from './components/ErrorBoundary';
 import { realTimeNotifications } from './utils/realTimeNotifications';
-import './utils/superAdminHelper'; // Import super admin helper for global access
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PasswordResetPage from './pages/PasswordResetPage';
@@ -16,7 +15,6 @@ import MagicLoginPage from './pages/MagicLoginPage';
 import Dashboard from './pages/Dashboard';
 import AnalyticsDashboard from './pages/AnalyticsDashboard';
 import AdminDashboard from './pages/AdminDashboard';
-import SuperAdminPage from './pages/SuperAdminPage';
 import Events from './pages/Events';
 import EventsPage from './pages/EventsPage';
 import ProfilePage from './pages/ProfilePage';
@@ -96,7 +94,6 @@ function App() {
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/analytics" element={<AnalyticsDashboard />} />
                       <Route path="/admin" element={<AdminDashboard />} />
-                      <Route path="/super-admin" element={<SuperAdminPage />} />
                       <Route path="/events" element={<Events />} />
                       <Route path="/events-old" element={<EventsPage />} />
                       <Route path="/profile" element={<ProfilePage />} />
@@ -135,7 +132,6 @@ function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/analytics" element={<AnalyticsDashboard />} />
                 <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/super-admin" element={<SuperAdminPage />} />
                 <Route path="/events" element={<Events />} />
                 <Route path="/events-old" element={<EventsPage />} />
                 <Route path="/profile" element={<ProfilePage />} />

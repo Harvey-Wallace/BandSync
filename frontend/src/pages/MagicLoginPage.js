@@ -76,7 +76,6 @@ function MagicLoginPage() {
     localStorage.setItem('refreshToken', loginData.refresh_token);
     localStorage.setItem('username', loginData.username || 'Unknown User');
     localStorage.setItem('role', loginData.role);
-    localStorage.setItem('super_admin', loginData.super_admin ? 'true' : 'false');
     
     if (loginData.organization_id) localStorage.setItem('organization_id', loginData.organization_id);
     if (loginData.organization) localStorage.setItem('organization', loginData.organization);

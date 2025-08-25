@@ -11,7 +11,7 @@ import cloudinary.uploader
 import os
 from werkzeug.utils import secure_filename
 from services.calendar_service import calendar_service
-from utils.admin_utils import is_super_admin, can_access_organization
+from utils.admin_utils import can_access_organization
 
 admin_bp = Blueprint('admin', __name__)
 
@@ -22,14 +22,9 @@ def get_users():
     claims = get_jwt()
     org_id = claims.get('organization_id')
     
-    # Check if user has admin access or is Super Admin
-    if not is_super_admin(user_id) and claims.get('role') != 'Admin':
+    # Check if user has admin access
+    if claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
-    
-    # If Super Admin, allow access to any organization
-    if is_super_admin(user_id):
-        # Super Admin can specify organization_id in query params
-        org_id = request.args.get('organization_id', org_id)
     
     if not org_id:
         return jsonify({'msg': 'Organization ID required'}), 400
@@ -356,7 +351,7 @@ def delete_user(user_id):
 def organization():
     user_id = get_jwt_identity()
     claims = get_jwt()
-    if not is_super_admin(user_id) and claims.get('role') != 'Admin':
+    if claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     org_id = claims.get('organization_id')
     org = Organization.query.get_or_404(org_id)
@@ -905,7 +900,7 @@ def get_email_logs():
     """Get email logs for current organization"""
     user_id = get_jwt_identity()
     claims = get_jwt()
-    if not is_super_admin(user_id) and claims.get('role') != 'Admin':
+    if claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     
     org_id = claims.get('organization_id')
@@ -955,7 +950,7 @@ def get_email_stats():
     """Get email statistics for current organization"""
     user_id = get_jwt_identity()
     claims = get_jwt()
-    if not is_super_admin(user_id) and claims.get('role') != 'Admin':
+    if claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     
     org_id = claims.get('organization_id')
@@ -984,7 +979,7 @@ def get_scheduled_jobs():
     """Get status of scheduled email jobs"""
     user_id = get_jwt_identity()
     claims = get_jwt()
-    if not is_super_admin(user_id) and claims.get('role') != 'Admin':
+    if claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     
     try:
@@ -1064,7 +1059,7 @@ def get_calendar_stats():
     """Get calendar usage statistics for current organization"""
     user_id = get_jwt_identity()
     claims = get_jwt()
-    if not is_super_admin(user_id) and claims.get('role') != 'Admin':
+    if claims.get('role') != 'Admin':
         return jsonify({'msg': 'Admins only'}), 403
     
     org_id = claims.get('organization_id')
