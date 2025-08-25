@@ -1,4 +1,4 @@
-# Multi-stage build for BandSync - FORCED REBUILD 2025-08-24-17:00
+# Multi-stage build for BandSync - CACHE BREAK 2025-08-25
 # Stage 1: Build frontend
 FROM node:18-alpine AS frontend-builder
 
@@ -17,14 +17,15 @@ RUN echo "🔍 Build-time environment variables:" && \
     echo "REACT_APP_GOOGLE_MAPS_API_KEY: ${REACT_APP_GOOGLE_MAPS_API_KEY:0:20}..." && \
     echo "📦 Starting frontend build (force rebuild)..."
 
-# Force cache invalidation with a comment - Build 2025-08-24-16:40
+# Force cache invalidation - FIXED BUILD 2025-08-25-08:00
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
+# Use npm install to resolve version conflicts (not npm ci)
 RUN npm install --only=production
 
 COPY frontend/ ./
-# Force rebuild with timestamp to bust Docker cache
-RUN echo "BUILD_HASH: $BUILD_HASH" && echo "Forcing frontend rebuild at $(date)" && BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') && echo "Build triggered at $BUILD_DATE" && npm run build
+# FIXED BUILD: Force rebuild with timestamp to bust Docker cache
+RUN echo "BUILD_HASH: $BUILD_HASH - FIXED" && echo "Forcing frontend rebuild at $(date)" && BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') && echo "Build triggered at $BUILD_DATE" && npm run build
 
 # Stage 2: Setup backend
 FROM python:3.11-slim AS backend
