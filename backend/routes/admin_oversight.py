@@ -126,8 +126,7 @@ def get_all_organizations():
                         'id': user.id,
                         'username': user.username,
                         'email': user.email,
-                        'first_name': user.first_name,
-                        'last_name': user.last_name,
+                        'name': user.name,
                         'role': role
                     }
                     for user, role in users
@@ -230,9 +229,8 @@ def get_all_users():
                 'id': user.id,
                 'username': user.username,
                 'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'name': user.name,
+                'created_at': getattr(user, 'created_at', None),
                 'organizations': [
                     {
                         'name': org_name,

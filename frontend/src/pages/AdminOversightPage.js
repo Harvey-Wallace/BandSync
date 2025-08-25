@@ -352,7 +352,7 @@ const AdminOversightPage = () => {
                                     {users.map(user => (
                                         <tr key={user.id}>
                                             <td><strong>{user.username}</strong></td>
-                                            <td>{user.first_name} {user.last_name}</td>
+                                            <td>{user.name || 'N/A'}</td>
                                             <td>{user.email}</td>
                                             <td>
                                                 {user.organizations.map((org, index) => (
@@ -361,7 +361,7 @@ const AdminOversightPage = () => {
                                                     </div>
                                                 ))}
                                             </td>
-                                            <td>{new Date(user.created_at).toLocaleDateString()}</td>
+                                            <td>{user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</td>
                                         </tr>
                                     ))}
                                 </tbody>
