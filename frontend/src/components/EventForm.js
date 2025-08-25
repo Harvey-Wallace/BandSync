@@ -88,12 +88,20 @@ function EventForm({ onSubmit, initialData, onCancel }) {
     const fetchCategories = async () => {
       try {
         const token = localStorage.getItem('token');
+        console.log('Fetching categories...', { token: token ? 'present' : 'missing' });
+        
         const response = await fetch(`${getApiUrl()}/events/categories`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        
+        console.log('Categories response status:', response.status);
+        
         if (response.ok) {
           const data = await response.json();
+          console.log('Categories data received:', data);
           setCategories(data);
+        } else {
+          console.error('Failed to fetch categories:', response.status, response.statusText);
         }
       } catch (error) {
         console.error('Error fetching categories:', error);
