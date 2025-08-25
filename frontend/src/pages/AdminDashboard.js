@@ -862,7 +862,7 @@ function AdminDashboard() {
   const loadCategories = async () => {
     try {
       setCategoriesLoading(true);
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_BASE_URL}/events/categories`, {
         headers: {
@@ -893,7 +893,7 @@ function AdminDashboard() {
 
     try {
       setCreateCategoryLoading(true);
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_BASE_URL}/events/categories`, {
         method: 'POST',
@@ -933,7 +933,7 @@ function AdminDashboard() {
     }
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_BASE_URL}/events/categories/${editingCategory.id}`, {
         method: 'PUT',
@@ -971,7 +971,7 @@ function AdminDashboard() {
     }
 
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('token');
       
       const response = await fetch(`${API_BASE_URL}/events/categories/${categoryId}`, {
         method: 'DELETE',

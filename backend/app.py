@@ -271,8 +271,22 @@ def unauthorized_callback(callback):
 
 @jwt.invalid_token_loader
 def invalid_token_callback(callback):
+    from flask import request
+    auth_header = request.headers.get('Authorization', 'No Authorization header')
     print(f"🚫 JWT INVALID TOKEN ERROR: {callback}")
     print(f"🚫 This usually means the token format is wrong or corrupted")
+    print(f"🚫 Authorization header: {auth_header}")
+    
+    # Check if it's a "Not enough segments" error
+    if "Not enough segments" in str(callback):
+        if auth_header.startswith('Bearer '):
+            token_part = auth_header[7:]  # Remove "Bearer " prefix
+            segment_count = len(token_part.split('.'))
+            print(f"🚫 Token has {segment_count} segments (should be 3)")
+            print(f"🚫 Token preview: {token_part[:50]}...")
+        else:
+            print(f"🚫 Authorization header doesn't start with 'Bearer '")
+    
     return {"msg": callback}, 422
 
 @jwt.expired_token_loader
