@@ -139,6 +139,18 @@ function Events() {
           }
         }
 
+        // Fetch categories for event creation/editing
+        try {
+          const categoriesResponse = await axios.get(`${getApiUrl()}/events/categories`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          console.log('Categories loaded:', categoriesResponse.data);
+          setCategories(categoriesResponse.data);
+        } catch (error) {
+          console.error('Error loading categories:', error);
+          // Don't fail the entire load if categories fail
+        }
+
       } catch (error) {
         console.error('Error fetching data:', error);
         if (error.response?.status === 401) {
