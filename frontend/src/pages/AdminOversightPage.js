@@ -38,7 +38,7 @@ const AdminOversightPage = () => {
             console.log('API URL:', getApiUrl());
             console.log('Token exists:', !!localStorage.getItem('token'));
             
-            const response = await axios.get(`${getApiUrl()}/api/admin-oversight/dashboard`, getAuthHeaders());
+            const response = await axios.get(`${getApiUrl()}/admin-oversight/dashboard`, getAuthHeaders());
             console.log('Dashboard response:', response.data);
             setDashboardData(response.data);
         } catch (err) {
@@ -66,7 +66,7 @@ const AdminOversightPage = () => {
     const loadOrganizations = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${getApiUrl()}/api/admin-oversight/organizations`, getAuthHeaders());
+            const response = await axios.get(`${getApiUrl()}/admin-oversight/organizations`, getAuthHeaders());
             setOrganizations(response.data.organizations);
         } catch (err) {
             console.error('Organizations load error:', err);
@@ -79,7 +79,7 @@ const AdminOversightPage = () => {
     const loadUsers = async () => {
         try {
             setLoading(true);
-            const response = await axios.get(`${getApiUrl()}/api/admin-oversight/users`, getAuthHeaders());
+            const response = await axios.get(`${getApiUrl()}/admin-oversight/users`, getAuthHeaders());
             setUsers(response.data.users);
         } catch (err) {
             console.error('Users load error:', err);
@@ -106,7 +106,7 @@ const AdminOversightPage = () => {
     const handleSaveOrg = async () => {
         try {
             await axios.put(
-                `${getApiUrl()}/api/admin-oversight/organizations/${editingOrg.id}`,
+                `${getApiUrl()}/admin-oversight/organizations/${editingOrg.id}`,
                 {
                     name: editingOrg.name,
                     description: editingOrg.description
@@ -124,7 +124,7 @@ const AdminOversightPage = () => {
     const handleDeleteOrg = async () => {
         try {
             await axios.delete(
-                `${getApiUrl()}/api/admin-oversight/organizations/${deletingOrg.id}`,
+                `${getApiUrl()}/admin-oversight/organizations/${deletingOrg.id}`,
                 getAuthHeaders()
             );
             setShowDeleteModal(false);
