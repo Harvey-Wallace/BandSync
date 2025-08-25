@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Modal, Form, Button, Alert, Spinner, Card, Row, Col } from 'react-bootstrap';
-import { Tab, Tabs } from 'react-bootstrap';
+import Tab from 'react-bootstrap/Tab';
+import Tabs from 'react-bootstrap/Tabs';
 import CustomFields from './CustomFields';
 import LocationPicker from './LocationPicker';
 
