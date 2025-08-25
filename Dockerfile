@@ -1,11 +1,11 @@
-# Multi-stage build for BandSync - REACT ERROR #130 FIX DEPLOYMENT
+# Multi-stage build for BandSync - FORCE REBUILD 2025-08-25T06:54:00Z
 # Stage 1: Build frontend
 FROM node:18-alpine AS frontend-builder
 
 # Accept build-time arguments for React environment variables
 ARG REACT_APP_GOOGLE_MAPS_API_KEY
 ARG REACT_APP_API_URL
-ARG BUILD_HASH=anonymous-export-fix
+ARG BUILD_HASH=force-rebuild-20250825
 
 # Set environment variables for the build
 ENV REACT_APP_GOOGLE_MAPS_API_KEY=$REACT_APP_GOOGLE_MAPS_API_KEY
@@ -17,15 +17,15 @@ RUN echo "🔍 Build-time environment variables:" && \
     echo "REACT_APP_GOOGLE_MAPS_API_KEY: ${REACT_APP_GOOGLE_MAPS_API_KEY:0:20}..." && \
     echo "📦 Starting frontend build (force rebuild)..."
 
-# Force cache invalidation - REACT ERROR #130 FIX DEPLOYMENT 2025-08-25
+# Force cache invalidation - AGGRESSIVE REBUILD 2025-08-25T06:54:00Z
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-# Use npm install to resolve version conflicts (not npm ci)
-RUN npm install --only=production
+# Clean install to avoid any caching issues and force complete rebuild
+RUN npm cache clean --force && npm install --only=production
 
 COPY frontend/ ./
-# FIXED BUILD: Force rebuild with timestamp to bust Docker cache
-RUN echo "BUILD_HASH: $BUILD_HASH - FIXED" && echo "Forcing frontend rebuild at $(date)" && BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') && echo "Build triggered at $BUILD_DATE" && npm run build
+# AGGRESSIVE REBUILD: Force complete rebuild with timestamp and BUILD_HASH
+RUN echo "BUILD_HASH: $BUILD_HASH - FORCE REBUILD" && echo "Complete rebuild triggered at $(date)" && BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') && echo "Force rebuild at $BUILD_DATE" && npm run build
 
 # Stage 2: Setup backend
 FROM python:3.11-slim AS backend

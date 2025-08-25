@@ -1,8 +1,8 @@
 {
   "name": "bandsync-frontend",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "private": true,
-  "buildTimestamp": "2025-08-01T16:28:00Z",
+  "buildTimestamp": "2025-08-25T06:54:00Z",
   "dependencies": {
     "@fortawesome/fontawesome-free": "^7.0.0",
     "@googlemaps/js-api-loader": "^1.16.10",
