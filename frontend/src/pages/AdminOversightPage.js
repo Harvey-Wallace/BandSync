@@ -23,6 +23,7 @@ const AdminOversightPage = () => {
 
     const getAuthHeaders = () => {
         const token = localStorage.getItem('token');
+        console.log('Auth token:', token ? `${token.substring(0, 20)}...` : 'null');
         return {
             headers: { Authorization: `Bearer ${token}` }
         };
@@ -31,11 +32,32 @@ const AdminOversightPage = () => {
     const loadDashboardData = async () => {
         try {
             setLoading(true);
+            setError(''); // Clear previous errors
+            
+            console.log('Loading dashboard data...');
+            console.log('API URL:', getApiUrl());
+            console.log('Token exists:', !!localStorage.getItem('token'));
+            
             const response = await axios.get(`${getApiUrl()}/api/admin-oversight/dashboard`, getAuthHeaders());
+            console.log('Dashboard response:', response.data);
             setDashboardData(response.data);
         } catch (err) {
             console.error('Dashboard load error:', err);
-            setError(err.response?.data?.error || 'Failed to load dashboard');
+            console.error('Error response:', err.response?.data);
+            console.error('Error status:', err.response?.status);
+            
+            let errorMsg = 'Failed to load dashboard';
+            if (err.response?.data?.error) {
+                errorMsg = err.response.data.error;
+            } else if (err.response?.status === 403) {
+                errorMsg = 'Access denied - Harvey258 only';
+            } else if (err.response?.status === 401) {
+                errorMsg = 'Authentication required - please login';
+            } else if (err.message) {
+                errorMsg = `Connection error: ${err.message}`;
+            }
+            
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }
