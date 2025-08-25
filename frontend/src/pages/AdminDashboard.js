@@ -1906,7 +1906,7 @@ function AdminDashboard() {
                                   style={{
                                     width: '20px',
                                     height: '20px',
-                                    backgroundColor: category.color,
+                                    backgroundColor: category.color || '#007bff',
                                     border: '2px solid #dee2e6'
                                   }}
                                 ></div>
@@ -2456,7 +2456,7 @@ function AdminDashboard() {
                         <input
                           type="color"
                           className="form-control form-control-color me-3"
-                          value={editingCategory.color}
+                          value={editingCategory.color || '#007bff'}
                           onChange={(e) => setEditingCategory({ ...editingCategory, color: e.target.value })}
                           style={{ width: '60px' }}
                         />

@@ -1007,14 +1007,16 @@ def create_event_category():
         db.session.commit()
         
         return jsonify({
-            'id': category.id,
-            'name': category.name,
-            'description': category.description,
-            'color': category.color,
-            'icon': category.icon,
-            'is_default': category.is_default,
-            'requires_location': category.requires_location,
-            'default_duration_hours': category.default_duration_hours,
+            'category': {
+                'id': category.id,
+                'name': category.name,
+                'description': category.description,
+                'color': category.color,
+                'icon': category.icon,
+                'is_default': category.is_default,
+                'requires_location': category.requires_location,
+                'default_duration_hours': category.default_duration_hours
+            },
             'message': 'Category created successfully'
         }), 201
         
@@ -1046,14 +1048,16 @@ def update_event_category(category_id):
         db.session.commit()
         
         return jsonify({
-            'id': category.id,
-            'name': category.name,
-            'description': category.description,
-            'color': category.color,
-            'icon': category.icon,
-            'is_default': category.is_default,
-            'requires_location': category.requires_location,
-            'default_duration_hours': category.default_duration_hours,
+            'category': {
+                'id': category.id,
+                'name': category.name,
+                'description': category.description,
+                'color': category.color,
+                'icon': category.icon,
+                'is_default': category.is_default,
+                'requires_location': category.requires_location,
+                'default_duration_hours': category.default_duration_hours
+            },
             'message': 'Category updated successfully'
         })
         
