@@ -16,6 +16,10 @@ const AdminOversightPage = () => {
     const [editingOrg, setEditingOrg] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingOrg, setDeletingOrg] = useState(null);
+    
+    // Debug states
+    const [debugUser, setDebugUser] = useState('');
+    const [debugResult, setDebugResult] = useState(null);
 
     useEffect(() => {
         loadDashboardData();
@@ -136,6 +140,38 @@ const AdminOversightPage = () => {
         }
     };
 
+    const debugUserOrganizations = async () => {
+        if (!debugUser.trim()) return;
+        
+        try {
+            const response = await axios.get(`${getApiUrl()}/admin-oversight/debug/user/${debugUser}`, getAuthHeaders());
+            setDebugResult(response.data);
+        } catch (err) {
+            console.error('Debug error:', err);
+            setError(err.response?.data?.error || 'Debug failed');
+        }
+    };
+
+    const fixUserOrganization = async (username, orgName) => {
+        try {
+            const response = await axios.post(
+                `${getApiUrl()}/admin-oversight/fix/add-user-to-org`,
+                {
+                    username: username,
+                    organization_name: orgName,
+                    role: 'Member'
+                },
+                getAuthHeaders()
+            );
+            alert(response.data.message);
+            // Refresh debug data
+            debugUserOrganizations();
+        } catch (err) {
+            console.error('Fix error:', err);
+            setError(err.response?.data?.error || 'Fix failed');
+        }
+    };
+
     if (loading && !dashboardData) {
         return (
             <Container className="mt-5 text-center">
@@ -172,6 +208,12 @@ const AdminOversightPage = () => {
                             onClick={() => handleTabChange('users')}
                         >
                             👥 Users
+                        </Button>
+                        <Button 
+                            variant={activeTab === 'debug' ? 'primary' : 'outline-primary'}
+                            onClick={() => handleTabChange('debug')}
+                        >
+                            🔧 Debug
                         </Button>
                     </div>
                 </Col>
@@ -371,6 +413,101 @@ const AdminOversightPage = () => {
                         )}
                     </Card.Body>
                 </Card>
+            )}
+
+            {/* Debug Tab */}
+            {activeTab === 'debug' && (
+                <Row>
+                    <Col md={6}>
+                        <Card>
+                            <Card.Body>
+                                <Card.Title>🔧 Debug User Organizations</Card.Title>
+                                <div className="mb-3">
+                                    <Form.Group>
+                                        <Form.Label>Username</Form.Label>
+                                        <Form.Control
+                                            type="text"
+                                            value={debugUser}
+                                            onChange={(e) => setDebugUser(e.target.value)}
+                                            placeholder="Enter username (e.g., Rob123)"
+                                        />
+                                    </Form.Group>
+                                    <Button 
+                                        variant="primary" 
+                                        onClick={debugUserOrganizations}
+                                        disabled={!debugUser.trim()}
+                                        className="mt-2"
+                                    >
+                                        🔍 Check Organizations
+                                    </Button>
+                                </div>
+                            </Card.Body>
+                        </Card>
+                    </Col>
+                    <Col md={6}>
+                        {debugResult && (
+                            <Card>
+                                <Card.Body>
+                                    <Card.Title>🔍 Debug Results for {debugResult.user.username}</Card.Title>
+                                    
+                                    <div className="mb-3">
+                                        <strong>User Info:</strong>
+                                        <ul>
+                                            <li>ID: {debugResult.user.id}</li>
+                                            <li>Name: {debugResult.user.name || 'N/A'}</li>
+                                            <li>Email: {debugResult.user.email}</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div className="mb-3">
+                                        <strong>Legacy Organization Fields:</strong>
+                                        <ul>
+                                            <li>Legacy Org: {debugResult.legacy_organization || 'None'}</li>
+                                            <li>Current Org: {debugResult.current_organization || 'None'}</li>
+                                            <li>Primary Org: {debugResult.primary_organization || 'None'}</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div className="mb-3">
+                                        <strong>Organization Memberships:</strong>
+                                        {debugResult.user_organization_relationships.length > 0 ? (
+                                            <ul>
+                                                {debugResult.user_organization_relationships.map((rel, index) => (
+                                                    <li key={index}>
+                                                        {rel.organization_name} ({rel.role}) 
+                                                        {rel.is_active ? ' ✅' : ' ❌'}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        ) : (
+                                            <div>
+                                                <Alert variant="warning">No organization memberships found!</Alert>
+                                                <div className="mt-2">
+                                                    <strong>Available Organizations:</strong>
+                                                    <ul>
+                                                        {debugResult.all_organizations.map(org => (
+                                                            <li key={org.id}>
+                                                                {org.name}
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="success"
+                                                                    className="ms-2"
+                                                                    onClick={() => fixUserOrganization(debugResult.user.username, org.name)}
+                                                                >
+                                                                    Add User
+                                                                </Button>
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </Card.Body>
+                            </Card>
+                        )}
+                    </Col>
+                </Row>
             )}
 
             {/* Edit Organization Modal */}
