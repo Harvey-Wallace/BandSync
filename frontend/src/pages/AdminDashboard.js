@@ -873,7 +873,7 @@ function AdminDashboard() {
 
       if (response.ok) {
         const data = await response.json();
-        setCategories(data.categories || []);
+        setCategories(data || []);
       } else {
         showErrorMessage('Failed to load categories');
       }
