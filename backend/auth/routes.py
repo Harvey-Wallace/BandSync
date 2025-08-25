@@ -103,10 +103,22 @@ def register():
             username=data['username'],
             email=data['email'],
             role=user_role,
-            organization_id=org.id
+            organization_id=org.id,
+            primary_organization_id=org.id,
+            current_organization_id=org.id
         )
         user.set_password(data['password'])
         db.session.add(user)
+        db.session.flush()  # Flush to get user.id
+        
+        # Create UserOrganization relationship (this was missing!)
+        from models import UserOrganization
+        user_org = UserOrganization(
+            user_id=user.id,
+            organization_id=org.id,
+            role=user_role
+        )
+        db.session.add(user_org)
         db.session.commit()
         
         return jsonify({

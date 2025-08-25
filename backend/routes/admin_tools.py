@@ -97,9 +97,34 @@ def get_events():
 @admin_tools_bp.route('/organizations', methods=['POST'])
 @jwt_required()
 def create_organization():
+    from flask_jwt_extended import get_jwt_identity
+    from models import UserOrganization
+    
     data = request.json
+    current_user_id = get_jwt_identity()
+    
     new_organization = Organization(name=data['name'])
     db.session.add(new_organization)
+    db.session.flush()  # Flush to get organization.id
+    
+    # Create UserOrganization relationship - creator becomes admin
+    user_org = UserOrganization(
+        user_id=current_user_id,
+        organization_id=new_organization.id,
+        role='Admin'
+    )
+    db.session.add(user_org)
+    
+    # Update user's organization references
+    from models import User
+    user = User.query.get(current_user_id)
+    if user:
+        if not user.primary_organization_id:
+            user.primary_organization_id = new_organization.id
+        user.current_organization_id = new_organization.id
+        if not user.organization_id:  # Legacy field
+            user.organization_id = new_organization.id
+    
     db.session.commit()
     return jsonify({"msg": "Organization created", "id": new_organization.id})
 

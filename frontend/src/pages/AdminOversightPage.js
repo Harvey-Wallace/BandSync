@@ -18,6 +18,8 @@ const AdminOversightPage = () => {
     const [editingOrg, setEditingOrg] = useState(null);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [deletingOrg, setDeletingOrg] = useState(null);
+    const [showDeleteUserModal, setShowDeleteUserModal] = useState(false);
+    const [deletingUser, setDeletingUser] = useState(null);
     
     // Debug states
     const [debugUser, setDebugUser] = useState('');
@@ -142,6 +144,30 @@ const AdminOversightPage = () => {
         }
     };
 
+    const handleDeleteUser = async () => {
+        try {
+            const response = await axios.delete(
+                `${getApiUrl()}/admin-oversight/delete-user`,
+                {
+                    ...getAuthHeaders(),
+                    data: { username: deletingUser.username }
+                }
+            );
+            alert(`✅ ${response.data.message}\n\nDeletion Details:\n` +
+                `- RSVPs deleted: ${response.data.deletion_details.rsvps_deleted}\n` +
+                `- Survey responses deleted: ${response.data.deletion_details.survey_responses_deleted}\n` +
+                `- Events transferred: ${response.data.deletion_details.events_transferred}\n` +
+                `- Organization memberships removed: ${response.data.deletion_details.user_organizations_deleted}`
+            );
+            setShowDeleteUserModal(false);
+            setDeletingUser(null);
+            loadUsers(); // Reload data
+            loadDashboardData(); // Update stats
+        } catch (err) {
+            setError(err.response?.data?.error || 'Failed to delete user');
+        }
+    };
+
     const debugUserOrganizations = async () => {
         if (!debugUser.trim()) return;
         
@@ -191,6 +217,53 @@ const AdminOversightPage = () => {
         } catch (err) {
             console.error('Role update error:', err);
             setError(err.response?.data?.error || 'Role update failed');
+        }
+    };
+
+    const debugTokenInfo = async () => {
+        try {
+            const response = await axios.get(
+                `${getApiUrl()}/admin-oversight/debug/token-info`,
+                getAuthHeaders()
+            );
+            alert(`Token Debug Info:\n${JSON.stringify(response.data, null, 2)}`);
+        } catch (err) {
+            console.error('Token debug error:', err);
+            setError(err.response?.data?.error || 'Token debug failed');
+        }
+    };
+
+    const fixUserContext = async (username) => {
+        try {
+            const response = await axios.post(
+                `${getApiUrl()}/admin-oversight/fix/update-user-context`,
+                {
+                    username: username
+                },
+                getAuthHeaders()
+            );
+            alert(response.data.message + '\n\n' + response.data.note);
+            // Refresh debug data
+            debugUserOrganizations();
+        } catch (err) {
+            console.error('Context fix error:', err);
+            setError(err.response?.data?.error || 'Context fix failed');
+        }
+    };
+
+    const debugAllRelationships = async () => {
+        try {
+            const response = await axios.get(
+                `${getApiUrl()}/admin-oversight/debug/all-relationships`,
+                getAuthHeaders()
+            );
+            setDebugResult({
+                ...response.data,
+                type: 'all_relationships'
+            });
+        } catch (err) {
+            console.error('Debug all relationships error:', err);
+            setError(err.response?.data?.error || 'Debug all relationships failed');
         }
     };
 
@@ -417,6 +490,7 @@ const AdminOversightPage = () => {
                                         <th>Email</th>
                                         <th>Organizations</th>
                                         <th>Joined</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -433,6 +507,21 @@ const AdminOversightPage = () => {
                                                 ))}
                                             </td>
                                             <td>{user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A'}</td>
+                                            <td>
+                                                {user.username !== 'Harvey258' && (
+                                                    <Button
+                                                        variant="outline-danger"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setDeletingUser(user);
+                                                            setShowDeleteUserModal(true);
+                                                        }}
+                                                        title="Delete User"
+                                                    >
+                                                        🗑️
+                                                    </Button>
+                                                )}
+                                            </td>
                                         </tr>
                                     ))}
                                 </tbody>
@@ -461,14 +550,41 @@ const AdminOversightPage = () => {
                                             placeholder="Enter username (e.g., Rob123)"
                                         />
                                     </Form.Group>
-                                    <Button 
-                                        variant="primary" 
-                                        onClick={debugUserOrganizations}
-                                        disabled={!debugUser.trim()}
-                                        className="mt-2"
-                                    >
-                                        🔍 Check Organizations
-                                    </Button>
+                                    <div className="d-flex gap-2 mt-2">
+                                        <Button 
+                                            variant="primary" 
+                                            onClick={debugUserOrganizations}
+                                            disabled={!debugUser.trim()}
+                                            size="sm"
+                                        >
+                                            🔍 Check Organizations
+                                        </Button>
+                                        <Button 
+                                            variant="info" 
+                                            onClick={debugTokenInfo}
+                                            disabled={!debugUser.trim()}
+                                            size="sm"
+                                        >
+                                            🔍 Debug Token Info
+                                        </Button>
+                                        <Button 
+                                            variant="warning" 
+                                            onClick={fixUserContext}
+                                            disabled={!debugUser.trim()}
+                                            size="sm"
+                                        >
+                                            🔧 Fix User Context
+                                        </Button>
+                                    </div>
+                                    <div className="mt-3">
+                                        <Button 
+                                            variant="success" 
+                                            onClick={debugAllRelationships}
+                                            size="sm"
+                                        >
+                                            🔍 Debug ALL User-Organization Relationships
+                                        </Button>
+                                    </div>
                                 </div>
                             </Card.Body>
                         </Card>
@@ -477,7 +593,68 @@ const AdminOversightPage = () => {
                         {debugResult && (
                             <Card>
                                 <Card.Body>
-                                    <Card.Title>🔍 Debug Results for {debugResult.user.username}</Card.Title>
+                                    {debugResult.type === 'all_relationships' ? (
+                                        <div>
+                                            <Card.Title>🔍 All User-Organization Relationships</Card.Title>
+                                            
+                                            <div className="mb-3">
+                                                <strong>Summary:</strong>
+                                                <ul>
+                                                    <li>Total Users: {debugResult.total_users}</li>
+                                                    <li>Total Organizations: {debugResult.total_organizations}</li>
+                                                    <li>Total Relationships: {debugResult.total_relationships}</li>
+                                                </ul>
+                                            </div>
+                                            
+                                            <div className="mb-3">
+                                                <strong>Users and Their Organizations:</strong>
+                                                <div style={{maxHeight: '400px', overflowY: 'auto'}}>
+                                                    {debugResult.users.map(user => (
+                                                        <div key={user.user_id} className="mb-2 p-2 border rounded">
+                                                            <strong>{user.username}</strong> (ID: {user.user_id})
+                                                            <div className="small text-muted">{user.email}</div>
+                                                            {user.organizations.length > 0 ? (
+                                                                <div className="mt-1">
+                                                                    {user.organizations.map((org, idx) => (
+                                                                        <span key={idx} className="badge bg-primary me-1">
+                                                                            {org.organization_name} ({org.role})
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-warning">No organizations</div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="mb-3">
+                                                <strong>Organizations and Their Members:</strong>
+                                                <div style={{maxHeight: '400px', overflowY: 'auto'}}>
+                                                    {debugResult.organizations.map(org => (
+                                                        <div key={org.organization_id} className="mb-2 p-2 border rounded">
+                                                            <strong>{org.organization_name}</strong> (ID: {org.organization_id})
+                                                            <div className="small text-muted">Members: {org.member_count}</div>
+                                                            {org.members.length > 0 ? (
+                                                                <div className="mt-1">
+                                                                    {org.members.map((member, idx) => (
+                                                                        <span key={idx} className="badge bg-success me-1">
+                                                                            {member.username} ({member.role})
+                                                                        </span>
+                                                                    ))}
+                                                                </div>
+                                                            ) : (
+                                                                <div className="text-warning">No members</div>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <Card.Title>🔍 Debug Results for {debugResult.user.username}</Card.Title>
                                     
                                     <div className="mb-3">
                                         <strong>User Info:</strong>
@@ -545,6 +722,8 @@ const AdminOversightPage = () => {
                                             </div>
                                         )}
                                     </div>
+                                        </div>
+                                    )}
                                 </Card.Body>
                             </Card>
                         )}
@@ -611,6 +790,37 @@ const AdminOversightPage = () => {
                     </Button>
                     <Button variant="danger" onClick={handleDeleteOrg}>
                         Delete Organization
+                    </Button>
+                </Modal.Footer>
+            </Modal>
+
+            {/* Delete User Modal */}
+            <Modal show={showDeleteUserModal} onHide={() => setShowDeleteUserModal(false)}>
+                <Modal.Header closeButton>
+                    <Modal.Title>🗑️ Delete User</Modal.Title>
+                </Modal.Header>
+                <Modal.Body>
+                    {deletingUser && (
+                        <div>
+                            <p>Are you sure you want to delete <strong>{deletingUser.username}</strong>?</p>
+                            <Alert variant="warning">
+                                <strong>Warning:</strong> This action cannot be undone. The user and all their data will be permanently deleted:
+                                <ul className="mt-2 mb-0">
+                                    <li>User account and profile</li>
+                                    <li>All RSVPs and survey responses</li>
+                                    <li>Organization memberships</li>
+                                    <li>Events created by this user will be transferred to organization admins</li>
+                                </ul>
+                            </Alert>
+                        </div>
+                    )}
+                </Modal.Body>
+                <Modal.Footer>
+                    <Button variant="secondary" onClick={() => setShowDeleteUserModal(false)}>
+                        Cancel
+                    </Button>
+                    <Button variant="danger" onClick={handleDeleteUser}>
+                        Delete User
                     </Button>
                 </Modal.Footer>
             </Modal>

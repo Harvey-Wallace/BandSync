@@ -85,6 +85,23 @@ function AdminDashboard() {
     description: ''
   });
   const [createSectionLoading, setCreateSectionLoading] = useState(false);
+  
+  // Categories state
+  const [categories, setCategories] = useState([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+  const [showCreateCategory, setShowCreateCategory] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [newCategory, setNewCategory] = useState({
+    name: '',
+    description: '',
+    color: '#007bff',
+    icon: '📅',
+    is_default: false,
+    requires_location: true,
+    default_duration_hours: 2
+  });
+  const [createCategoryLoading, setCreateCategoryLoading] = useState(false);
+  
   const [activeTab, setActiveTab] = useState('organization');
   
   // Email management state
@@ -841,6 +858,142 @@ function AdminDashboard() {
     }
   };
 
+  // Category management functions
+  const loadCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const token = localStorage.getItem('authToken');
+      
+      const response = await fetch(`${API_BASE_URL}/events/categories`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories || []);
+      } else {
+        showErrorMessage('Failed to load categories');
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      showErrorMessage('Error loading categories');
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategory.name.trim()) {
+      showErrorMessage('Category name is required');
+      return;
+    }
+
+    try {
+      setCreateCategoryLoading(true);
+      const token = localStorage.getItem('authToken');
+      
+      const response = await fetch(`${API_BASE_URL}/events/categories`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: newCategory.name.trim(),
+          description: newCategory.description.trim(),
+          color: newCategory.color
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(prev => [...prev, data.category]);
+        setNewCategory({ name: '', description: '', color: '#007bff' });
+        setShowCreateCategory(false);
+        showSuccessMessage('Category created successfully');
+      } else {
+        const errorData = await response.json();
+        showErrorMessage(errorData.error || 'Failed to create category');
+      }
+    } catch (error) {
+      console.error('Error creating category:', error);
+      showErrorMessage('Error creating category');
+    } finally {
+      setCreateCategoryLoading(false);
+    }
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingCategory.name.trim()) {
+      showErrorMessage('Category name is required');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('authToken');
+      
+      const response = await fetch(`${API_BASE_URL}/events/categories/${editingCategory.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: editingCategory.name.trim(),
+          description: editingCategory.description.trim(),
+          color: editingCategory.color
+        })
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(prev => prev.map(cat => 
+          cat.id === editingCategory.id ? data.category : cat
+        ));
+        setEditingCategory(null);
+        showSuccessMessage('Category updated successfully');
+      } else {
+        const errorData = await response.json();
+        showErrorMessage(errorData.error || 'Failed to update category');
+      }
+    } catch (error) {
+      console.error('Error updating category:', error);
+      showErrorMessage('Error updating category');
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    if (!window.confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('authToken');
+      
+      const response = await fetch(`${API_BASE_URL}/events/categories/${categoryId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setCategories(prev => prev.filter(cat => cat.id !== categoryId));
+        showSuccessMessage('Category deleted successfully');
+      } else {
+        const errorData = await response.json();
+        showErrorMessage(errorData.error || 'Failed to delete category');
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      showErrorMessage('Error deleting category');
+    }
+  };
+
   useEffect(() => {
     fetchOrg();
     fetchUsers();
@@ -860,6 +1013,8 @@ function AdminDashboard() {
       fetchScheduledJobs();
     } else if (activeTab === 'calendar') {
       fetchCalendarStats();
+    } else if (activeTab === 'categories') {
+      loadCategories();
     }
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -901,6 +1056,14 @@ function AdminDashboard() {
               onClick={() => setActiveTab('sections')}
             >
               Sections
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link ${activeTab === 'categories' ? 'active' : ''}`}
+              onClick={() => setActiveTab('categories')}
+            >
+              Event Categories
             </button>
           </li>
           <li className="nav-item">
@@ -1693,6 +1856,89 @@ function AdminDashboard() {
           </div>
         )}
 
+        {/* Event Categories Tab */}
+        {activeTab === 'categories' && (
+          <div className="row">
+            <div className="col-12">
+              <div className="card">
+                <div className="card-header d-flex justify-content-between align-items-center">
+                  <h5 className="mb-0">
+                    <i className="bi bi-tags me-2"></i>
+                    Event Categories
+                  </h5>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setShowCreateCategory(true)}
+                  >
+                    <i className="bi bi-plus-circle me-2"></i>
+                    Add Category
+                  </button>
+                </div>
+                <div className="card-body">
+                  {categoriesLoading ? (
+                    <div className="text-center">
+                      <div className="spinner-border" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                    </div>
+                  ) : categories.length === 0 ? (
+                    <div className="text-center text-muted">
+                      <i className="bi bi-tags display-1 mb-3"></i>
+                      <p>No event categories found. Create your first category to organize events.</p>
+                    </div>
+                  ) : (
+                    <div className="table-responsive">
+                      <table className="table table-striped">
+                        <thead>
+                          <tr>
+                            <th>Color</th>
+                            <th>Name</th>
+                            <th>Description</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {categories.map((category) => (
+                            <tr key={category.id}>
+                              <td>
+                                <div
+                                  className="rounded-circle"
+                                  style={{
+                                    width: '20px',
+                                    height: '20px',
+                                    backgroundColor: category.color,
+                                    border: '2px solid #dee2e6'
+                                  }}
+                                ></div>
+                              </td>
+                              <td>{category.name}</td>
+                              <td>{category.description || 'No description'}</td>
+                              <td>
+                                <button
+                                  className="btn btn-sm btn-outline-primary me-2"
+                                  onClick={() => setEditingCategory(category)}
+                                >
+                                  <i className="bi bi-pencil"></i>
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => handleDeleteCategory(category.id)}
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add Existing User Modal */}
         {showAddExistingUser && (
           <div className="modal show d-block">
@@ -2082,6 +2328,155 @@ function AdminDashboard() {
                       disabled={createSectionLoading}
                     >
                       {createSectionLoading ? <LoadingSpinner /> : 'Create Section'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Category Modal */}
+        {showCreateCategory && (
+          <div className="modal show d-block">
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Create Event Category</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => {
+                      setShowCreateCategory(false);
+                      setNewCategory({ name: '', description: '', color: '#007bff' });
+                    }}
+                  ></button>
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); handleCreateCategory(); }}>
+                  <div className="modal-body">
+                    <div className="mb-3">
+                      <label className="form-label">Category Name *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={newCategory.name}
+                        onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                        placeholder="Enter category name"
+                        required
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Description</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        value={newCategory.description}
+                        onChange={(e) => setNewCategory({ ...newCategory, description: e.target.value })}
+                        placeholder="Enter category description (optional)"
+                      ></textarea>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Color</label>
+                      <div className="d-flex align-items-center">
+                        <input
+                          type="color"
+                          className="form-control form-control-color me-3"
+                          value={newCategory.color}
+                          onChange={(e) => setNewCategory({ ...newCategory, color: e.target.value })}
+                          style={{ width: '60px' }}
+                        />
+                        <div className="text-muted">Choose a color to help identify this category</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setShowCreateCategory(false);
+                        setNewCategory({ name: '', description: '', color: '#007bff' });
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={createCategoryLoading}
+                    >
+                      {createCategoryLoading ? <LoadingSpinner /> : 'Create Category'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Category Modal */}
+        {editingCategory && (
+          <div className="modal show d-block">
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Edit Category</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setEditingCategory(null)}
+                  ></button>
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); handleUpdateCategory(); }}>
+                  <div className="modal-body">
+                    <div className="mb-3">
+                      <label className="form-label">Category Name *</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={editingCategory.name}
+                        onChange={(e) => setEditingCategory({ ...editingCategory, name: e.target.value })}
+                        placeholder="Enter category name"
+                        required
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Description</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        value={editingCategory.description || ''}
+                        onChange={(e) => setEditingCategory({ ...editingCategory, description: e.target.value })}
+                        placeholder="Enter category description (optional)"
+                      ></textarea>
+                    </div>
+                    <div className="mb-3">
+                      <label className="form-label">Color</label>
+                      <div className="d-flex align-items-center">
+                        <input
+                          type="color"
+                          className="form-control form-control-color me-3"
+                          value={editingCategory.color}
+                          onChange={(e) => setEditingCategory({ ...editingCategory, color: e.target.value })}
+                          style={{ width: '60px' }}
+                        />
+                        <div className="text-muted">Choose a color to help identify this category</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setEditingCategory(null)}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                    >
+                      Update Category
                     </button>
                   </div>
                 </form>

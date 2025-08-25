@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Rob123 Token</title>
+</head>
+<body>
+    <h1>Debug Rob123 JWT Token</h1>
+    <div id="output"></div>
+    
+    <script>
+        // Get token from localStorage
+        const token = localStorage.getItem('token');
+        const orgId = localStorage.getItem('organization_id');
+        const org = localStorage.getItem('organization');
+        const role = localStorage.getItem('role');
+        
+        document.getElementById('output').innerHTML = `
+            <h3>Local Storage:</h3>
+            <p><strong>Token:</strong> ${token ? `${token.substring(0, 50)}...` : 'Not found'}</p>
+            <p><strong>Organization ID:</strong> ${orgId || 'Not set'}</p>
+            <p><strong>Organization:</strong> ${org || 'Not set'}</p>
+            <p><strong>Role:</strong> ${role || 'Not set'}</p>
+            
+            <h3>JWT Token Payload:</h3>
+        `;
+        
+        if (token) {
+            try {
+                // Decode JWT payload (base64)
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                document.getElementById('output').innerHTML += `
+                    <pre>${JSON.stringify(payload, null, 2)}</pre>
+                `;
+            } catch (e) {
+                document.getElementById('output').innerHTML += `<p>Error decoding token: ${e.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
