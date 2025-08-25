@@ -1,31 +1,34 @@
-# Multi-stage build for BandSync - FORCE REBUILD 2025-08-25T06:54:00Z
+# Multi-stage build for BandSync - UNIQUE BUILD 1756105148
 # Stage 1: Build frontend
 FROM node:18-alpine AS frontend-builder
 
 # Accept build-time arguments for React environment variables
 ARG REACT_APP_GOOGLE_MAPS_API_KEY
 ARG REACT_APP_API_URL
-ARG BUILD_HASH=force-rebuild-20250825
+ARG BUILD_HASH=unique-build-1756105148
+ARG CACHE_BUST=1756105148
 
 # Set environment variables for the build
 ENV REACT_APP_GOOGLE_MAPS_API_KEY=$REACT_APP_GOOGLE_MAPS_API_KEY
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
+ENV CACHE_BUST=$CACHE_BUST
 
 # Debug: Print environment variables during build
-RUN echo "🔍 Build-time environment variables:" && \
+RUN echo "🔍 Build-time environment variables (UNIQUE BUILD 1756105148):" && \
     echo "REACT_APP_API_URL: $REACT_APP_API_URL" && \
     echo "REACT_APP_GOOGLE_MAPS_API_KEY: ${REACT_APP_GOOGLE_MAPS_API_KEY:0:20}..." && \
-    echo "📦 Starting frontend build (force rebuild)..."
+    echo "CACHE_BUST: $CACHE_BUST" && \
+    echo "📦 Starting frontend build (UNIQUE BUILD)..."
 
-# Force cache invalidation - AGGRESSIVE REBUILD 2025-08-25T06:54:00Z
+# Force cache invalidation - UNIQUE BUILD 1756105148
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-# Clean install to avoid any caching issues and force complete rebuild
-RUN npm cache clean --force && npm install --only=production
+# Complete cache invalidation with unique timestamp
+RUN echo "CACHE_BUST: $CACHE_BUST" && npm cache clean --force && rm -rf node_modules && npm install --only=production
 
 COPY frontend/ ./
-# AGGRESSIVE REBUILD: Force complete rebuild with timestamp and BUILD_HASH
-RUN echo "BUILD_HASH: $BUILD_HASH - FORCE REBUILD" && echo "Complete rebuild triggered at $(date)" && BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') && echo "Force rebuild at $BUILD_DATE" && npm run build
+# UNIQUE BUILD: Complete rebuild with unique cache busting
+RUN echo "BUILD_HASH: $BUILD_HASH - UNIQUE BUILD 1756105148" && echo "Unique build triggered at $(date)" && BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') && echo "Unique rebuild at $BUILD_DATE with CACHE_BUST=$CACHE_BUST" && npm run build
 
 # Stage 2: Setup backend
 FROM python:3.11-slim AS backend
