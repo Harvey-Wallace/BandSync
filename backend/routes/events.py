@@ -269,6 +269,10 @@ def get_events():
                     'canceller_name': e.canceller.name if e.canceller else None,
                     'cancellation_reason': e.cancellation_reason,
                     'cancellation_notification_sent': e.cancellation_notification_sent,
+                    # Multiple dates support
+                    'has_multiple_dates': getattr(e, 'has_multiple_dates', False),
+                    'final_date_selected': getattr(e, 'final_date_selected', True),
+                    'date_selection_deadline': e.date_selection_deadline.isoformat() if getattr(e, 'date_selection_deadline', None) else None,
                     # RSVP statistics
                     'rsvp_stats': get_rsvp_stats(e.id)
                 }
@@ -363,13 +367,35 @@ def create_event():
             event_data['start_time'] = start_time
         if hasattr(Event, 'end_time'):
             event_data['end_time'] = end_time
+        if hasattr(Event, 'has_multiple_dates'):
+            event_data['has_multiple_dates'] = data.get('has_multiple_dates', False)
+        if hasattr(Event, 'final_date_selected'):
+            event_data['final_date_selected'] = not data.get('has_multiple_dates', False)
+        if hasattr(Event, 'date_selection_deadline'):
+            event_data['date_selection_deadline'] = datetime.fromisoformat(data['date_selection_deadline']) if data.get('date_selection_deadline') else None
     except Exception:
-        # Time fields not available yet, skip them
+        # Fields not available yet, skip them
         pass
     
     event = Event(**event_data)
     
     db.session.add(event)
+    db.session.flush()  # Get the event ID for possible dates
+    
+    # Add multiple possible dates if specified
+    if data.get('has_multiple_dates') and data.get('possible_dates'):
+        from models import EventPossibleDate
+        for pdate_data in data['possible_dates']:
+            pdate = EventPossibleDate(
+                event_id=event.id,
+                date=datetime.fromisoformat(pdate_data['date']),
+                end_date=datetime.fromisoformat(pdate_data['end_date']) if pdate_data.get('end_date') else None,
+                arrive_by_time=datetime.strptime(pdate_data['arrive_by_time'], '%H:%M').time() if pdate_data.get('arrive_by_time') else None,
+                start_time=datetime.strptime(pdate_data['start_time'], '%H:%M').time() if pdate_data.get('start_time') else None,
+                end_time=datetime.strptime(pdate_data['end_time'], '%H:%M').time() if pdate_data.get('end_time') else None
+            )
+            db.session.add(pdate)
+    
     db.session.commit()
     
     # Create recurring events if specified

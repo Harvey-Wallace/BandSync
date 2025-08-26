@@ -70,6 +70,9 @@ apiClient.interceptors.response.use(
 
 export default apiClient;
 
+// Utility function to get API URL
+export const getApiUrl = () => API_URL;
+
 // Utility function to check if user is authenticated
 export const isAuthenticated = () => {
   const token = localStorage.getItem('token');

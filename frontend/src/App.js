@@ -25,6 +25,7 @@ import SubstitutionPage from './pages/SubstitutionPage';
 import BulkOperationsPage from './pages/BulkOperationsPage';
 import QuickPollsPage from './pages/QuickPollsPage';
 import AdminOversightPage from './pages/AdminOversightPage';
+import MultipleDatesDemo from './pages/MultipleDatesDemo';
 import './styles/custom.css';
 
 console.log('🎯 App.js loading...');
@@ -105,6 +106,7 @@ function App() {
                       <Route path="/bulk-operations" element={<BulkOperationsPage />} />
                       <Route path="/polls" element={<QuickPollsPage />} />
                       <Route path="/admin-oversight" element={<AdminOversightPage />} />
+                      <Route path="/multiple-dates-demo" element={<MultipleDatesDemo />} />
                       <Route path="*" element={<LoginPage />} />
                     </Routes>
                   </Router>
@@ -144,6 +146,7 @@ function App() {
                 <Route path="/bulk-operations" element={<BulkOperationsPage />} />
                 <Route path="/polls" element={<QuickPollsPage />} />
                 <Route path="/admin-oversight" element={<AdminOversightPage />} />
+                <Route path="/multiple-dates-demo" element={<MultipleDatesDemo />} />
                 <Route path="*" element={<LoginPage />} />
               </Routes>
             </Router>

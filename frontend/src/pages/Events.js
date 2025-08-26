@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import NotificationSystem from '../components/NotificationSystem';
 import EnhancedEventForm from '../components/EnhancedEventForm';
+import MultipleDateEventForm from '../components/MultipleDateEventForm';
+import EventDateVoting from '../components/EventDateVoting';
 import { 
   DataLoadingState, 
   ErrorState, 
@@ -33,6 +35,8 @@ function Events() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [useMultipleDates, setUseMultipleDates] = useState(false); // Toggle for multiple dates form
+  const [showVoting, setShowVoting] = useState({}); // Track which events show voting
   const { orgThemeColor } = useTheme();
   const role = localStorage.getItem('role');
 
@@ -614,6 +618,14 @@ function Events() {
     }
   };
 
+  // Toggle voting display for multiple date events
+  const toggleVoting = (eventId) => {
+    setShowVoting(prev => ({
+      ...prev,
+      [eventId]: !prev[eventId]
+    }));
+  };
+
   // Open edit form with event data
   const openEditForm = (event) => {
     setEditingEvent(event);
@@ -826,10 +838,30 @@ function Events() {
                             </div>
                           )}
                           
-                          {/* Simple Time Display */}
+                          {/* Time Display - Support Multiple Dates */}
                           <div className="d-flex align-items-center gap-2 text-muted">
                             <i className="fas fa-clock"></i>
-                            <span className="fw-medium">{formatEventTiming(event)}</span>
+                            <span className="fw-medium">
+                              {event.has_multiple_dates ? (
+                                event.final_date_selected ? 
+                                  formatEventTiming(event) : 
+                                  'Multiple dates - voting in progress'
+                              ) : (
+                                formatEventTiming(event)
+                              )}
+                            </span>
+                            {event.has_multiple_dates && !event.final_date_selected && (
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleVoting(event.id);
+                                }}
+                                style={{ borderRadius: '8px', fontSize: '0.75rem' }}
+                              >
+                                {showVoting[event.id] ? 'Hide Voting' : 'Vote on Dates'}
+                              </button>
+                            )}
                           </div>
                           
                           {/* Response Count - Admin Only */}
@@ -1018,6 +1050,13 @@ function Events() {
                             </div>
                           )}
                           
+                          {/* Multiple Date Voting Component */}
+                          {event.has_multiple_dates && !event.final_date_selected && showVoting[event.id] && (
+                            <div className="col-12">
+                              <EventDateVoting eventId={event.id} />
+                            </div>
+                          )}
+                          
                           {/* RSVP Responses for Admins */}
                           {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
                             <div className="col-12">
@@ -1124,11 +1163,13 @@ function Events() {
         )}
         
         {/* Create Event Modal */}
-        <EnhancedEventForm
+        <MultipleDateEventForm
           show={showCreateForm}
           onHide={() => setShowCreateForm(false)}
           onSave={handleCreateEvent}
           categories={categories}
+          useMultipleDates={useMultipleDates}
+          setUseMultipleDates={setUseMultipleDates}
         />
 
         {/* Edit Event Modal */}

@@ -238,6 +238,7 @@ from routes.quick_polls import quick_polls_bp
 from routes.analytics import analytics_bp
 from routes.debug import debug_bp
 from routes.admin_oversight import admin_oversight
+from routes.multiple_dates import multiple_dates_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(events_bp, url_prefix='/api/events')
@@ -245,6 +246,7 @@ app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(rsvps_bp, url_prefix='/api/events')
 app.register_blueprint(admin_tools_bp, url_prefix='/api/admin-tools')
 app.register_blueprint(org_bp, url_prefix='/api/organizations')
+app.register_blueprint(multiple_dates_bp, url_prefix='/api/multiple-dates')
 # Mobile app endpoints
 from routes.mobile_api import mobile_api_bp
 app.register_blueprint(mobile_api_bp, url_prefix='/api/organization')

@@ -295,6 +295,11 @@ class Event(db.Model):
     cancellation_reason = db.Column(db.Text, nullable=True)  # Why it was cancelled
     cancellation_notification_sent = db.Column(db.Boolean, default=False)  # Whether notification was sent
     
+    # Multiple date support
+    has_multiple_dates = db.Column(db.Boolean, default=False)  # Indicates if event has multiple possible dates
+    final_date_selected = db.Column(db.Boolean, default=False)  # Whether final date has been chosen
+    date_selection_deadline = db.Column(db.DateTime, nullable=True)  # Deadline for date selection voting
+    
     # Basic metadata
     organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -305,6 +310,56 @@ class Event(db.Model):
     child_events = db.relationship('Event', backref=db.backref('parent_event', remote_side=[id]), lazy=True)
     creator = db.relationship('User', foreign_keys=[created_by], backref='created_events', lazy=True)
     canceller = db.relationship('User', foreign_keys=[cancelled_by], backref='cancelled_events', lazy=True)
+    possible_dates = db.relationship('EventPossibleDate', backref='event', cascade='all, delete-orphan', lazy=True)
+
+
+class EventPossibleDate(db.Model):
+    """Model for events with multiple possible dates that members can vote on"""
+    __tablename__ = 'event_possible_dates'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
+    date = db.Column(db.DateTime, nullable=False)
+    end_date = db.Column(db.DateTime, nullable=True)
+    
+    # Time fields
+    arrive_by_time = db.Column(db.Time, nullable=True)
+    start_time = db.Column(db.Time, nullable=True)
+    end_time = db.Column(db.Time, nullable=True)
+    
+    # Vote tracking
+    vote_count = db.Column(db.Integer, default=0)
+    is_selected = db.Column(db.Boolean, default=False)  # True if this date is chosen as final
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    date_votes = db.relationship('EventDateVote', backref='possible_date', cascade='all, delete-orphan', lazy=True)
+
+
+class EventDateVote(db.Model):
+    """Track user votes for preferred event dates"""
+    __tablename__ = 'event_date_votes'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    possible_date_id = db.Column(db.Integer, db.ForeignKey('event_possible_dates.id'), nullable=False)
+    event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)  # For easier querying
+    
+    # Vote preferences
+    preference_order = db.Column(db.Integer, default=1)  # 1 = most preferred, 2 = second choice, etc.
+    can_attend = db.Column(db.Boolean, default=True)  # Whether user can attend this date
+    
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref='date_votes')
+    event = db.relationship('Event', backref='date_votes')
+    
+    # Unique constraint: one vote per user per possible date
+    __table_args__ = (db.UniqueConstraint('user_id', 'possible_date_id'),)
+
 
 class RSVP(db.Model):
     id = db.Column(db.Integer, primary_key=True)
