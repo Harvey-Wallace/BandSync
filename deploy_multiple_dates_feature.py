@@ -71,14 +71,20 @@ def build_frontend():
     """Build the frontend for production"""
     print("\n🏗️  Building frontend...")
     
+    # Change to frontend directory
+    os.chdir("frontend")
+    
     # Install dependencies
     run_command("npm install", "Installing frontend dependencies")
     
     # Build the frontend
     run_command("npm run build", "Building frontend for production")
     
+    # Change back to root directory
+    os.chdir("..")
+    
     # Check if build directory exists
-    if os.path.exists("build"):
+    if os.path.exists("frontend/build"):
         print("✅ Frontend build completed successfully")
         return True
     else:
