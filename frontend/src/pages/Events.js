@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import NotificationSystem from '../components/NotificationSystem';
+import EventForm from '../components/EventForm';
 import EnhancedEventForm from '../components/EnhancedEventForm';
-import MultipleDateEventForm from '../components/MultipleDateEventForm';
 import EventDateVoting from '../components/EventDateVoting';
 import { 
   DataLoadingState, 
@@ -35,7 +35,6 @@ function Events() {
   const [showEditForm, setShowEditForm] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [useMultipleDates, setUseMultipleDates] = useState(false); // Toggle for multiple dates form
   const [showVoting, setShowVoting] = useState({}); // Track which events show voting
   const { orgThemeColor } = useTheme();
   const role = localStorage.getItem('role');
@@ -1163,14 +1162,32 @@ function Events() {
         )}
         
         {/* Create Event Modal */}
-        <MultipleDateEventForm
-          show={showCreateForm}
-          onHide={() => setShowCreateForm(false)}
-          onSave={handleCreateEvent}
-          categories={categories}
-          useMultipleDates={useMultipleDates}
-          setUseMultipleDates={setUseMultipleDates}
-        />
+        {showCreateForm && (
+          <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <i className="bi bi-calendar-plus me-2"></i>
+                    Create New Event
+                  </h5>
+                  <button 
+                    type="button" 
+                    className="btn-close" 
+                    onClick={() => setShowCreateForm(false)}
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <EventForm
+                    onSubmit={handleCreateEvent}
+                    onCancel={() => setShowCreateForm(false)}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Edit Event Modal */}
         <EnhancedEventForm

@@ -385,16 +385,33 @@ def create_event():
     # Add multiple possible dates if specified
     if data.get('has_multiple_dates') and data.get('possible_dates'):
         from models import EventPossibleDate
-        for pdate_data in data['possible_dates']:
-            pdate = EventPossibleDate(
-                event_id=event.id,
-                date=datetime.fromisoformat(pdate_data['date']),
-                end_date=datetime.fromisoformat(pdate_data['end_date']) if pdate_data.get('end_date') else None,
-                arrive_by_time=datetime.strptime(pdate_data['arrive_by_time'], '%H:%M').time() if pdate_data.get('arrive_by_time') else None,
-                start_time=datetime.strptime(pdate_data['start_time'], '%H:%M').time() if pdate_data.get('start_time') else None,
-                end_time=datetime.strptime(pdate_data['end_time'], '%H:%M').time() if pdate_data.get('end_time') else None
-            )
-            db.session.add(pdate)
+        print(f"Creating multiple dates for event {event.id}")
+        print(f"Possible dates data: {data.get('possible_dates')}")
+        
+        for i, pdate_data in enumerate(data['possible_dates']):
+            try:
+                print(f"Processing possible date {i}: {pdate_data}")
+                
+                # Skip if no date provided
+                if not pdate_data.get('date') or pdate_data['date'] == '':
+                    print(f"Skipping possible date {i} - no date provided")
+                    continue
+                
+                pdate = EventPossibleDate(
+                    event_id=event.id,
+                    date=datetime.fromisoformat(pdate_data['date']),
+                    end_date=datetime.fromisoformat(pdate_data['end_date']) if pdate_data.get('end_date') and pdate_data['end_date'] != '' else None,
+                    arrive_by_time=datetime.strptime(pdate_data['arrive_by_time'], '%H:%M').time() if pdate_data.get('arrive_by_time') and pdate_data['arrive_by_time'] != '' else None,
+                    start_time=datetime.strptime(pdate_data['start_time'], '%H:%M').time() if pdate_data.get('start_time') and pdate_data['start_time'] != '' else None,
+                    end_time=datetime.strptime(pdate_data['end_time'], '%H:%M').time() if pdate_data.get('end_time') and pdate_data['end_time'] != '' else None
+                )
+                db.session.add(pdate)
+                print(f"Successfully added possible date {i}")
+            except Exception as e:
+                print(f"Error processing possible date {i}: {e}")
+                print(f"Problematic data: {pdate_data}")
+                # Continue processing other dates instead of failing completely
+                continue
     
     db.session.commit()
     

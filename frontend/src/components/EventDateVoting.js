@@ -20,7 +20,7 @@ const EventDateVoting = ({ eventId, isAdmin = false, onVoteUpdate, onDateSelecte
   const fetchPossibleDates = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${getApiUrl()}/multiple-dates/${eventId}/possible-dates`, {
+      const response = await fetch(`${getApiUrl()}/multiple-dates/events/${eventId}/possible-dates`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -41,7 +41,7 @@ const EventDateVoting = ({ eventId, isAdmin = false, onVoteUpdate, onDateSelecte
   const fetchVotesSummary = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${getApiUrl()}/multiple-dates/${eventId}/votes-summary`, {
+      const response = await fetch(`${getApiUrl()}/multiple-dates/events/${eventId}/votes-summary`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -78,7 +78,7 @@ const EventDateVoting = ({ eventId, isAdmin = false, onVoteUpdate, onDateSelecte
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${getApiUrl()}/multiple-dates/${eventId}/vote`, {
+      const response = await fetch(`${getApiUrl()}/multiple-dates/events/${eventId}/vote`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -112,7 +112,7 @@ const EventDateVoting = ({ eventId, isAdmin = false, onVoteUpdate, onDateSelecte
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${getApiUrl()}/multiple-dates/${eventId}/select-final-date`, {
+      const response = await fetch(`${getApiUrl()}/multiple-dates/events/${eventId}/select-final-date`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

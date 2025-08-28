@@ -43,6 +43,11 @@ function EventForm({ onSubmit, initialData, onCancel }) {
   const [startTime, setStartTime] = useState(initialData?.start_time || '');
   const [endTime, setEndTime] = useState(initialData?.end_time || '');
   
+  // Multiple dates feature
+  const [hasMultipleDates, setHasMultipleDates] = useState(initialData?.has_multiple_dates || false);
+  const [dateSelectionDeadline, setDateSelectionDeadline] = useState(initialData?.date_selection_deadline || '');
+  const [possibleDates, setPossibleDates] = useState(initialData?.possible_dates || []);
+  
   const mapRef = useRef(null);
   const autocompleteRef = useRef(null);
   const markerRef = useRef(null);
@@ -108,23 +113,38 @@ function EventForm({ onSubmit, initialData, onCancel }) {
       }
     };
 
-    const initializeGoogleMaps = () => {
+    const initializeGoogleMaps = async () => {
       if (window.google && window.google.maps) {
+        console.log('Google Maps already loaded, initializing map...');
+        initializeMap();
         return;
       }
       
-      const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places`;
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        console.log('Google Maps script loaded, initializing map...');
+      try {
+        console.log('Loading Google Maps with API key:', googleMapsApiKey ? 'Key present' : 'No key');
+        const loader = new Loader({
+          apiKey: googleMapsApiKey,
+          version: "weekly",
+          libraries: ["places"]
+        });
+
+        await loader.load();
+        console.log('Google Maps script loaded successfully, initializing map...');
+        
         // Add a small delay to ensure DOM is ready
         setTimeout(() => {
           initializeMap();
         }, 100);
-      };
-      document.head.appendChild(script);
+      } catch (error) {
+        console.error('Error loading Google Maps:', error);
+        console.error('API Key used:', googleMapsApiKey);
+        // Show a user-friendly message
+        if (error.message.includes('InvalidKeyMapError')) {
+          console.error('Google Maps API key is invalid or has restrictions');
+        } else if (error.message.includes('RefererNotAllowedMapError')) {
+          console.error('Domain not allowed for this Google Maps API key');
+        }
+      }
     };
 
     const initializeMap = () => {
@@ -189,7 +209,7 @@ function EventForm({ onSubmit, initialData, onCancel }) {
 
     fetchCategories();
     if (googleMapsApiKey && googleMapsApiKey !== 'YOUR_GOOGLE_MAPS_API_KEY_HERE') {
-      initializeGoogleMaps();
+      initializeGoogleMaps().catch(console.error);
     }
   }, []);
 
@@ -242,9 +262,37 @@ function EventForm({ onSubmit, initialData, onCancel }) {
     mapInstance.current.setZoom(15);
   };
 
+  // Multiple dates functions
+  const addPossibleDate = () => {
+    setPossibleDates(prev => [...prev, {
+      date: '',
+      end_date: '',
+      arrive_by_time: '',
+      start_time: '',
+      end_time: ''
+    }]);
+  };
+
+  const removePossibleDate = (index) => {
+    setPossibleDates(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updatePossibleDate = (index, field, value) => {
+    setPossibleDates(prev => 
+      prev.map((dateOption, i) => 
+        i === index ? { ...dateOption, [field]: value } : dateOption
+      )
+    );
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit({ 
+    
+    // Filter out incomplete possible dates (those without a date)
+    const validPossibleDates = hasMultipleDates ? 
+      possibleDates.filter(pdate => pdate.date && pdate.date !== '') : [];
+    
+    const eventData = { 
       title, 
       type,
       description, 
@@ -267,8 +315,17 @@ function EventForm({ onSubmit, initialData, onCancel }) {
       send_notification: sendNotification,
       arrive_by_time: arriveByTime || null,
       start_time: startTime || null,
-      end_time: endTime || null
-    });
+      end_time: endTime || null,
+      // Multiple dates support
+      has_multiple_dates: hasMultipleDates,
+      date_selection_deadline: hasMultipleDates ? dateSelectionDeadline : null,
+      possible_dates: validPossibleDates
+    };
+    
+    console.log('Submitting event data:', eventData);
+    console.log('Valid possible dates:', validPossibleDates);
+    
+    onSubmit(eventData);
   };
 
   // Direct hardcoded values as final fallback
@@ -436,13 +493,34 @@ function EventForm({ onSubmit, initialData, onCancel }) {
                   <i className="bi bi-calendar-event me-1"></i>
                   Start Date *
                 </label>
-                <input 
-                  type="date" 
-                  className="form-control" 
-                  value={date} 
-                  onChange={e => setDate(e.target.value)} 
-                  required 
-                />
+                <div className="d-flex align-items-center gap-2">
+                  <input 
+                    type="date" 
+                    className="form-control" 
+                    value={date} 
+                    onChange={e => setDate(e.target.value)} 
+                    required 
+                  />
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary btn-sm"
+                    onClick={() => {
+                      setHasMultipleDates(true);
+                      if (possibleDates.length === 0 && date) {
+                        addPossibleDate();
+                      }
+                    }}
+                    title="Add multiple date options for voting"
+                  >
+                    <i className="bi bi-plus-circle me-1"></i>
+                    Multiple Dates
+                  </button>
+                </div>
+                {!hasMultipleDates && (
+                  <small className="text-muted">
+                    Click "Multiple Dates" to create a poll with date options for members to vote on
+                  </small>
+                )}
               </div>
             </div>
             
@@ -461,6 +539,149 @@ function EventForm({ onSubmit, initialData, onCancel }) {
               </div>
             </div>
           </div>
+
+          {/* Multiple Dates Section */}
+          {hasMultipleDates && (
+            <div className="border rounded p-3 mb-3 bg-light">
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h6 className="mb-0">
+                  <i className="bi bi-calendar-plus me-2"></i>
+                  Multiple Date Options
+                </h6>
+                <button
+                  type="button"
+                  className="btn btn-sm btn-outline-secondary"
+                  onClick={() => {
+                    setHasMultipleDates(false);
+                    setPossibleDates([]);
+                    setDateSelectionDeadline('');
+                  }}
+                >
+                  <i className="bi bi-x-circle me-1"></i>
+                  Remove Multiple Dates
+                </button>
+              </div>
+              
+              <div className="alert alert-info">
+                <i className="bi bi-info-circle me-2"></i>
+                <strong>Multiple Date Poll:</strong> Members will be able to vote on their preferred dates. You can select the final date after collecting votes.
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">
+                  <i className="bi bi-clock me-1"></i>
+                  Voting Deadline
+                </label>
+                <input 
+                  type="datetime-local" 
+                  className="form-control" 
+                  value={dateSelectionDeadline} 
+                  onChange={e => setDateSelectionDeadline(e.target.value)}
+                />
+                <small className="text-muted">When should voting close?</small>
+              </div>
+
+              <div className="mb-3">
+                <div className="d-flex justify-content-between align-items-center mb-2">
+                  <label className="form-label mb-0">Date Options</label>
+                  <button
+                    type="button"
+                    className="btn btn-sm btn-success"
+                    onClick={addPossibleDate}
+                  >
+                    <i className="bi bi-plus-circle me-1"></i>
+                    Add Date Option
+                  </button>
+                </div>
+                
+                {possibleDates.map((dateOption, index) => (
+                  <div key={index} className="border rounded p-3 mb-2 bg-white">
+                    <div className="d-flex justify-content-between align-items-center mb-2">
+                      <h6 className="mb-0">Option {index + 1}</h6>
+                      {possibleDates.length > 1 && (
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-outline-danger"
+                          onClick={() => removePossibleDate(index)}
+                        >
+                          <i className="bi bi-trash"></i>
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="mb-2">
+                          <label className="form-label form-label-sm">Start Date</label>
+                          <input 
+                            type="date" 
+                            className="form-control form-control-sm" 
+                            value={dateOption.date} 
+                            onChange={e => updatePossibleDate(index, 'date', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="mb-2">
+                          <label className="form-label form-label-sm">End Date</label>
+                          <input 
+                            type="date" 
+                            className="form-control form-control-sm" 
+                            value={dateOption.end_date} 
+                            onChange={e => updatePossibleDate(index, 'end_date', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="row">
+                      <div className="col-md-4">
+                        <div className="mb-2">
+                          <label className="form-label form-label-sm">Arrive By</label>
+                          <input 
+                            type="time" 
+                            className="form-control form-control-sm" 
+                            value={dateOption.arrive_by_time} 
+                            onChange={e => updatePossibleDate(index, 'arrive_by_time', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-4">
+                        <div className="mb-2">
+                          <label className="form-label form-label-sm">Start Time</label>
+                          <input 
+                            type="time" 
+                            className="form-control form-control-sm" 
+                            value={dateOption.start_time} 
+                            onChange={e => updatePossibleDate(index, 'start_time', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-4">
+                        <div className="mb-2">
+                          <label className="form-label form-label-sm">End Time</label>
+                          <input 
+                            type="time" 
+                            className="form-control form-control-sm" 
+                            value={dateOption.end_time} 
+                            onChange={e => updatePossibleDate(index, 'end_time', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {possibleDates.length === 0 && (
+                  <div className="text-center text-muted py-3">
+                    <i className="bi bi-calendar-plus display-6"></i>
+                    <p className="mb-1">No date options added yet</p>
+                    <p className="small">Click "Add Date Option" to start creating your poll</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Time Fields Section */}
           <div className="row">
