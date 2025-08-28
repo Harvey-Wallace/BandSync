@@ -830,16 +830,26 @@ function EventsPage() {
                       <button 
                         className={`btn btn-sm touch-target mobile-button ${status[event.id] === 'yes' ? 'btn-success' : 'btn-outline-success'}`}
                         onClick={() => handleRsvp(event.id, 'yes')}
-                        style={{ minHeight: '40px', minWidth: '60px' }}
+                        style={{ 
+                          minHeight: '40px', 
+                          minWidth: '60px',
+                          fontWeight: status[event.id] === 'yes' ? 'bold' : 'normal',
+                          boxShadow: status[event.id] === 'yes' ? '0 0 8px rgba(40, 167, 69, 0.4)' : 'none'
+                        }}
                       >
-                        ✓ Yes
+                        {status[event.id] === 'yes' ? '✓ Yes ✓' : '✓ Yes'}
                       </button>
                       <button 
                         className={`btn btn-sm touch-target mobile-button ${status[event.id] === 'no' ? 'btn-danger' : 'btn-outline-danger'}`}
                         onClick={() => handleRsvp(event.id, 'no')}
-                        style={{ minHeight: '40px', minWidth: '60px' }}
+                        style={{ 
+                          minHeight: '40px', 
+                          minWidth: '60px',
+                          fontWeight: status[event.id] === 'no' ? 'bold' : 'normal',
+                          boxShadow: status[event.id] === 'no' ? '0 0 8px rgba(220, 53, 69, 0.4)' : 'none'
+                        }}
                       >
-                        ✗ No
+                        {status[event.id] === 'no' ? '✗ No ✗' : '✗ No'}
                       </button>
                       {status[event.id] === 'no' && (
                         <button 
@@ -854,9 +864,14 @@ function EventsPage() {
                       <button 
                         className={`btn btn-sm touch-target mobile-button ${status[event.id] === 'maybe' ? 'btn-warning' : 'btn-outline-warning'}`}
                         onClick={() => handleRsvp(event.id, 'maybe')}
-                        style={{ minHeight: '40px', minWidth: '70px' }}
+                        style={{ 
+                          minHeight: '40px', 
+                          minWidth: '70px',
+                          fontWeight: status[event.id] === 'maybe' ? 'bold' : 'normal',
+                          boxShadow: status[event.id] === 'maybe' ? '0 0 8px rgba(255, 193, 7, 0.4)' : 'none'
+                        }}
                       >
-                        ? Maybe
+                        {status[event.id] === 'maybe' ? '? Maybe ?' : '? Maybe'}
                       </button>
                     </div>
                   </div>

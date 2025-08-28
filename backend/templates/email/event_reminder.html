@@ -51,6 +51,9 @@
             font-weight: 600;
             color: #007bff;
             margin: 0 0 15px 0;
+            line-height: 1.3;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
         }
         .event-details {
             margin: 10px 0;
@@ -58,11 +61,22 @@
         .event-details strong {
             color: #495057;
             display: inline-block;
-            width: 80px;
+            width: 90px;
+            min-width: 90px;
         }
         .event-details .icon {
             margin-right: 8px;
             color: #6c757d;
+        }
+        .event-detail-row {
+            margin-bottom: 12px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        .event-detail-content {
+            display: inline-block;
+            vertical-align: top;
+            max-width: calc(100% - 120px);
         }
         .cta-section {
             text-align: center;
@@ -113,6 +127,18 @@
             .event-card {
                 padding: 20px 15px;
             }
+            .event-details strong {
+                width: 80px;
+                min-width: 80px;
+            }
+            .event-detail-content {
+                max-width: calc(100% - 100px);
+            }
+            .event-title {
+                font-size: 20px;
+                line-height: 1.3;
+                word-wrap: break-word;
+            }
         }
     </style>
 </head>
@@ -151,30 +177,49 @@
                 <h2 class="event-title">{{ event.title }}</h2>
                 
                 <div class="event-details">
-                    <div style="margin-bottom: 12px;">
+                    <div class="event-detail-row">
                         <span class="icon">📅</span>
-                        <strong>Date:</strong> {{ event.date.strftime('%A, %B %d, %Y') }}
+                        <strong>Date:</strong> 
+                        <span class="event-detail-content">{{ event.date.strftime('%A, %B %d, %Y') }}</span>
                     </div>
                     
-                    <div style="margin-bottom: 12px;">
+                    <div class="event-detail-row">
                         <span class="icon">🕐</span>
-                        <strong>Time:</strong> {{ event.date.strftime('%I:%M %p') }}
-                        {% if event.end_date %}
-                        - {{ event.end_date.strftime('%I:%M %p') }}
+                        <strong>Time:</strong> 
+                        <span class="event-detail-content">
+                        {% if event.start_time and event.end_time %}
+                            {{ event.start_time.strftime('%I:%M %p') }} - {{ event.end_time.strftime('%I:%M %p') }}
+                        {% elif event.start_time %}
+                            {{ event.start_time.strftime('%I:%M %p') }}
+                        {% elif event.date %}
+                            {{ event.date.strftime('%I:%M %p') }}
+                        {% else %}
+                            Time TBD
                         {% endif %}
+                        </span>
                     </div>
+                    
+                    {% if event.arrive_by_time %}
+                    <div class="event-detail-row">
+                        <span class="icon">⏰</span>
+                        <strong>Arrive by:</strong> 
+                        <span class="event-detail-content">{{ event.arrive_by_time.strftime('%I:%M %p') }}</span>
+                    </div>
+                    {% endif %}
                     
                     {% if event.location_address %}
-                    <div style="margin-bottom: 12px;">
+                    <div class="event-detail-row">
                         <span class="icon">📍</span>
-                        <strong>Location:</strong> {{ event.location_address }}
+                        <strong>Location:</strong> 
+                        <span class="event-detail-content">{{ event.location_address }}</span>
                     </div>
                     {% endif %}
                     
                     {% if event.type %}
-                    <div style="margin-bottom: 12px;">
+                    <div class="event-detail-row">
                         <span class="icon">🎭</span>
-                        <strong>Type:</strong> {{ event.type }}
+                        <strong>Type:</strong> 
+                        <span class="event-detail-content">{{ event.type }}</span>
                     </div>
                     {% endif %}
                     

@@ -161,11 +161,24 @@
                     
                     <div style="margin-bottom: 12px;">
                         <span class="icon">🕐</span>
-                        <strong>Time:</strong> {{ event.date.strftime('%I:%M %p') }}
-                        {% if event.end_date %}
-                        - {{ event.end_date.strftime('%I:%M %p') }}
+                        <strong>Time:</strong> 
+                        {% if event.start_time and event.end_time %}
+                            {{ event.start_time.strftime('%I:%M %p') }} - {{ event.end_time.strftime('%I:%M %p') }}
+                        {% elif event.start_time %}
+                            {{ event.start_time.strftime('%I:%M %p') }}
+                        {% elif event.date %}
+                            {{ event.date.strftime('%I:%M %p') }}
+                        {% else %}
+                            Time TBD
                         {% endif %}
                     </div>
+                    
+                    {% if event.arrive_by_time %}
+                    <div style="margin-bottom: 12px;">
+                        <span class="icon">⏰</span>
+                        <strong>Arrive by:</strong> {{ event.arrive_by_time.strftime('%I:%M %p') }}
+                    </div>
+                    {% endif %}
                     
                     {% if event.location_address %}
                     <div style="margin-bottom: 12px;">
