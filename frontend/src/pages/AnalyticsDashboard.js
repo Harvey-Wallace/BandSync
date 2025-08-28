@@ -68,6 +68,10 @@ function AnalyticsDashboard() {
             const rsvpRes = await axios.get(`${getApiUrl()}/events/${event.id}/rsvps`, config);
             // Find user's RSVP status
             for (const [rsvpStatus, users] of Object.entries(rsvpRes.data)) {
+              // Skip metadata fields and ensure users is an array
+              if (rsvpStatus.startsWith('_') || !Array.isArray(users)) {
+                continue;
+              }
               if (users.some(user => user.username === username)) {
                 rsvpMap[event.id] = rsvpStatus;
                 break;

@@ -83,6 +83,10 @@ function Events() {
             });
             // Find user's RSVP status
             for (const [rsvpStatus, users] of Object.entries(rsvpRes.data)) {
+              // Skip metadata fields and ensure users is an array
+              if (rsvpStatus.startsWith('_') || !Array.isArray(users)) {
+                continue;
+              }
               if (users.some(user => user.username === username)) {
                 rsvpMap[event.id] = rsvpStatus;
                 break;
@@ -226,6 +230,10 @@ function Events() {
           // Check if our RSVP is in the response
           let foundOurRsvp = false;
           for (const [rsvpStatus, users] of Object.entries(verifyResponse.data)) {
+            // Skip metadata fields and ensure users is an array
+            if (rsvpStatus.startsWith('_') || !Array.isArray(users)) {
+              continue;
+            }
             if (users.some(user => user.username === username)) {
               console.log(`✅ RSVP verified! User ${username} found in ${rsvpStatus} list`);
               foundOurRsvp = true;
