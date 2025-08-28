@@ -150,33 +150,32 @@ function EventsPage() {
       // Load current user's RSVP status for each event
       const username = localStorage.getItem('username');
       const statusMap = {};
-      console.log(`Loading RSVP status for user: ${username}`);
       
       for (const event of sortedEvents) {
         try {
           const rsvpRes = await axios.get(`${getApiUrl()}/events/${event.id}/rsvps`, {
             headers: { Authorization: `Bearer ${token}` }
           });
-          console.log(`Event ${event.id} RSVP data:`, rsvpRes.data);
           
           // Find user's RSVP status
           let foundStatus = false;
           for (const [rsvpStatus, users] of Object.entries(rsvpRes.data)) {
-            // Skip metadata fields
-            if (rsvpStatus.startsWith('_')) continue;
+            // Skip metadata fields like _privacy
+            if (rsvpStatus.startsWith('_')) {
+              continue;
+            }
+            
+            if (!Array.isArray(users)) {
+              continue;
+            }
             
             const userFound = users.some(user => {
-              const matches = user.username === username;
-              if (matches) {
-                console.log(`Found ${username} in ${rsvpStatus} for event ${event.id}:`, user);
-              }
-              return matches;
+              return user.username === username;
             });
             
             if (userFound) {
               // Normalize status to lowercase for consistent comparison
               statusMap[event.id] = rsvpStatus.toLowerCase();
-              console.log(`RSVP Status for event ${event.id}: ${rsvpStatus} -> ${rsvpStatus.toLowerCase()}`);
               foundStatus = true;
               break;
             }
@@ -190,7 +189,6 @@ function EventsPage() {
         }
       }
       
-      console.log('Final status map:', statusMap);
       setStatus(statusMap);
     } catch (error) {
       showErrorMessage('Failed to load events');
@@ -222,26 +220,20 @@ function EventsPage() {
     const token = localStorage.getItem('token');
     const userId = localStorage.getItem('user_id');
     
-    console.log(`Submitting RSVP: Event ${eventId}, Status: ${rsvpStatus}`);
-    
     try {
       if (navigator.onLine) {
         // Online: send RSVP immediately
-        const response = await axios.post(`${getApiUrl()}/events/${eventId}/rsvp`, { status: rsvpStatus }, {
+        await axios.post(`${getApiUrl()}/events/${eventId}/rsvp`, { status: rsvpStatus }, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        console.log('RSVP API response:', response.data);
         
         setStatus({ ...status, [eventId]: rsvpStatus });
-        console.log(`Updated local status for event ${eventId} to ${rsvpStatus}`);
-        
         showSuccessMessage(`RSVP set to ${rsvpStatus}`);
         
         // Add a small delay before refreshing to ensure DB is updated
         setTimeout(async () => {
-          console.log('Refreshing events after RSVP...');
           await fetchEvents();
-        }, 500);
+        }, 300);
       } else {
         // Offline: save RSVP locally
         const saved = await offlineManager.saveOfflineRSVP(eventId, userId, rsvpStatus);
