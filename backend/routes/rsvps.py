@@ -68,6 +68,17 @@ def get_event_rsvps(event_id):
                     'section_id': section_id,
                     'section_name': section_name
                 }
+                
+                # Include comments and likelihood if available
+                if hasattr(r, 'comments') and r.comments:
+                    user_info['comments'] = r.comments
+                
+                if hasattr(r, 'likelihood') and r.likelihood is not None:
+                    user_info['likelihood'] = r.likelihood
+                
+                if hasattr(r, 'updated_at') and r.updated_at:
+                    user_info['updated_at'] = r.updated_at.isoformat()
+                
                 # Normalize the status to proper case to handle any legacy data
                 status = r.status
                 if status in ['yes', 'no', 'maybe']:

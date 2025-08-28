@@ -4,6 +4,7 @@ import NotificationSystem from '../components/NotificationSystem';
 import EventForm from '../components/EventForm';
 import EnhancedEventForm from '../components/EnhancedEventForm';
 import EventDateVoting from '../components/EventDateVoting';
+import EnhancedRSVPModal from '../components/EnhancedRSVPModal';
 import { 
   DataLoadingState, 
   ErrorState, 
@@ -23,6 +24,7 @@ import '@fortawesome/fontawesome-free/css/all.min.css';
 function Events() {
   const [events, setEvents] = useState([]);
   const [rsvps, setRsvps] = useState({});
+  const [rsvpDetails, setRsvpDetails] = useState({}); // Store detailed RSVP data (comments, likelihood, etc.)
   const [allRsvps, setAllRsvps] = useState({}); // Store all member responses
   const [sections, setSections] = useState([]); // Store sections
   const [allUsers, setAllUsers] = useState([]); // Store all users with section info
@@ -36,6 +38,11 @@ function Events() {
   const [editingEvent, setEditingEvent] = useState(null);
   const [categories, setCategories] = useState([]);
   const [showVoting, setShowVoting] = useState({}); // Track which events show voting
+  
+  // Enhanced RSVP Modal state
+  const [showRsvpModal, setShowRsvpModal] = useState(false);
+  const [currentRsvpEvent, setCurrentRsvpEvent] = useState(null);
+  
   const { orgThemeColor } = useTheme();
   const role = localStorage.getItem('role');
 
@@ -175,8 +182,8 @@ function Events() {
     fetchData();
   }, [role]);
 
-  const handleRSVP = async (eventId, status) => {
-    console.log(`Starting RSVP update for event ${eventId} with status: ${status}`);
+  const handleRSVP = async (eventId, rsvpData) => {
+    console.log(`Starting RSVP update for event ${eventId} with data:`, rsvpData);
     
     try {
       const token = localStorage.getItem('token');
@@ -189,11 +196,9 @@ function Events() {
 
       console.log(`Current user: ${username}`);
       console.log(`Sending RSVP request to: ${getApiUrl()}/events/${eventId}/rsvp`);
-      console.log(`Request payload:`, { status: status });
+      console.log(`Request payload:`, rsvpData);
 
-      const response = await axios.post(`${getApiUrl()}/events/${eventId}/rsvp`, {
-        status: status
-      }, {
+      const response = await axios.post(`${getApiUrl()}/events/${eventId}/rsvp`, rsvpData, {
         headers: { 
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -204,10 +209,21 @@ function Events() {
       console.log('RSVP API response status:', response.status);
 
       // Update local state immediately for better UX - normalize to lowercase for UI consistency
-      const normalizedStatus = status.toLowerCase();
+      const normalizedStatus = rsvpData.status.toLowerCase();
       setRsvps(prev => ({
         ...prev,
         [eventId]: normalizedStatus
+      }));
+
+      // Store detailed RSVP data
+      setRsvpDetails(prev => ({
+        ...prev,
+        [eventId]: {
+          status: rsvpData.status,
+          comments: rsvpData.comments,
+          likelihood: rsvpData.likelihood,
+          updated_at: new Date().toISOString()
+        }
       }));
 
       console.log(`Updated local RSVP state for event ${eventId} to ${normalizedStatus}`);
@@ -262,7 +278,7 @@ function Events() {
         'Maybe': 'RSVP updated - marked as maybe attending'
       };
       
-      showSuccessMessage(statusMessages[status] || 'RSVP updated successfully!');
+      showSuccessMessage(statusMessages[rsvpData.status] || 'RSVP updated successfully!');
 
     } catch (error) {
       console.error('Error updating RSVP:', error);
@@ -298,6 +314,48 @@ function Events() {
     } catch (error) {
       console.warn(`Error refreshing RSVP data for event ${eventId}:`, error);
     }
+  };
+
+  // Enhanced RSVP Functions
+  const openEnhancedRSVP = (event) => {
+    setCurrentRsvpEvent(event);
+    setShowRsvpModal(true);
+  };
+
+  const handleEnhancedRSVP = async (rsvpData) => {
+    if (currentRsvpEvent) {
+      await handleRSVP(currentRsvpEvent.id, rsvpData);
+      
+      // Show enhanced success message
+      const statusMessages = {
+        'Yes': `RSVP confirmed for "${currentRsvpEvent.title}"! See you there! 🎉`,
+        'No': `RSVP updated for "${currentRsvpEvent.title}" - marked as not attending`,
+        'Maybe': `RSVP updated for "${currentRsvpEvent.title}" - marked as maybe attending${rsvpData.likelihood ? ` (${rsvpData.likelihood}% likely)` : ''}`
+      };
+      
+      showSuccessMessage(statusMessages[rsvpData.status] || 'RSVP updated successfully!');
+    }
+  };
+
+  // Quick RSVP functions for backward compatibility with simple button clicks
+  const handleQuickRSVP = async (eventId, status) => {
+    const rsvpData = { status };
+    
+    // For "Maybe" responses without enhanced modal, default to 50% likelihood
+    if (status === 'Maybe') {
+      rsvpData.likelihood = 50;
+    }
+    
+    await handleRSVP(eventId, rsvpData);
+    
+    // Show success message
+    const statusMessages = {
+      'Yes': 'RSVP confirmed! See you there! 🎉',
+      'No': 'RSVP updated - marked as not attending',
+      'Maybe': 'RSVP updated - marked as maybe attending'
+    };
+    
+    showSuccessMessage(statusMessages[status] || 'RSVP updated successfully!');
   };
 
   const toggleEventExpansion = async (eventId) => {
@@ -894,7 +952,7 @@ function Events() {
                                 className={`btn btn-sm ${rsvps[event.id] === 'yes' ? 'btn-success' : 'btn-outline-success'}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleRSVP(event.id, 'Yes');
+                                  handleQuickRSVP(event.id, 'Yes');
                                 }}
                                 style={{ borderRadius: '8px', minWidth: '60px' }}
                                 title="Going"
@@ -905,7 +963,7 @@ function Events() {
                                 className={`btn btn-sm ${rsvps[event.id] === 'maybe' ? 'btn-warning' : 'btn-outline-warning'}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleRSVP(event.id, 'Maybe');
+                                  handleQuickRSVP(event.id, 'Maybe');
                                 }}
                                 style={{ borderRadius: '8px', minWidth: '60px' }}
                                 title="Maybe"
@@ -916,12 +974,25 @@ function Events() {
                                 className={`btn btn-sm ${rsvps[event.id] === 'no' ? 'btn-danger' : 'btn-outline-danger'}`}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleRSVP(event.id, 'No');
+                                  handleQuickRSVP(event.id, 'No');
                                 }}
                                 style={{ borderRadius: '8px', minWidth: '60px' }}
                                 title="Can't Go"
                               >
                                 <i className="fas fa-times"></i>
+                              </button>
+                              
+                              {/* Enhanced RSVP Button */}
+                              <button
+                                className="btn btn-sm btn-outline-primary"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  openEnhancedRSVP(event);
+                                }}
+                                style={{ borderRadius: '8px', minWidth: '40px' }}
+                                title="Add comments or details to your RSVP"
+                              >
+                                <i className="fas fa-comment-alt"></i>
                               </button>
                             </div>
                           )}
@@ -1207,6 +1278,20 @@ function Events() {
           onSave={handleEditEvent}
           event={editingEvent}
           categories={categories}
+        />
+
+        {/* Enhanced RSVP Modal */}
+        <EnhancedRSVPModal
+          show={showRsvpModal}
+          onHide={() => {
+            setShowRsvpModal(false);
+            setCurrentRsvpEvent(null);
+          }}
+          eventTitle={currentRsvpEvent?.title || ''}
+          currentStatus={currentRsvpEvent ? (rsvpDetails[currentRsvpEvent.id]?.status || '') : ''}
+          currentComments={currentRsvpEvent ? (rsvpDetails[currentRsvpEvent.id]?.comments || '') : ''}
+          currentLikelihood={currentRsvpEvent ? (rsvpDetails[currentRsvpEvent.id]?.likelihood || 50) : 50}
+          onSubmit={handleEnhancedRSVP}
         />
       </div>
     </div>

@@ -366,7 +366,10 @@ class RSVP(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     event_id = db.Column(db.Integer, db.ForeignKey('event.id'), nullable=False)
     status = db.Column(db.String(10), nullable=False)  # Yes, No, Maybe
+    comments = db.Column(db.Text, nullable=True)  # Optional comments from user
+    likelihood = db.Column(db.Integer, nullable=True)  # 1-100 percentage for "Maybe" responses
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
 class EmailLog(db.Model):

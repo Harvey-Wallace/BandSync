@@ -182,12 +182,24 @@ def get_events():
                                 elif user.section:
                                     section_name = user.section.name
                                 
-                                detailed_rsvps.append({
+                                user_rsvp = {
                                     'user_id': user.id,
                                     'name': user.name or user.username,
                                     'status': rsvp.status,
                                     'section': section_name
-                                })
+                                }
+                                
+                                # Include comments and likelihood if available
+                                if hasattr(rsvp, 'comments') and rsvp.comments:
+                                    user_rsvp['comments'] = rsvp.comments
+                                
+                                if hasattr(rsvp, 'likelihood') and rsvp.likelihood is not None:
+                                    user_rsvp['likelihood'] = rsvp.likelihood
+                                
+                                if hasattr(rsvp, 'updated_at') and rsvp.updated_at:
+                                    user_rsvp['updated_at'] = rsvp.updated_at.isoformat()
+                                
+                                detailed_rsvps.append(user_rsvp)
                 
                 # Build response based on privacy settings
                 response = {
@@ -651,6 +663,8 @@ def rsvp_event(event_id):
     user_id = get_jwt_identity()
     data = request.get_json()
     status = data.get('status')
+    comments = data.get('comments', '').strip() or None  # Optional comments
+    likelihood = data.get('likelihood')  # Optional likelihood (1-100) for "Maybe" responses
     
     # Handle both mobile format (attending/maybe/not_attending) and web format (Yes/No/Maybe)
     mobile_statuses = ['attending', 'maybe', 'not_attending']
@@ -670,14 +684,32 @@ def rsvp_event(event_id):
     else:
         return jsonify({'msg': 'Invalid RSVP status. Use: Yes/No/Maybe or attending/maybe/not_attending'}), 400
     
+    # Validate likelihood for "Maybe" responses
+    if likelihood is not None:
+        if status != 'Maybe':
+            return jsonify({'msg': 'Likelihood can only be set for "Maybe" responses'}), 400
+        if not isinstance(likelihood, int) or likelihood < 1 or likelihood > 100:
+            return jsonify({'msg': 'Likelihood must be an integer between 1 and 100'}), 400
+    elif status == 'Maybe' and likelihood is None:
+        # Default likelihood for "Maybe" responses if not provided
+        likelihood = 50
+    
+    # Clear likelihood if status is not "Maybe"
+    if status != 'Maybe':
+        likelihood = None
+    
     # Track previous status for admin notifications
     previous_status = None
     rsvp = RSVP.query.filter_by(user_id=user_id, event_id=event_id).first()
     if rsvp:
         previous_status = rsvp.status
         rsvp.status = status
+        rsvp.comments = comments
+        rsvp.likelihood = likelihood
+        rsvp.updated_at = datetime.utcnow()
     else:
-        rsvp = RSVP(user_id=user_id, event_id=event_id, status=status)
+        rsvp = RSVP(user_id=user_id, event_id=event_id, status=status, 
+                   comments=comments, likelihood=likelihood)
         db.session.add(rsvp)
     
     db.session.commit()
@@ -718,7 +750,10 @@ def get_user_rsvp(event_id):
         'status': mobile_status,
         'event_id': event_id,
         'user_id': int(user_id),
-        'timestamp': rsvp.created_at.isoformat() if rsvp.created_at else None
+        'comments': rsvp.comments,
+        'likelihood': rsvp.likelihood,
+        'timestamp': rsvp.created_at.isoformat() if rsvp.created_at else None,
+        'updated_at': rsvp.updated_at.isoformat() if hasattr(rsvp, 'updated_at') and rsvp.updated_at else None
     })
 
 @events_bp.route('/<int:event_id>/rsvp/', methods=['POST'])
