@@ -158,7 +158,9 @@ function EventsPage() {
           // Find user's RSVP status
           for (const [rsvpStatus, users] of Object.entries(rsvpRes.data)) {
             if (users.some(user => user.username === username)) {
-              statusMap[event.id] = rsvpStatus;
+              // Normalize status to lowercase for consistent comparison
+              statusMap[event.id] = rsvpStatus.toLowerCase();
+              console.log(`RSVP Status for event ${event.id}: ${rsvpStatus} -> ${rsvpStatus.toLowerCase()}`);
               break;
             }
           }
