@@ -88,7 +88,7 @@ function Events() {
                 continue;
               }
               if (users.some(user => user.username === username)) {
-                rsvpMap[event.id] = rsvpStatus;
+                rsvpMap[event.id] = rsvpStatus.toLowerCase(); // Normalize to lowercase for UI consistency
                 break;
               }
             }
