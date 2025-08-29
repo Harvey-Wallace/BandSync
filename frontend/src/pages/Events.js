@@ -39,6 +39,14 @@ function Events() {
   const [categories, setCategories] = useState([]);
   const [showVoting, setShowVoting] = useState({}); // Track which events show voting
   
+  // Templates state
+  const [templates, setTemplates] = useState([]);
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState(null);
+  const [templateDate, setTemplateDate] = useState('');
+  const [templateLocation, setTemplateLocation] = useState('');
+  const [templateLoading, setTemplateLoading] = useState(false);
+  
   // Enhanced RSVP Modal state
   const [showRsvpModal, setShowRsvpModal] = useState(false);
   const [currentRsvpEvent, setCurrentRsvpEvent] = useState(null);
@@ -163,6 +171,20 @@ function Events() {
         } catch (error) {
           console.error('Error loading categories:', error);
           // Don't fail the entire load if categories fail
+        }
+
+        // Fetch templates for admin users
+        if (role === 'Admin' || role === 'admin' || role === 'super_admin') {
+          try {
+            const templatesResponse = await axios.get(`${getApiUrl()}/events/templates`, {
+              headers: { Authorization: `Bearer ${token}` }
+            });
+            console.log('Templates loaded:', templatesResponse.data);
+            setTemplates(templatesResponse.data);
+          } catch (error) {
+            console.error('Error loading templates:', error);
+            // Don't fail the entire load if templates fail
+          }
         }
 
       } catch (error) {
@@ -697,6 +719,65 @@ function Events() {
     setShowEditForm(true);
   };
 
+  // Template functions
+  const openTemplatesModal = () => {
+    setShowTemplatesModal(true);
+  };
+
+  const closeTemplatesModal = () => {
+    setShowTemplatesModal(false);
+    setSelectedTemplate(null);
+    setTemplateDate('');
+    setTemplateLocation('');
+  };
+
+  const selectTemplate = (template) => {
+    setSelectedTemplate(template);
+    setShowTemplatesModal(false);
+  };
+
+  const createEventFromTemplate = async () => {
+    if (!selectedTemplate || !templateDate) {
+      showErrorMessage('Please select a date for the event');
+      return;
+    }
+
+    setTemplateLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.post(`${getApiUrl()}/events/from-template/${selectedTemplate.id}`, {
+        date: templateDate,
+        location_address: templateLocation,
+        title: selectedTemplate.template_name || selectedTemplate.title
+      }, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      showSuccessMessage('Event created successfully from template! 🎉');
+      
+      // Close modal and reset state
+      setSelectedTemplate(null);
+      setTemplateDate('');
+      setTemplateLocation('');
+      
+      // Refresh events list
+      const eventsResponse = await axios.get(`${getApiUrl()}/events`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      const sortedEvents = eventsResponse.data.sort((a, b) => new Date(a.date) - new Date(b.date));
+      setEvents(sortedEvents);
+      
+    } catch (error) {
+      console.error('Error creating event from template:', error);
+      showErrorMessage(error.response?.data?.error || 'Failed to create event from template');
+    } finally {
+      setTemplateLoading(false);
+    }
+  };
+
   // Delete event handler
   const handleDeleteEvent = async (event) => {
     if (!window.confirm(`Are you sure you want to delete "${event.title || event.name || 'this event'}"? This action cannot be undone.`)) {
@@ -773,15 +854,40 @@ function Events() {
                 <p className="text-muted mb-0">View and manage your event schedule</p>
               </div>
               <div className="d-flex align-items-center gap-3">
-                {/* Create Event Button - Admin Only */}
+                {/* Create Event Button with Dropdown - Admin Only */}
                 {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
-                  <button 
-                    className="btn btn-success"
-                    onClick={() => setShowCreateForm(true)}
-                  >
-                    <i className="fas fa-plus me-2"></i>
-                    Create Event
-                  </button>
+                  <div className="dropdown">
+                    <button 
+                      className="btn btn-success dropdown-toggle"
+                      type="button" 
+                      data-bs-toggle="dropdown" 
+                      aria-expanded="false"
+                    >
+                      <i className="fas fa-plus me-2"></i>
+                      Create Event
+                    </button>
+                    <ul className="dropdown-menu dropdown-menu-end">
+                      <li>
+                        <button 
+                          className="dropdown-item" 
+                          onClick={() => setShowCreateForm(true)}
+                        >
+                          <i className="fas fa-plus me-2 text-primary"></i>
+                          Create New Event
+                        </button>
+                      </li>
+                      <li><hr className="dropdown-divider" /></li>
+                      <li>
+                        <button 
+                          className="dropdown-item" 
+                          onClick={openTemplatesModal}
+                        >
+                          <i className="fas fa-file-alt me-2 text-success"></i>
+                          Create from Template
+                        </button>
+                      </li>
+                    </ul>
+                  </div>
                 )}
                 <a href="/analytics" className="btn btn-outline-primary">
                   <i className="fas fa-chart-line me-2"></i>
@@ -1293,6 +1399,174 @@ function Events() {
           currentLikelihood={currentRsvpEvent ? (rsvpDetails[currentRsvpEvent.id]?.likelihood || 50) : 50}
           onSubmit={handleEnhancedRSVP}
         />
+
+        {/* Templates Selection Modal */}
+        {showTemplatesModal && (
+          <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <i className="fas fa-file-alt me-2"></i>
+                    Choose Event Template
+                  </h5>
+                  <button 
+                    type="button" 
+                    className="btn-close" 
+                    onClick={closeTemplatesModal}
+                    aria-label="Close"
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  {templates.length === 0 ? (
+                    <div className="text-center text-muted py-4">
+                      <i className="fas fa-file-alt display-4 mb-3"></i>
+                      <p>No templates found. Create an event and save it as a template.</p>
+                    </div>
+                  ) : (
+                    <div className="row">
+                      {templates.map(template => (
+                        <div key={template.id} className="col-md-6 col-lg-4 mb-3">
+                          <div className="card h-100 shadow-sm template-card" 
+                               style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
+                               onClick={() => selectTemplate(template)}
+                               onMouseEnter={(e) => e.target.closest('.card').style.transform = 'translateY(-3px)'}
+                               onMouseLeave={(e) => e.target.closest('.card').style.transform = 'translateY(0)'}>
+                            <div className="card-body">
+                              <h6 className="card-title fw-bold text-primary">
+                                {template.template_name || 'Untitled Template'}
+                              </h6>
+                              <p className="card-text small text-muted">
+                                {template.description || 'No description'}
+                              </p>
+                              {template.category && (
+                                <div className="mb-2">
+                                  <span className="badge bg-secondary">{template.category}</span>
+                                </div>
+                              )}
+                              <div className="d-flex justify-content-between align-items-center">
+                                <small className="text-muted">
+                                  <i className="fas fa-clock me-1"></i>
+                                  {template.default_start_time || 'No time set'}
+                                </small>
+                                <i className="fas fa-arrow-right text-primary"></i>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={closeTemplatesModal}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {showTemplatesModal && <div className="modal-backdrop fade show"></div>}
+
+        {/* Create Event from Template Modal */}
+        {selectedTemplate && (
+          <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+            <div className="modal-dialog">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <i className="fas fa-calendar-plus me-2"></i>
+                    Create Event from Template
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setSelectedTemplate(null)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <div className="mb-3">
+                    <h6 className="fw-bold text-primary">{selectedTemplate.template_name || selectedTemplate.title}</h6>
+                    <p className="text-muted small mb-0">{selectedTemplate.description}</p>
+                    {selectedTemplate.category && (
+                      <span className="badge bg-secondary mt-1">{selectedTemplate.category}</span>
+                    )}
+                  </div>
+                  
+                  <div className="mb-3">
+                    <label htmlFor="template-date" className="form-label">
+                      <i className="fas fa-calendar me-1"></i>
+                      Event Date & Time *
+                    </label>
+                    <input
+                      type="datetime-local"
+                      className="form-control"
+                      id="template-date"
+                      value={templateDate}
+                      onChange={(e) => setTemplateDate(e.target.value)}
+                      required
+                    />
+                  </div>
+
+                  <div className="mb-3">
+                    <label htmlFor="template-location" className="form-label">
+                      <i className="fas fa-map-marker-alt me-1"></i>
+                      Location (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      id="template-location"
+                      value={templateLocation}
+                      onChange={(e) => setTemplateLocation(e.target.value)}
+                      placeholder="Enter event location"
+                    />
+                  </div>
+
+                  <div className="alert alert-info">
+                    <i className="fas fa-info-circle me-2"></i>
+                    <strong>Note:</strong> This will create a new event using the template's settings. 
+                    You can modify the event details after creation.
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setSelectedTemplate(null)}
+                    disabled={templateLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-success"
+                    onClick={createEventFromTemplate}
+                    disabled={templateLoading || !templateDate}
+                  >
+                    {templateLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2"></span>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-plus me-1"></i>
+                        Create Event
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {selectedTemplate && <div className="modal-backdrop fade show"></div>}
       </div>
     </div>
   );
