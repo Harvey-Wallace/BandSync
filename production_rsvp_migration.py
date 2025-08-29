@@ -10,7 +10,7 @@ import logging
 from datetime import datetime
 
 # Add the backend directory to Python path
-sys.path.insert(0, '/opt/render/project/src/backend')
+sys.path.insert(0, '/app')
 
 from app import app
 from models import db
