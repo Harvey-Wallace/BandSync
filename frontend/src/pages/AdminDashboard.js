@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import NotificationSystem from '../components/NotificationSystem';
 import { 
@@ -12,6 +12,8 @@ import BulkOperations from '../components/BulkOperations';
 import DebugEnv from '../components/DebugEnv';
 import AnalyticsDashboard from '../components/AnalyticsDashboard';
 import { getApiUrl } from '../utils/apiUrl';
+import { getGoogleMapsApiKey } from '../config/constants';
+import { Loader } from '@googlemaps/js-api-loader';
 
 function AdminDashboard() {
   const [org, setOrg] = useState({ 
@@ -143,6 +145,10 @@ function AdminDashboard() {
     loading: false
   });
   const [calendarInfo, setCalendarInfo] = useState({});
+
+  // Google Maps autocomplete refs
+  const newTemplateLocationRef = useRef(null);
+  const editTemplateLocationRef = useRef(null);
 
   const API_BASE_URL = getApiUrl();
 
@@ -1241,6 +1247,93 @@ function AdminDashboard() {
       loadCategories();
     }
   }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Google Maps initialization
+  useEffect(() => {
+    initializeGoogleMaps();
+  }, []);
+
+  const initializeGoogleMaps = async () => {
+    try {
+      const googleMapsApiKey = getGoogleMapsApiKey();
+      if (!googleMapsApiKey) {
+        console.log('No Google Maps API key available');
+        return;
+      }
+
+      if (window.google && window.google.maps) {
+        initializeAutocomplete();
+        return;
+      }
+
+      const loader = new Loader({
+        apiKey: googleMapsApiKey,
+        version: "weekly",
+        libraries: ["places"]
+      });
+
+      await loader.load();
+      initializeAutocomplete();
+    } catch (error) {
+      console.error('Error loading Google Maps:', error);
+    }
+  };
+
+  const initializeAutocomplete = () => {
+    if (!window.google || !window.google.maps) return;
+
+    // Initialize autocomplete for new template form
+    if (newTemplateLocationRef.current) {
+      const newTemplateAutocomplete = new window.google.maps.places.Autocomplete(
+        newTemplateLocationRef.current,
+        {
+          types: ['establishment', 'geocode'],
+          fields: ['place_id', 'formatted_address', 'name']
+        }
+      );
+
+      newTemplateAutocomplete.addListener('place_changed', () => {
+        const place = newTemplateAutocomplete.getPlace();
+        if (place.formatted_address) {
+          setNewTemplate({ 
+            ...newTemplate, 
+            default_location_address: place.formatted_address 
+          });
+        }
+      });
+    }
+
+    // Initialize autocomplete for edit template form
+    if (editTemplateLocationRef.current) {
+      const editTemplateAutocomplete = new window.google.maps.places.Autocomplete(
+        editTemplateLocationRef.current,
+        {
+          types: ['establishment', 'geocode'],
+          fields: ['place_id', 'formatted_address', 'name']
+        }
+      );
+
+      editTemplateAutocomplete.addListener('place_changed', () => {
+        const place = editTemplateAutocomplete.getPlace();
+        if (place.formatted_address) {
+          setEditingTemplate({ 
+            ...editingTemplate, 
+            default_location_address: place.formatted_address 
+          });
+        }
+      });
+    }
+  };
+
+  // Reinitialize autocomplete when modals open
+  useEffect(() => {
+    if (showCreateTemplate || showEditTemplate) {
+      // Delay to ensure DOM is rendered
+      setTimeout(() => {
+        initializeAutocomplete();
+      }, 100);
+    }
+  }, [showCreateTemplate, showEditTemplate]);
 
   return (
     <div>
@@ -2898,15 +2991,27 @@ function AdminDashboard() {
                     <div className="mb-3">
                       <label className="form-label">Default Location</label>
                       <input
+                        ref={newTemplateLocationRef}
                         type="text"
                         className="form-control"
                         value={newTemplate.default_location_address}
                         onChange={(e) => setNewTemplate({ ...newTemplate, default_location_address: e.target.value })}
-                        placeholder="Enter default location (optional)"
+                        placeholder="Search for a location or enter manually..."
                       />
                     </div>
 
                     <div className="row">
+                      <div className="col-md-4">
+                        <div className="mb-3">
+                          <label className="form-label">Default Arrive By</label>
+                          <input
+                            type="time"
+                            className="form-control"
+                            value={newTemplate.default_arrive_by_time}
+                            onChange={(e) => setNewTemplate({ ...newTemplate, default_arrive_by_time: e.target.value })}
+                          />
+                        </div>
+                      </div>
                       <div className="col-md-4">
                         <div className="mb-3">
                           <label className="form-label">Default Start Time</label>
@@ -2926,17 +3031,6 @@ function AdminDashboard() {
                             className="form-control"
                             value={newTemplate.default_end_time}
                             onChange={(e) => setNewTemplate({ ...newTemplate, default_end_time: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="mb-3">
-                          <label className="form-label">Default Arrive By</label>
-                          <input
-                            type="time"
-                            className="form-control"
-                            value={newTemplate.default_arrive_by_time}
-                            onChange={(e) => setNewTemplate({ ...newTemplate, default_arrive_by_time: e.target.value })}
                           />
                         </div>
                       </div>
@@ -3103,15 +3197,27 @@ function AdminDashboard() {
                     <div className="mb-3">
                       <label className="form-label">Default Location</label>
                       <input
+                        ref={editTemplateLocationRef}
                         type="text"
                         className="form-control"
                         value={editingTemplate.default_location_address}
                         onChange={(e) => setEditingTemplate({ ...editingTemplate, default_location_address: e.target.value })}
-                        placeholder="Enter default location (optional)"
+                        placeholder="Search for a location or enter manually..."
                       />
                     </div>
 
                     <div className="row">
+                      <div className="col-md-4">
+                        <div className="mb-3">
+                          <label className="form-label">Default Arrive By</label>
+                          <input
+                            type="time"
+                            className="form-control"
+                            value={editingTemplate.default_arrive_by_time}
+                            onChange={(e) => setEditingTemplate({ ...editingTemplate, default_arrive_by_time: e.target.value })}
+                          />
+                        </div>
+                      </div>
                       <div className="col-md-4">
                         <div className="mb-3">
                           <label className="form-label">Default Start Time</label>
@@ -3131,17 +3237,6 @@ function AdminDashboard() {
                             className="form-control"
                             value={editingTemplate.default_end_time}
                             onChange={(e) => setEditingTemplate({ ...editingTemplate, default_end_time: e.target.value })}
-                          />
-                        </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="mb-3">
-                          <label className="form-label">Default Arrive By</label>
-                          <input
-                            type="time"
-                            className="form-control"
-                            value={editingTemplate.default_arrive_by_time}
-                            onChange={(e) => setEditingTemplate({ ...editingTemplate, default_arrive_by_time: e.target.value })}
                           />
                         </div>
                       </div>
