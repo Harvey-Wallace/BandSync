@@ -1060,7 +1060,7 @@ function Events() {
                       onClick={() => setFilter('upcoming')}
                     >
                       <i className="fas fa-calendar-plus me-1"></i>
-                      Upcoming ({events.filter(e => isEventUpcoming(e.dateTime)).length})
+                      Upcoming ({events.filter(e => isEventUpcoming(e.date)).length})
                     </button>
                     <button
                       type="button"
@@ -1076,7 +1076,7 @@ function Events() {
                       onClick={() => setFilter('past')}
                     >
                       <i className="fas fa-calendar-check me-1"></i>
-                      Past ({events.filter(e => isEventPast(e.dateTime)).length})
+                      Past ({events.filter(e => isEventPast(e.date)).length})
                     </button>
                   </div>
                 </div>
