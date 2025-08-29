@@ -1441,42 +1441,94 @@ def delete_event_template(template_id):
 @jwt_required()
 def create_from_template(template_id):
     """Create a new event from a template."""
-    claims = get_jwt()
-    if claims.get('role') != 'Admin':
-        return jsonify({'msg': 'Admins only'}), 403
-    
-    org_id = claims.get('organization_id')
-    user_id = get_jwt_identity()
-    
-    # Get the template
-    template = Event.query.filter_by(id=template_id, organization_id=org_id, is_template=True).first_or_404()
-    
-    # Get additional data from request
-    data = request.get_json()
-    event_date = datetime.fromisoformat(data['date'])
-    
-    # Create event from template
-    event = Event(
-        title=data.get('title', template.title),
-        type=template.type,
-        description=data.get('description', template.description),
-        date=event_date,
-        end_date=event_date + timedelta(hours=template.category.default_duration_hours) if template.category else None,
-        location_address=data.get('location_address'),
-        location_lat=data.get('lat'),
-        location_lng=data.get('lng'),
-        location_place_id=data.get('location_place_id'),
-        category_id=template.category_id,
-        send_reminders=template.send_reminders,
-        reminder_days_before=template.reminder_days_before,
-        organization_id=org_id,
-        created_by=user_id
-    )
-    
-    db.session.add(event)
-    db.session.commit()
-    
-    return jsonify({'msg': 'Event created from template', 'id': event.id})
+    try:
+        claims = get_jwt()
+        if claims.get('role') != 'Admin':
+            return jsonify({'error': 'Admin access required'}), 403
+        
+        org_id = claims.get('organization_id')
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        # Get the template from EventTemplate model
+        template = EventTemplate.query.filter_by(
+            id=template_id, 
+            organization_id=org_id,
+            is_active=True
+        ).first()
+        
+        if not template:
+            return jsonify({'error': 'Template not found'}), 404
+        
+        # Validate required data
+        if not data.get('date'):
+            return jsonify({'error': 'Event date is required'}), 400
+        
+        try:
+            event_date = datetime.fromisoformat(data['date'])
+        except ValueError:
+            return jsonify({'error': 'Invalid date format'}), 400
+        
+        # Calculate end date if duration is available
+        end_date = None
+        if template.default_duration_hours:
+            end_date = event_date + timedelta(hours=template.default_duration_hours)
+        
+        # Create event from template
+        event = Event(
+            title=data.get('title', template.default_title or template.name),
+            type='Event',  # Default type
+            description=data.get('description', template.default_description or template.description),
+            date=event_date,
+            end_date=end_date,
+            location_address=data.get('location_address', template.default_location_address),
+            location_lat=template.default_location_lat,
+            location_lng=template.default_location_lng,
+            location_place_id=template.default_location_place_id,
+            category_id=template.category_id,
+            send_reminders=template.default_send_reminders,
+            reminder_days_before=template.default_reminder_days_before,
+            organization_id=org_id,
+            created_by=user_id,
+            template_id=template_id  # Link to the template used
+        )
+        
+        # Add time fields if they exist in the model
+        try:
+            if template.default_start_time:
+                event.start_time = template.default_start_time
+            if template.default_arrive_by_offset and template.default_start_time:
+                # Calculate arrive by time from start time and offset
+                start_datetime = datetime.combine(event_date.date(), template.default_start_time)
+                arrive_by_datetime = start_datetime - timedelta(minutes=template.default_arrive_by_offset)
+                event.arrive_by_time = arrive_by_datetime.time()
+        except AttributeError:
+            # Time fields don't exist in Event model yet
+            pass
+        
+        db.session.add(event)
+        db.session.flush()  # Get the event ID
+        
+        # Update template usage count
+        template.usage_count = (template.usage_count or 0) + 1
+        
+        db.session.commit()
+        
+        return jsonify({
+            'msg': 'Event created from template successfully',
+            'id': event.id,
+            'event': {
+                'id': event.id,
+                'title': event.title,
+                'date': event.date.isoformat(),
+                'location_address': event.location_address
+            }
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error creating event from template: {str(e)}")
+        return jsonify({'error': 'Failed to create event from template'}), 500
 
 @events_bp.route('/<int:event_id>/export-rsvps', methods=['GET'])
 @jwt_required()

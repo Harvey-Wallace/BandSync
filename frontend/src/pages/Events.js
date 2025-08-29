@@ -474,7 +474,6 @@ function Events() {
       }
     });
     
-    console.log(`RSVP counts for event ${eventId}:`, counts, 'Raw data:', eventRsvps);
     return counts;
   };
 
