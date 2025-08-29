@@ -46,6 +46,7 @@ function Events() {
   const [templateDate, setTemplateDate] = useState('');
   const [templateLocation, setTemplateLocation] = useState('');
   const [templateLoading, setTemplateLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
   
   // Enhanced RSVP Modal state
   const [showRsvpModal, setShowRsvpModal] = useState(false);
@@ -203,6 +204,20 @@ function Events() {
 
     fetchData();
   }, [role]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (showDropdown && !event.target.closest('.btn-group')) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showDropdown]);
 
   const handleRSVP = async (eventId, rsvpData) => {
     console.log(`Starting RSVP update for event ${eventId} with data:`, rsvpData);
@@ -841,6 +856,18 @@ function Events() {
       <Navbar />
       <NotificationSystem />
 
+      <style>
+        {`
+          .template-card:hover {
+            transform: translateY(-3px) !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+          }
+          .dropdown-menu.show {
+            display: block;
+          }
+        `}
+      </style>
+
       <div className="container-fluid mt-4">
         {/* Page Header */}
         <div className="row mb-4">
@@ -856,37 +883,52 @@ function Events() {
               <div className="d-flex align-items-center gap-3">
                 {/* Create Event Button with Dropdown - Admin Only */}
                 {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
-                  <div className="dropdown">
+                  <div className="btn-group" style={{ position: 'relative' }}>
                     <button 
-                      className="btn btn-success dropdown-toggle"
-                      type="button" 
-                      data-bs-toggle="dropdown" 
-                      aria-expanded="false"
+                      className="btn btn-success"
+                      onClick={() => setShowCreateForm(true)}
                     >
                       <i className="fas fa-plus me-2"></i>
                       Create Event
                     </button>
-                    <ul className="dropdown-menu dropdown-menu-end">
-                      <li>
-                        <button 
-                          className="dropdown-item" 
-                          onClick={() => setShowCreateForm(true)}
-                        >
-                          <i className="fas fa-plus me-2 text-primary"></i>
-                          Create New Event
-                        </button>
-                      </li>
-                      <li><hr className="dropdown-divider" /></li>
-                      <li>
-                        <button 
-                          className="dropdown-item" 
-                          onClick={openTemplatesModal}
-                        >
-                          <i className="fas fa-file-alt me-2 text-success"></i>
-                          Create from Template
-                        </button>
-                      </li>
-                    </ul>
+                    <button 
+                      className="btn btn-success dropdown-toggle dropdown-toggle-split" 
+                      type="button" 
+                      onClick={() => setShowDropdown(!showDropdown)}
+                      aria-expanded={showDropdown}
+                      style={{ borderLeft: '1px solid rgba(255,255,255,0.2)' }}
+                    >
+                      <span className="visually-hidden">Toggle Dropdown</span>
+                    </button>
+                    {showDropdown && (
+                      <ul className="dropdown-menu show" style={{ position: 'absolute', top: '100%', right: 0, zIndex: 1000 }}>
+                        <li>
+                          <button 
+                            className="dropdown-item" 
+                            onClick={() => {
+                              setShowCreateForm(true);
+                              setShowDropdown(false);
+                            }}
+                          >
+                            <i className="fas fa-plus me-2 text-primary"></i>
+                            Create New Event
+                          </button>
+                        </li>
+                        <li><hr className="dropdown-divider" /></li>
+                        <li>
+                          <button 
+                            className="dropdown-item" 
+                            onClick={() => {
+                              openTemplatesModal();
+                              setShowDropdown(false);
+                            }}
+                          >
+                            <i className="fas fa-file-alt me-2 text-success"></i>
+                            Create from Template
+                          </button>
+                        </li>
+                      </ul>
+                    )}
                   </div>
                 )}
                 <a href="/analytics" className="btn btn-outline-primary">
@@ -1428,10 +1470,11 @@ function Events() {
                       {templates.map(template => (
                         <div key={template.id} className="col-md-6 col-lg-4 mb-3">
                           <div className="card h-100 shadow-sm template-card" 
-                               style={{ cursor: 'pointer', transition: 'transform 0.2s' }}
-                               onClick={() => selectTemplate(template)}
-                               onMouseEnter={(e) => e.target.closest('.card').style.transform = 'translateY(-3px)'}
-                               onMouseLeave={(e) => e.target.closest('.card').style.transform = 'translateY(0)'}>
+                               style={{ 
+                                 cursor: 'pointer', 
+                                 transition: 'transform 0.2s, box-shadow 0.2s'
+                               }}
+                               onClick={() => selectTemplate(template)}>
                             <div className="card-body">
                               <h6 className="card-title fw-bold text-primary">
                                 {template.template_name || 'Untitled Template'}
