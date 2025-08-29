@@ -442,8 +442,8 @@ function Events() {
 
   const getFilteredEvents = () => {
     if (filter === 'all') return events;
-    if (filter === 'past') return events.filter(event => isEventPast(event.dateTime));
-    if (filter === 'upcoming') return events.filter(event => isEventUpcoming(event.dateTime));
+    if (filter === 'past') return events.filter(event => isEventPast(event.date));
+    if (filter === 'upcoming') return events.filter(event => isEventUpcoming(event.date));
     return events;
   };
 

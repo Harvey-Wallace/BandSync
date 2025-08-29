@@ -47,7 +47,21 @@ const Dashboard = () => {
             
             // Remove automatic admin redirect - let admins use dashboard too
             
-            setEvents(Array.isArray(eventsResponse.data) ? eventsResponse.data.slice(0, 5) : []);
+            // Filter events to show only upcoming events for dashboard
+            const allEvents = Array.isArray(eventsResponse.data) ? eventsResponse.data : [];
+            const now = new Date();
+            
+            // Filter upcoming events and sort by date
+            const upcomingEvents = allEvents
+                .filter(event => {
+                    if (!event.date) return false;
+                    const eventDate = new Date(event.date);
+                    return eventDate >= now;
+                })
+                .sort((a, b) => new Date(a.date) - new Date(b.date))
+                .slice(0, 5); // Show next 5 upcoming events
+            
+            setEvents(upcomingEvents);
             
             // Load templates if user is admin
             if (userResponse.data.role === 'Admin') {
@@ -164,7 +178,7 @@ const Dashboard = () => {
                             <Col md={6}>
                                 <Card className="mb-4">
                                     <Card.Header>
-                                        <Card.Title className="mb-0">📅 Recent Events</Card.Title>
+                                        <Card.Title className="mb-0">📅 Upcoming Events</Card.Title>
                                     </Card.Header>
                                     <Card.Body>
                                         {events && events.length > 0 ? (
@@ -174,7 +188,7 @@ const Dashboard = () => {
                                                         <strong>{event.title || 'Untitled Event'}</strong>
                                                         {event.date && (
                                                             <div className="text-muted small">
-                                                                {new Date(event.date).toLocaleDateString()}
+                                                                {new Date(event.date).toLocaleDateString()} at {new Date(event.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                                                             </div>
                                                         )}
                                                     </div>
@@ -189,13 +203,13 @@ const Dashboard = () => {
                                             </div>
                                         ) : (
                                             <div>
-                                                <p className="text-muted">No recent events</p>
+                                                <p className="text-muted">No upcoming events</p>
                                                 <Button 
                                                     variant="outline-primary" 
                                                     size="sm"
                                                     onClick={() => window.location.href = '/events'}
                                                 >
-                                                    Go to Events
+                                                    View All Events
                                                 </Button>
                                             </div>
                                         )}
