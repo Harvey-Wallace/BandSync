@@ -96,8 +96,8 @@ function App() {
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/analytics" element={<AnalyticsDashboard />} />
                       <Route path="/admin" element={<AdminDashboard />} />
-                      <Route path="/events" element={<Events />} />
-                      <Route path="/events-old" element={<EventsPage />} />
+                      <Route path="/events" element={<EventsPage />} />
+                      <Route path="/events-old" element={<Events />} />
                       <Route path="/profile" element={<ProfilePage />} />
                       <Route path="/email-preferences" element={<EmailPreferencesPage />} />
                       <Route path="/calendar" element={<CalendarIntegrationPage />} />
@@ -136,8 +136,8 @@ function App() {
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/analytics" element={<AnalyticsDashboard />} />
                 <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/events" element={<Events />} />
-                <Route path="/events-old" element={<EventsPage />} />
+                <Route path="/events" element={<EventsPage />} />
+                <Route path="/events-old" element={<Events />} />
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/email-preferences" element={<EmailPreferencesPage />} />
                 <Route path="/calendar" element={<CalendarIntegrationPage />} />
