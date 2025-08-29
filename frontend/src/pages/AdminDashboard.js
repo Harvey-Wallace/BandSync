@@ -102,6 +102,27 @@ function AdminDashboard() {
   });
   const [createCategoryLoading, setCreateCategoryLoading] = useState(false);
   
+  // Templates state
+  const [templates, setTemplates] = useState([]);
+  const [templatesLoading, setTemplatesLoading] = useState(false);
+  const [showCreateTemplate, setShowCreateTemplate] = useState(false);
+  const [editingTemplate, setEditingTemplate] = useState(null);
+  const [showEditTemplate, setShowEditTemplate] = useState(false);
+  const [newTemplate, setNewTemplate] = useState({
+    template_name: '',
+    description: '',
+    category_id: '',
+    default_location_address: '',
+    default_start_time: '',
+    default_end_time: '',
+    default_arrive_by_time: '',
+    default_rsvp_required: true,
+    default_rsvp_deadline_hours: 24,
+    default_reminder_hours: 24,
+    default_send_invitations: true
+  });
+  const [createTemplateLoading, setCreateTemplateLoading] = useState(false);
+  
   const [activeTab, setActiveTab] = useState('organization');
   
   // Email management state
@@ -1016,6 +1037,181 @@ function AdminDashboard() {
     }
   };
 
+  // Templates management functions
+  const loadTemplates = async () => {
+    try {
+      setTemplatesLoading(true);
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE_URL}/events/templates`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTemplates(data || []);
+      } else {
+        showErrorMessage('Failed to load templates');
+      }
+    } catch (error) {
+      console.error('Error loading templates:', error);
+      showErrorMessage('Error loading templates');
+    } finally {
+      setTemplatesLoading(false);
+    }
+  };
+
+  const handleCreateTemplate = async () => {
+    if (!newTemplate.template_name.trim()) {
+      showErrorMessage('Template name is required');
+      return;
+    }
+
+    setCreateTemplateLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      
+      const templateData = {
+        ...newTemplate,
+        template_name: newTemplate.template_name.trim(),
+        description: newTemplate.description.trim(),
+        category_id: newTemplate.category_id || null,
+        default_location_address: newTemplate.default_location_address.trim() || null,
+        default_start_time: newTemplate.default_start_time || null,
+        default_end_time: newTemplate.default_end_time || null,
+        default_arrive_by_time: newTemplate.default_arrive_by_time || null
+      };
+
+      const response = await fetch(`${API_BASE_URL}/events/templates`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(templateData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTemplates(prev => [...prev, data]);
+        setShowCreateTemplate(false);
+        resetTemplateForm();
+        showSuccessMessage('Template created successfully');
+      } else {
+        const errorData = await response.json();
+        showErrorMessage(errorData.error || 'Failed to create template');
+      }
+    } catch (error) {
+      console.error('Error creating template:', error);
+      showErrorMessage('Error creating template');
+    } finally {
+      setCreateTemplateLoading(false);
+    }
+  };
+
+  const handleEditTemplate = async () => {
+    if (!editingTemplate || !editingTemplate.template_name.trim()) {
+      showErrorMessage('Template name is required');
+      return;
+    }
+
+    setCreateTemplateLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      
+      const templateData = {
+        ...editingTemplate,
+        template_name: editingTemplate.template_name.trim(),
+        description: editingTemplate.description.trim(),
+        category_id: editingTemplate.category_id || null,
+        default_location_address: editingTemplate.default_location_address.trim() || null,
+        default_start_time: editingTemplate.default_start_time || null,
+        default_end_time: editingTemplate.default_end_time || null,
+        default_arrive_by_time: editingTemplate.default_arrive_by_time || null
+      };
+
+      const response = await fetch(`${API_BASE_URL}/events/templates/${editingTemplate.id}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(templateData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setTemplates(prev => prev.map(template => 
+          template.id === editingTemplate.id ? data : template
+        ));
+        setShowEditTemplate(false);
+        setEditingTemplate(null);
+        showSuccessMessage('Template updated successfully');
+      } else {
+        const errorData = await response.json();
+        showErrorMessage(errorData.error || 'Failed to update template');
+      }
+    } catch (error) {
+      console.error('Error updating template:', error);
+      showErrorMessage('Error updating template');
+    } finally {
+      setCreateTemplateLoading(false);
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId) => {
+    if (!window.confirm('Are you sure you want to delete this template? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE_URL}/events/templates/${templateId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        setTemplates(prev => prev.filter(template => template.id !== templateId));
+        showSuccessMessage('Template deleted successfully');
+      } else {
+        const errorData = await response.json();
+        showErrorMessage(errorData.error || 'Failed to delete template');
+      }
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      showErrorMessage('Error deleting template');
+    }
+  };
+
+  const resetTemplateForm = () => {
+    setNewTemplate({
+      template_name: '',
+      description: '',
+      category_id: '',
+      default_location_address: '',
+      default_start_time: '',
+      default_end_time: '',
+      default_arrive_by_time: '',
+      default_rsvp_required: true,
+      default_rsvp_deadline_hours: 24,
+      default_reminder_hours: 24,
+      default_send_invitations: true
+    });
+  };
+
+  const openEditTemplate = (template) => {
+    setEditingTemplate({ ...template });
+    setShowEditTemplate(true);
+  };
+
   useEffect(() => {
     fetchOrg();
     fetchUsers();
@@ -1025,7 +1221,13 @@ function AdminDashboard() {
     fetchScheduledJobs();
     fetchCalendarStats();
     fetchRsvpVisibilitySetting();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (activeTab === 'templates') {
+      loadTemplates();
+    }
+    if (activeTab === 'categories') {
+      loadCategories();
+    }
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     // Refresh data when tab changes
@@ -1086,6 +1288,14 @@ function AdminDashboard() {
               onClick={() => setActiveTab('categories')}
             >
               Event Categories
+            </button>
+          </li>
+          <li className="nav-item">
+            <button
+              className={`nav-link ${activeTab === 'templates' ? 'active' : ''}`}
+              onClick={() => setActiveTab('templates')}
+            >
+              Event Templates
             </button>
           </li>
           <li className="nav-item">
@@ -1961,6 +2171,122 @@ function AdminDashboard() {
           </div>
         )}
 
+        {/* Event Templates Tab */}
+        {activeTab === 'templates' && (
+          <div className="row">
+            <div className="col-12">
+              <div className="card">
+                <div className="card-header d-flex justify-content-between align-items-center">
+                  <h5 className="mb-0">
+                    <i className="bi bi-file-earmark-text me-2"></i>
+                    Event Templates
+                  </h5>
+                  <button
+                    className="btn btn-primary"
+                    onClick={() => setShowCreateTemplate(true)}
+                  >
+                    <i className="bi bi-plus-circle me-2"></i>
+                    Create Template
+                  </button>
+                </div>
+                <div className="card-body">
+                  {templatesLoading ? (
+                    <div className="text-center">
+                      <div className="spinner-border" role="status">
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                    </div>
+                  ) : templates.length === 0 ? (
+                    <div className="text-center text-muted">
+                      <i className="bi bi-file-earmark-text display-1 mb-3"></i>
+                      <p>No event templates found. Create your first template to quickly set up recurring events.</p>
+                    </div>
+                  ) : (
+                    <div className="table-responsive">
+                      <table className="table table-striped">
+                        <thead>
+                          <tr>
+                            <th>Name</th>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Default Location</th>
+                            <th>RSVP Required</th>
+                            <th>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {templates.map((template) => (
+                            <tr key={template.id}>
+                              <td>
+                                <strong>{template.template_name}</strong>
+                              </td>
+                              <td>
+                                {template.category ? (
+                                  <span className="badge" style={{ 
+                                    backgroundColor: template.category.color || '#007bff',
+                                    color: 'white'
+                                  }}>
+                                    {template.category.name}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted">No category</span>
+                                )}
+                              </td>
+                              <td>
+                                {template.description ? (
+                                  <span>{template.description.length > 50 ? 
+                                    template.description.substring(0, 50) + '...' : 
+                                    template.description}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted">No description</span>
+                                )}
+                              </td>
+                              <td>
+                                {template.default_location_address ? (
+                                  <span>{template.default_location_address.length > 30 ? 
+                                    template.default_location_address.substring(0, 30) + '...' : 
+                                    template.default_location_address}
+                                  </span>
+                                ) : (
+                                  <span className="text-muted">No default location</span>
+                                )}
+                              </td>
+                              <td>
+                                {template.default_rsvp_required ? (
+                                  <span className="badge bg-success">Yes</span>
+                                ) : (
+                                  <span className="badge bg-secondary">No</span>
+                                )}
+                              </td>
+                              <td>
+                                <button
+                                  className="btn btn-sm btn-outline-primary me-2"
+                                  onClick={() => openEditTemplate(template)}
+                                  title="Edit Template"
+                                >
+                                  <i className="bi bi-pencil"></i>
+                                </button>
+                                <button
+                                  className="btn btn-sm btn-outline-danger"
+                                  onClick={() => handleDeleteTemplate(template.id)}
+                                  title="Delete Template"
+                                >
+                                  <i className="bi bi-trash"></i>
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Add Existing User Modal */}
         {showAddExistingUser && (
           <div className="modal show d-block">
@@ -2499,6 +2825,416 @@ function AdminDashboard() {
                       className="btn btn-primary"
                     >
                       Update Category
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Create Template Modal */}
+        {showCreateTemplate && (
+          <div className="modal show d-block">
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Create Event Template</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => {
+                      setShowCreateTemplate(false);
+                      resetTemplateForm();
+                    }}
+                  ></button>
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); handleCreateTemplate(); }}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Template Name *</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={newTemplate.template_name}
+                            onChange={(e) => setNewTemplate({ ...newTemplate, template_name: e.target.value })}
+                            placeholder="Enter template name"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Category</label>
+                          <select
+                            className="form-select"
+                            value={newTemplate.category_id || ''}
+                            onChange={(e) => setNewTemplate({ ...newTemplate, category_id: e.target.value || null })}
+                          >
+                            <option value="">No category</option>
+                            {categories.map(category => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <label className="form-label">Description</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        value={newTemplate.description}
+                        onChange={(e) => setNewTemplate({ ...newTemplate, description: e.target.value })}
+                        placeholder="Enter template description (optional)"
+                      ></textarea>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Default Location</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={newTemplate.default_location_address}
+                        onChange={(e) => setNewTemplate({ ...newTemplate, default_location_address: e.target.value })}
+                        placeholder="Enter default location (optional)"
+                      />
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-4">
+                        <div className="mb-3">
+                          <label className="form-label">Default Start Time</label>
+                          <input
+                            type="time"
+                            className="form-control"
+                            value={newTemplate.default_start_time}
+                            onChange={(e) => setNewTemplate({ ...newTemplate, default_start_time: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-4">
+                        <div className="mb-3">
+                          <label className="form-label">Default End Time</label>
+                          <input
+                            type="time"
+                            className="form-control"
+                            value={newTemplate.default_end_time}
+                            onChange={(e) => setNewTemplate({ ...newTemplate, default_end_time: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-4">
+                        <div className="mb-3">
+                          <label className="form-label">Default Arrive By</label>
+                          <input
+                            type="time"
+                            className="form-control"
+                            value={newTemplate.default_arrive_by_time}
+                            onChange={(e) => setNewTemplate({ ...newTemplate, default_arrive_by_time: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id="rsvpRequired"
+                              checked={newTemplate.default_rsvp_required}
+                              onChange={(e) => setNewTemplate({ ...newTemplate, default_rsvp_required: e.target.checked })}
+                            />
+                            <label className="form-check-label" htmlFor="rsvpRequired">
+                              RSVP Required by Default
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id="sendInvitations"
+                              checked={newTemplate.default_send_invitations}
+                              onChange={(e) => setNewTemplate({ ...newTemplate, default_send_invitations: e.target.checked })}
+                            />
+                            <label className="form-check-label" htmlFor="sendInvitations">
+                              Send Invitations by Default
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">RSVP Deadline (hours before event)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={newTemplate.default_rsvp_deadline_hours}
+                            onChange={(e) => setNewTemplate({ ...newTemplate, default_rsvp_deadline_hours: parseInt(e.target.value) || 24 })}
+                            min="1"
+                            max="168"
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Reminder (hours before event)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={newTemplate.default_reminder_hours}
+                            onChange={(e) => setNewTemplate({ ...newTemplate, default_reminder_hours: parseInt(e.target.value) || 24 })}
+                            min="1"
+                            max="168"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setShowCreateTemplate(false);
+                        resetTemplateForm();
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={createTemplateLoading}
+                    >
+                      {createTemplateLoading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          Creating...
+                        </>
+                      ) : (
+                        'Create Template'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Template Modal */}
+        {showEditTemplate && editingTemplate && (
+          <div className="modal show d-block">
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Edit Event Template</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => {
+                      setShowEditTemplate(false);
+                      setEditingTemplate(null);
+                    }}
+                  ></button>
+                </div>
+                <form onSubmit={(e) => { e.preventDefault(); handleEditTemplate(); }}>
+                  <div className="modal-body">
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Template Name *</label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            value={editingTemplate.template_name}
+                            onChange={(e) => setEditingTemplate({ ...editingTemplate, template_name: e.target.value })}
+                            placeholder="Enter template name"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Category</label>
+                          <select
+                            className="form-select"
+                            value={editingTemplate.category_id || ''}
+                            onChange={(e) => setEditingTemplate({ ...editingTemplate, category_id: e.target.value || null })}
+                          >
+                            <option value="">No category</option>
+                            {categories.map(category => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <label className="form-label">Description</label>
+                      <textarea
+                        className="form-control"
+                        rows="3"
+                        value={editingTemplate.description}
+                        onChange={(e) => setEditingTemplate({ ...editingTemplate, description: e.target.value })}
+                        placeholder="Enter template description (optional)"
+                      ></textarea>
+                    </div>
+
+                    <div className="mb-3">
+                      <label className="form-label">Default Location</label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={editingTemplate.default_location_address}
+                        onChange={(e) => setEditingTemplate({ ...editingTemplate, default_location_address: e.target.value })}
+                        placeholder="Enter default location (optional)"
+                      />
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-4">
+                        <div className="mb-3">
+                          <label className="form-label">Default Start Time</label>
+                          <input
+                            type="time"
+                            className="form-control"
+                            value={editingTemplate.default_start_time}
+                            onChange={(e) => setEditingTemplate({ ...editingTemplate, default_start_time: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-4">
+                        <div className="mb-3">
+                          <label className="form-label">Default End Time</label>
+                          <input
+                            type="time"
+                            className="form-control"
+                            value={editingTemplate.default_end_time}
+                            onChange={(e) => setEditingTemplate({ ...editingTemplate, default_end_time: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-4">
+                        <div className="mb-3">
+                          <label className="form-label">Default Arrive By</label>
+                          <input
+                            type="time"
+                            className="form-control"
+                            value={editingTemplate.default_arrive_by_time}
+                            onChange={(e) => setEditingTemplate({ ...editingTemplate, default_arrive_by_time: e.target.value })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id="editRsvpRequired"
+                              checked={editingTemplate.default_rsvp_required}
+                              onChange={(e) => setEditingTemplate({ ...editingTemplate, default_rsvp_required: e.target.checked })}
+                            />
+                            <label className="form-check-label" htmlFor="editRsvpRequired">
+                              RSVP Required by Default
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <div className="form-check">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id="editSendInvitations"
+                              checked={editingTemplate.default_send_invitations}
+                              onChange={(e) => setEditingTemplate({ ...editingTemplate, default_send_invitations: e.target.checked })}
+                            />
+                            <label className="form-check-label" htmlFor="editSendInvitations">
+                              Send Invitations by Default
+                            </label>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">RSVP Deadline (hours before event)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={editingTemplate.default_rsvp_deadline_hours}
+                            onChange={(e) => setEditingTemplate({ ...editingTemplate, default_rsvp_deadline_hours: parseInt(e.target.value) || 24 })}
+                            min="1"
+                            max="168"
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label className="form-label">Reminder (hours before event)</label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            value={editingTemplate.default_reminder_hours}
+                            onChange={(e) => setEditingTemplate({ ...editingTemplate, default_reminder_hours: parseInt(e.target.value) || 24 })}
+                            min="1"
+                            max="168"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="modal-footer">
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setShowEditTemplate(false);
+                        setEditingTemplate(null);
+                      }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="btn btn-primary"
+                      disabled={createTemplateLoading}
+                    >
+                      {createTemplateLoading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          Updating...
+                        </>
+                      ) : (
+                        'Update Template'
+                      )}
                     </button>
                   </div>
                 </form>

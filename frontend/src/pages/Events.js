@@ -48,6 +48,23 @@ function Events() {
   const [templateLoading, setTemplateLoading] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
   
+  // Template creation state
+  const [showCreateTemplateForm, setShowCreateTemplateForm] = useState(false);
+  const [newTemplate, setNewTemplate] = useState({
+    template_name: '',
+    description: '',
+    category_id: '',
+    default_location_address: '',
+    default_start_time: '',
+    default_end_time: '',
+    default_arrive_by_time: '',
+    default_rsvp_required: true,
+    default_rsvp_deadline_hours: 24,
+    default_reminder_hours: 24,
+    default_send_invitations: true
+  });
+  const [createTemplateLoading, setCreateTemplateLoading] = useState(false);
+  
   // Enhanced RSVP Modal state
   const [showRsvpModal, setShowRsvpModal] = useState(false);
   const [currentRsvpEvent, setCurrentRsvpEvent] = useState(null);
@@ -793,6 +810,84 @@ function Events() {
     }
   };
 
+  // Template creation functions
+  const handleTemplateInputChange = (field, value) => {
+    setNewTemplate(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const resetTemplateForm = () => {
+    setNewTemplate({
+      template_name: '',
+      description: '',
+      category_id: '',
+      default_location_address: '',
+      default_start_time: '',
+      default_end_time: '',
+      default_arrive_by_time: '',
+      default_rsvp_required: true,
+      default_rsvp_deadline_hours: 24,
+      default_reminder_hours: 24,
+      default_send_invitations: true
+    });
+  };
+
+  const createTemplate = async () => {
+    if (!newTemplate.template_name.trim()) {
+      showErrorMessage('Please enter a template name');
+      return;
+    }
+
+    setCreateTemplateLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      
+      const templateData = {
+        ...newTemplate,
+        template_name: newTemplate.template_name.trim(),
+        description: newTemplate.description.trim(),
+        category_id: newTemplate.category_id || null,
+        default_location_address: newTemplate.default_location_address.trim() || null,
+        default_start_time: newTemplate.default_start_time || null,
+        default_end_time: newTemplate.default_end_time || null,
+        default_arrive_by_time: newTemplate.default_arrive_by_time || null
+      };
+
+      await axios.post(`${getApiUrl()}/events/templates`, templateData, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      showSuccessMessage('Template created successfully! 🎉');
+      
+      // Close modal and reset form
+      setShowCreateTemplateForm(false);
+      resetTemplateForm();
+      
+      // Refresh templates list
+      if (role === 'Admin' || role === 'admin' || role === 'super_admin') {
+        try {
+          const templatesResponse = await axios.get(`${getApiUrl()}/events/templates`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          setTemplates(templatesResponse.data);
+        } catch (error) {
+          console.error('Error reloading templates:', error);
+        }
+      }
+      
+    } catch (error) {
+      console.error('Error creating template:', error);
+      showErrorMessage(error.response?.data?.error || 'Failed to create template');
+    } finally {
+      setCreateTemplateLoading(false);
+    }
+  };
+
   // Delete event handler
   const handleDeleteEvent = async (event) => {
     if (!window.confirm(`Are you sure you want to delete "${event.title || event.name || 'this event'}"? This action cannot be undone.`)) {
@@ -925,6 +1020,19 @@ function Events() {
                           >
                             <i className="fas fa-file-alt me-2 text-success"></i>
                             Create from Template
+                          </button>
+                        </li>
+                        <li><hr className="dropdown-divider" /></li>
+                        <li>
+                          <button 
+                            className="dropdown-item" 
+                            onClick={() => {
+                              setShowCreateTemplateForm(true);
+                              setShowDropdown(false);
+                            }}
+                          >
+                            <i className="fas fa-save me-2 text-warning"></i>
+                            Create Template
                           </button>
                         </li>
                       </ul>
@@ -1610,6 +1718,257 @@ function Events() {
           </div>
         )}
         {selectedTemplate && <div className="modal-backdrop fade show"></div>}
+
+        {/* Create Template Modal */}
+        {showCreateTemplateForm && (
+          <div className="modal fade show" style={{ display: 'block' }} tabIndex="-1">
+            <div className="modal-dialog modal-lg">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">
+                    <i className="fas fa-save me-2"></i>
+                    Create Event Template
+                  </h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => {
+                      setShowCreateTemplateForm(false);
+                      resetTemplateForm();
+                    }}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <form>
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label htmlFor="template-name" className="form-label">
+                            <i className="fas fa-tag me-1"></i>
+                            Template Name *
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            id="template-name"
+                            value={newTemplate.template_name}
+                            onChange={(e) => handleTemplateInputChange('template_name', e.target.value)}
+                            placeholder="e.g., Weekly Rehearsal, Concert Performance"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label htmlFor="template-category" className="form-label">
+                            <i className="fas fa-folder me-1"></i>
+                            Category
+                          </label>
+                          <select
+                            className="form-select"
+                            id="template-category"
+                            value={newTemplate.category_id}
+                            onChange={(e) => handleTemplateInputChange('category_id', e.target.value)}
+                          >
+                            <option value="">Select category (optional)</option>
+                            {categories.map(category => (
+                              <option key={category.id} value={category.id}>
+                                {category.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mb-3">
+                      <label htmlFor="template-description" className="form-label">
+                        <i className="fas fa-align-left me-1"></i>
+                        Description
+                      </label>
+                      <textarea
+                        className="form-control"
+                        id="template-description"
+                        rows="3"
+                        value={newTemplate.description}
+                        onChange={(e) => handleTemplateInputChange('description', e.target.value)}
+                        placeholder="Describe what this template is for..."
+                      />
+                    </div>
+
+                    <div className="mb-3">
+                      <label htmlFor="template-location" className="form-label">
+                        <i className="fas fa-map-marker-alt me-1"></i>
+                        Default Location
+                      </label>
+                      <input
+                        type="text"
+                        className="form-control"
+                        id="template-location"
+                        value={newTemplate.default_location_address}
+                        onChange={(e) => handleTemplateInputChange('default_location_address', e.target.value)}
+                        placeholder="Default location for events created from this template"
+                      />
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-4">
+                        <div className="mb-3">
+                          <label htmlFor="template-arrive-time" className="form-label">
+                            <i className="fas fa-clock me-1"></i>
+                            Arrive By Time
+                          </label>
+                          <input
+                            type="time"
+                            className="form-control"
+                            id="template-arrive-time"
+                            value={newTemplate.default_arrive_by_time}
+                            onChange={(e) => handleTemplateInputChange('default_arrive_by_time', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-4">
+                        <div className="mb-3">
+                          <label htmlFor="template-start-time" className="form-label">
+                            <i className="fas fa-play me-1"></i>
+                            Start Time
+                          </label>
+                          <input
+                            type="time"
+                            className="form-control"
+                            id="template-start-time"
+                            value={newTemplate.default_start_time}
+                            onChange={(e) => handleTemplateInputChange('default_start_time', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-4">
+                        <div className="mb-3">
+                          <label htmlFor="template-end-time" className="form-label">
+                            <i className="fas fa-stop me-1"></i>
+                            End Time
+                          </label>
+                          <input
+                            type="time"
+                            className="form-control"
+                            id="template-end-time"
+                            value={newTemplate.default_end_time}
+                            onChange={(e) => handleTemplateInputChange('default_end_time', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label htmlFor="template-rsvp-deadline" className="form-label">
+                            <i className="fas fa-calendar-check me-1"></i>
+                            RSVP Deadline (hours before)
+                          </label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            id="template-rsvp-deadline"
+                            value={newTemplate.default_rsvp_deadline_hours}
+                            onChange={(e) => handleTemplateInputChange('default_rsvp_deadline_hours', parseInt(e.target.value))}
+                            min="1"
+                            max="168"
+                          />
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="mb-3">
+                          <label htmlFor="template-reminder" className="form-label">
+                            <i className="fas fa-bell me-1"></i>
+                            Reminder (hours before)
+                          </label>
+                          <input
+                            type="number"
+                            className="form-control"
+                            id="template-reminder"
+                            value={newTemplate.default_reminder_hours}
+                            onChange={(e) => handleTemplateInputChange('default_reminder_hours', parseInt(e.target.value))}
+                            min="1"
+                            max="168"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="form-check mb-3">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="template-rsvp-required"
+                            checked={newTemplate.default_rsvp_required}
+                            onChange={(e) => handleTemplateInputChange('default_rsvp_required', e.target.checked)}
+                          />
+                          <label className="form-check-label" htmlFor="template-rsvp-required">
+                            RSVP Required
+                          </label>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="form-check mb-3">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id="template-send-invitations"
+                            checked={newTemplate.default_send_invitations}
+                            onChange={(e) => handleTemplateInputChange('default_send_invitations', e.target.checked)}
+                          />
+                          <label className="form-check-label" htmlFor="template-send-invitations">
+                            Send Invitations by Default
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="alert alert-info">
+                      <i className="fas fa-info-circle me-2"></i>
+                      <strong>Template Usage:</strong> Once created, this template will be available in the "Create from Template" option. When using the template, you'll be able to set the specific date and override any defaults as needed.
+                    </div>
+                  </form>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setShowCreateTemplateForm(false);
+                      resetTemplateForm();
+                    }}
+                    disabled={createTemplateLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-warning"
+                    onClick={createTemplate}
+                    disabled={createTemplateLoading || !newTemplate.template_name.trim()}
+                  >
+                    {createTemplateLoading ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2"></span>
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <i className="fas fa-save me-1"></i>
+                        Create Template
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        {showCreateTemplateForm && <div className="modal-backdrop fade show"></div>}
       </div>
     </div>
   );
