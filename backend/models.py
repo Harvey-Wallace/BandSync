@@ -283,6 +283,7 @@ class Event(db.Model):
     # Event template support
     is_template = db.Column(db.Boolean, default=False)
     template_name = db.Column(db.String(120), nullable=True)
+    template_id = db.Column(db.Integer, db.ForeignKey('event_template.id'), nullable=True)  # Link to template used
     
     # Notification settings
     send_reminders = db.Column(db.Boolean, default=True)
@@ -311,6 +312,80 @@ class Event(db.Model):
     creator = db.relationship('User', foreign_keys=[created_by], backref='created_events', lazy=True)
     canceller = db.relationship('User', foreign_keys=[cancelled_by], backref='cancelled_events', lazy=True)
     possible_dates = db.relationship('EventPossibleDate', backref='event', cascade='all, delete-orphan', lazy=True)
+
+
+class EventTemplate(db.Model):
+    """Model for reusable event templates to streamline event creation"""
+    __tablename__ = 'event_template'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    
+    # Event defaults
+    default_title = db.Column(db.String(120), nullable=True)
+    default_description = db.Column(db.Text, nullable=True)
+    default_duration_hours = db.Column(db.Integer, default=2)
+    
+    # Location defaults
+    default_location_address = db.Column(db.Text, nullable=True)
+    default_location_lat = db.Column(db.Float, nullable=True)
+    default_location_lng = db.Column(db.Float, nullable=True)
+    default_location_place_id = db.Column(db.String(255), nullable=True)
+    
+    # Time defaults
+    default_arrive_by_offset = db.Column(db.Integer, default=15)  # Minutes before start_time
+    default_start_time = db.Column(db.Time, nullable=True)  # Default start time
+    
+    # Settings defaults
+    default_rsvp_required = db.Column(db.Boolean, default=True)
+    default_send_reminders = db.Column(db.Boolean, default=True)
+    default_reminder_days_before = db.Column(db.Integer, default=1)
+    
+    # Categorization
+    category_id = db.Column(db.Integer, db.ForeignKey('event_category.id'), nullable=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False)
+    
+    # Usage tracking
+    usage_count = db.Column(db.Integer, default=0)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_by = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    creator = db.relationship('User', foreign_keys=[created_by], backref='created_templates', lazy=True)
+    events = db.relationship('Event', backref='template', foreign_keys='Event.template_id', lazy=True)
+    
+    # Unique constraint: template name must be unique per organization
+    __table_args__ = (db.UniqueConstraint('name', 'organization_id'),)
+    
+    def to_dict(self):
+        """Convert template to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'default_title': self.default_title,
+            'default_description': self.default_description,
+            'default_duration_hours': self.default_duration_hours,
+            'default_location_address': self.default_location_address,
+            'default_location_lat': self.default_location_lat,
+            'default_location_lng': self.default_location_lng,
+            'default_location_place_id': self.default_location_place_id,
+            'default_arrive_by_offset': self.default_arrive_by_offset,
+            'default_start_time': self.default_start_time.strftime('%H:%M') if self.default_start_time else None,
+            'default_rsvp_required': self.default_rsvp_required,
+            'default_send_reminders': self.default_send_reminders,
+            'default_reminder_days_before': self.default_reminder_days_before,
+            'category_id': self.category_id,
+            'usage_count': self.usage_count,
+            'is_active': self.is_active,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None
+        }
 
 
 class EventPossibleDate(db.Model):

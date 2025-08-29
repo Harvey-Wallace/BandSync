@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify, make_response
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-from models import Event, RSVP, EventCategory, User, UserOrganization, Organization, db
+from models import Event, RSVP, EventCategory, User, UserOrganization, Organization, EventTemplate, db
 from datetime import datetime, timedelta
 import csv
 import io
@@ -1454,3 +1454,292 @@ def download_event_rsvp_pdf(event_id):
         return jsonify({'msg': 'PDF service not available. Please install reportlab: pip install reportlab'}), 500
     except Exception as e:
         return jsonify({'msg': f'Error generating PDF: {str(e)}'}), 500
+
+
+# =====================
+# ADVANCED EVENT TEMPLATE ROUTES
+# =====================
+
+@events_bp.route('/advanced-templates', methods=['GET'])
+@jwt_required()
+def get_advanced_event_templates():
+    """Get all advanced event templates for the user's organization"""
+    try:
+        claims = get_jwt()
+        org_id = claims.get('organization_id')
+        
+        templates = EventTemplate.query.filter_by(
+            organization_id=org_id,
+            is_active=True
+        ).order_by(EventTemplate.name).all()
+        
+        return jsonify({
+            'templates': [template.to_dict() for template in templates]
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'msg': f'Error fetching templates: {str(e)}'}), 500
+
+
+@events_bp.route('/advanced-templates', methods=['POST'])
+@jwt_required()
+def create_advanced_event_template():
+    """Create a new advanced event template"""
+    try:
+        claims = get_jwt()
+        org_id = claims.get('organization_id')
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        # Check for required fields
+        if not data.get('name'):
+            return jsonify({'msg': 'Template name is required'}), 400
+        
+        # Check if template name already exists in organization
+        existing = EventTemplate.query.filter_by(
+            name=data['name'],
+            organization_id=org_id
+        ).first()
+        
+        if existing:
+            return jsonify({'msg': 'Template name already exists'}), 409
+        
+        # Create new template
+        template = EventTemplate(
+            name=data['name'],
+            description=data.get('description'),
+            default_title=data.get('default_title'),
+            default_description=data.get('default_description'),
+            default_duration_hours=data.get('default_duration_hours', 2),
+            default_location_address=data.get('default_location_address'),
+            default_location_lat=data.get('default_location_lat'),
+            default_location_lng=data.get('default_location_lng'),
+            default_location_place_id=data.get('default_location_place_id'),
+            default_arrive_by_offset=data.get('default_arrive_by_offset', 15),
+            default_start_time=datetime.strptime(data['default_start_time'], '%H:%M').time() if data.get('default_start_time') else None,
+            default_rsvp_required=data.get('default_rsvp_required', True),
+            default_send_reminders=data.get('default_send_reminders', True),
+            default_reminder_days_before=data.get('default_reminder_days_before', 1),
+            category_id=data.get('category_id'),
+            organization_id=org_id,
+            created_by=user_id
+        )
+        
+        db.session.add(template)
+        db.session.commit()
+        
+        return jsonify({
+            'msg': 'Template created successfully',
+            'template': template.to_dict()
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'msg': f'Error creating template: {str(e)}'}), 500
+
+
+@events_bp.route('/advanced-templates/<int:template_id>', methods=['GET'])
+@jwt_required()
+def get_advanced_event_template(template_id):
+    """Get a specific advanced event template"""
+    try:
+        claims = get_jwt()
+        org_id = claims.get('organization_id')
+        
+        template = EventTemplate.query.filter_by(
+            id=template_id,
+            organization_id=org_id
+        ).first()
+        
+        if not template:
+            return jsonify({'msg': 'Template not found'}), 404
+        
+        return jsonify({'template': template.to_dict()}), 200
+        
+    except Exception as e:
+        return jsonify({'msg': f'Error fetching template: {str(e)}'}), 500
+
+
+@events_bp.route('/advanced-templates/<int:template_id>', methods=['PUT'])
+@jwt_required()
+def update_advanced_event_template(template_id):
+    """Update an advanced event template"""
+    try:
+        claims = get_jwt()
+        org_id = claims.get('organization_id')
+        data = request.get_json()
+        
+        template = EventTemplate.query.filter_by(
+            id=template_id,
+            organization_id=org_id
+        ).first()
+        
+        if not template:
+            return jsonify({'msg': 'Template not found'}), 404
+        
+        # Check if template name already exists (excluding current template)
+        if data.get('name') and data['name'] != template.name:
+            existing = EventTemplate.query.filter_by(
+                name=data['name'],
+                organization_id=org_id
+            ).filter(EventTemplate.id != template_id).first()
+            
+            if existing:
+                return jsonify({'msg': 'Template name already exists'}), 409
+        
+        # Update fields
+        if 'name' in data:
+            template.name = data['name']
+        if 'description' in data:
+            template.description = data['description']
+        if 'default_title' in data:
+            template.default_title = data['default_title']
+        if 'default_description' in data:
+            template.default_description = data['default_description']
+        if 'default_duration_hours' in data:
+            template.default_duration_hours = data['default_duration_hours']
+        if 'default_location_address' in data:
+            template.default_location_address = data['default_location_address']
+        if 'default_location_lat' in data:
+            template.default_location_lat = data['default_location_lat']
+        if 'default_location_lng' in data:
+            template.default_location_lng = data['default_location_lng']
+        if 'default_location_place_id' in data:
+            template.default_location_place_id = data['default_location_place_id']
+        if 'default_arrive_by_offset' in data:
+            template.default_arrive_by_offset = data['default_arrive_by_offset']
+        if 'default_start_time' in data:
+            template.default_start_time = datetime.strptime(data['default_start_time'], '%H:%M').time() if data['default_start_time'] else None
+        if 'default_rsvp_required' in data:
+            template.default_rsvp_required = data['default_rsvp_required']
+        if 'default_send_reminders' in data:
+            template.default_send_reminders = data['default_send_reminders']
+        if 'default_reminder_days_before' in data:
+            template.default_reminder_days_before = data['default_reminder_days_before']
+        if 'category_id' in data:
+            template.category_id = data['category_id']
+        if 'is_active' in data:
+            template.is_active = data['is_active']
+        
+        template.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'msg': 'Template updated successfully',
+            'template': template.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'msg': f'Error updating template: {str(e)}'}), 500
+
+
+@events_bp.route('/advanced-templates/<int:template_id>', methods=['DELETE'])
+@jwt_required()
+def delete_advanced_event_template(template_id):
+    """Delete an advanced event template (soft delete)"""
+    try:
+        claims = get_jwt()
+        org_id = claims.get('organization_id')
+        
+        template = EventTemplate.query.filter_by(
+            id=template_id,
+            organization_id=org_id
+        ).first()
+        
+        if not template:
+            return jsonify({'msg': 'Template not found'}), 404
+        
+        # Soft delete by setting is_active to False
+        template.is_active = False
+        template.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({'msg': 'Template deleted successfully'}), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'msg': f'Error deleting template: {str(e)}'}), 500
+
+
+@events_bp.route('/from-advanced-template/<int:template_id>', methods=['POST'])
+@jwt_required()
+def create_from_advanced_template(template_id):
+    """Create a new event from an advanced template"""
+    try:
+        claims = get_jwt()
+        org_id = claims.get('organization_id')
+        user_id = get_jwt_identity()
+        data = request.get_json()
+        
+        template = EventTemplate.query.filter_by(
+            id=template_id,
+            organization_id=org_id,
+            is_active=True
+        ).first()
+        
+        if not template:
+            return jsonify({'msg': 'Template not found'}), 404
+        
+        # Get the event date from request (required)
+        if not data.get('date'):
+            return jsonify({'msg': 'Event date is required'}), 400
+        
+        try:
+            event_date = datetime.fromisoformat(data['date'].replace('Z', '+00:00'))
+        except:
+            return jsonify({'msg': 'Invalid date format'}), 400
+        
+        # Calculate times based on template defaults
+        start_time = template.default_start_time if template.default_start_time else None
+        arrive_by_time = None
+        end_time = None
+        
+        if start_time:
+            # Calculate arrive_by_time
+            start_datetime = datetime.combine(event_date.date(), start_time)
+            arrive_by_datetime = start_datetime - timedelta(minutes=template.default_arrive_by_offset)
+            arrive_by_time = arrive_by_datetime.time()
+            
+            # Calculate end_time
+            end_datetime = start_datetime + timedelta(hours=template.default_duration_hours)
+            end_time = end_datetime.time()
+        
+        # Create new event from template
+        event = Event(
+            title=data.get('title', template.default_title),
+            description=data.get('description', template.default_description),
+            date=event_date,
+            arrive_by_time=arrive_by_time,
+            start_time=start_time,
+            end_time=end_time,
+            location_address=data.get('location_address', template.default_location_address),
+            location_lat=data.get('location_lat', template.default_location_lat),
+            location_lng=data.get('location_lng', template.default_location_lng),
+            location_place_id=data.get('location_place_id', template.default_location_place_id),
+            category_id=template.category_id,
+            template_id=template_id,  # Link back to template
+            send_reminders=template.default_send_reminders,
+            reminder_days_before=template.default_reminder_days_before,
+            organization_id=org_id,
+            created_by=user_id
+        )
+        
+        db.session.add(event)
+        
+        # Increment template usage count
+        template.usage_count = (template.usage_count or 0) + 1
+        template.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        return jsonify({
+            'msg': 'Event created from template successfully',
+            'event_id': event.id
+        }), 201
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'msg': f'Error creating event from template: {str(e)}'}), 500
