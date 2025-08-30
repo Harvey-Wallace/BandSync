@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Button, Alert, Modal } from 'react-bootstrap';
 import Navbar from '../components/Navbar';
 import NotificationSystem from '../components/NotificationSystem';
+import { ActivityFeed, CompactActivityFeed } from '../components/ActivityFeed';
 import { getApiUrl } from '../utils/apiUrl';
 import axios from 'axios';
 
@@ -258,6 +259,47 @@ const Dashboard = () => {
                                                     ⚙️ Admin Panel
                                                 </Button>
                                             )}
+                                        </div>
+                                    </Card.Body>
+                                </Card>
+                            </Col>
+                        </Row>
+
+                        {/* Live Activity Feed */}
+                        <Row className="mt-4">
+                            <Col lg={8}>
+                                {/* Compact Activity Alert */}
+                                <CompactActivityFeed />
+                                
+                                {/* Full Activity Feed */}
+                                <ActivityFeed 
+                                  className="mb-4" 
+                                  maxHeight="300px" 
+                                />
+                            </Col>
+                            <Col lg={4}>
+                                <Card className="mb-4">
+                                    <Card.Header>
+                                        <Card.Title className="mb-0">📊 Quick Stats</Card.Title>
+                                    </Card.Header>
+                                    <Card.Body>
+                                        <div className="d-flex justify-content-between align-items-center mb-2">
+                                            <span>Upcoming Events:</span>
+                                            <span className="badge bg-primary">{events.length}</span>
+                                        </div>
+                                        <div className="d-flex justify-content-between align-items-center mb-2">
+                                            <span>Your Role:</span>
+                                            <span className="badge bg-secondary">{user?.role || 'Member'}</span>
+                                        </div>
+                                        <hr />
+                                        <div className="d-grid">
+                                            <Button 
+                                                variant="outline-info" 
+                                                size="sm"
+                                                onClick={() => window.location.href = '/analytics'}
+                                            >
+                                                📈 View Analytics
+                                            </Button>
                                         </div>
                                     </Card.Body>
                                 </Card>

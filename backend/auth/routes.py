@@ -215,6 +215,11 @@ def login():
         )
         refresh_token = create_refresh_token(identity=str(user.id))
         
+        # Track login activity
+        from activity_tracker import track_user_login
+        if selected_org:
+            track_user_login(user.id, selected_org.id)
+        
         return jsonify({
             'access_token': access_token,
             'refresh_token': refresh_token,

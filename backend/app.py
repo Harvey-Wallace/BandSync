@@ -220,6 +220,10 @@ jwt = JWTManager(app)
 # Initialize WebSocket support
 socketio = init_websocket(app)
 
+# Initialize Activity Tracker
+from activity_tracker import ActivityTracker
+app.activity_tracker = ActivityTracker(db, socketio.notification_manager)
+
 # Initialize scheduled tasks
 from services.scheduled_tasks import task_service
 task_service.init_app(app)

@@ -5,6 +5,7 @@ import EventForm from '../components/EventForm';
 import EnhancedEventForm from '../components/EnhancedEventForm';
 import EventDateVoting from '../components/EventDateVoting';
 import EnhancedRSVPModal from '../components/EnhancedRSVPModal';
+import { CompactActivityFeed } from '../components/ActivityFeed';
 import { 
   DataLoadingState, 
   ErrorState, 
@@ -1132,6 +1133,13 @@ function Events() {
             </div>
           </div>
         </header>
+
+        {/* Live Activity Feed */}
+        <div className="row mb-3">
+          <div className="col-12">
+            <CompactActivityFeed />
+          </div>
+        </div>
 
         {/* Filter Tabs */}
         <nav className="row mb-3" aria-label="Event filter navigation">

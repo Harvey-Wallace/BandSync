@@ -27,6 +27,7 @@ export const WebSocketProvider = ({ children }) => {
   const [onRSVPUpdate, setOnRSVPUpdate] = useState(() => () => {});
   const [onEventCreated, setOnEventCreated] = useState(() => () => {});
   const [onEventUpdated, setOnEventUpdated] = useState(() => () => {});
+  const [eventHandlers, setEventHandlers] = useState({}); // Generic event handlers
 
   const connectSocket = useCallback(() => {
     const token = localStorage.getItem('token');
@@ -135,6 +136,26 @@ export const WebSocketProvider = ({ children }) => {
       }
     });
 
+    // Member activity handler
+    newSocket.on('member_activity', (data) => {
+      console.log('Member activity received:', data);
+      
+      // Call generic event handler if registered
+      if (eventHandlers.member_activity) {
+        eventHandlers.member_activity(data);
+      }
+      
+      // Also add as notification for important activities
+      if (data.activity && ['high', 'medium'].includes(data.activity.priority)) {
+        addNotification({
+          type: 'activity',
+          message: data.message,
+          data: data,
+          timestamp: data.activity.timestamp
+        });
+      }
+    });
+
     // Keepalive ping/pong
     newSocket.on('pong', (data) => {
       console.log('Pong received:', data);
@@ -209,6 +230,14 @@ export const WebSocketProvider = ({ children }) => {
     setOnEventUpdated(() => handler);
   }, []);
 
+  // Generic event handler registration
+  const registerEventHandler = useCallback((eventType, handler) => {
+    setEventHandlers(prev => ({
+      ...prev,
+      [eventType]: handler
+    }));
+  }, []);
+
   // Send ping for keepalive
   const sendPing = useCallback(() => {
     if (socket && isConnected) {
@@ -265,6 +294,7 @@ export const WebSocketProvider = ({ children }) => {
     registerRSVPHandler,
     registerEventCreatedHandler,
     registerEventUpdatedHandler,
+    registerEventHandler, // Generic event handler registration
     
     // Utility
     sendPing

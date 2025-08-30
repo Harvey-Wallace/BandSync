@@ -435,6 +435,13 @@ def create_event():
         # Don't fail event creation if notification fails
         print(f"Error sending event creation notification: {str(e)}")
     
+    # Track event creation activity for member feed
+    try:
+        from activity_tracker import track_event_action
+        track_event_action(user_id, org_id, 'created', event.title)
+    except Exception as e:
+        print(f"Error tracking event creation activity: {str(e)}")
+    
     # Create recurring events if specified
     if event.is_recurring and not event.is_template:
         create_recurring_events(event)
@@ -732,6 +739,17 @@ def rsvp_event(event_id):
     except Exception as e:
         # Don't fail the RSVP if notification fails
         print(f"Error sending RSVP notification: {str(e)}")
+    
+    # Track RSVP activity for member feed
+    try:
+        from activity_tracker import track_rsvp_update
+        from models import Event, User
+        event = Event.query.get(event_id)
+        user = User.query.get(user_id)
+        if event and user and user.organization_id:
+            track_rsvp_update(user_id, user.organization_id, event.title, status)
+    except Exception as e:
+        print(f"Error tracking RSVP activity: {str(e)}")
     
     # Track RSVP change for admin notifications
     try:
