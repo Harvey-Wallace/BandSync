@@ -51,7 +51,12 @@ export const WebSocketProvider = ({ children }) => {
       },
       transports: ['websocket', 'polling'],
       timeout: 10000,
-      forceNew: true
+      forceNew: true,
+      // Reduce aggressive reconnection behavior
+      reconnection: true,
+      reconnectionDelay: 5000, // Wait 5 seconds before reconnecting
+      reconnectionDelayMax: 30000, // Max 30 seconds between reconnections
+      maxReconnectionAttempts: 10 // Limit reconnection attempts
     });
 
     // Connection event handlers
@@ -79,11 +84,7 @@ export const WebSocketProvider = ({ children }) => {
     // Confirmation and status handlers
     newSocket.on('connection_confirmed', (data) => {
       console.log('Connection confirmed:', data);
-      addNotification({
-        type: 'info',
-        message: 'Real-time notifications connected',
-        timestamp: new Date().toISOString()
-      });
+      // Don't show notification for routine connections to prevent spam
     });
 
     newSocket.on('notification_status', (data) => {
@@ -145,15 +146,24 @@ export const WebSocketProvider = ({ children }) => {
         eventHandlers.member_activity(data);
       }
       
-      // Also add as notification for important activities
-      if (data.activity && ['high', 'medium'].includes(data.activity.priority)) {
+      // Only add high-priority activities as notifications with sounds
+      if (data.activity && data.activity.priority === 'high') {
         addNotification({
           type: 'activity',
           message: data.message,
           data: data,
           timestamp: data.activity.timestamp
         });
+      } else if (data.activity && data.activity.priority === 'medium') {
+        // Medium priority activities are silent notifications
+        addNotification({
+          type: 'activity',
+          message: data.message,
+          data: data,
+          timestamp: data.activity.timestamp
+        }, true); // Silent notification
       }
+      // Low priority activities don't create notifications at all
     });
 
     // Keepalive ping/pong
@@ -177,7 +187,7 @@ export const WebSocketProvider = ({ children }) => {
     }
   }, [socket]);
 
-  const addNotification = useCallback((notification) => {
+  const addNotification = useCallback((notification, silent = false) => {
     const notificationWithId = {
       ...notification,
       id: Date.now() + Math.random(),
@@ -186,8 +196,8 @@ export const WebSocketProvider = ({ children }) => {
     
     setNotifications(prev => [notificationWithId, ...prev.slice(0, 49)]); // Keep last 50 notifications
     
-    // Show browser notification if permission granted
-    if (Notification.permission === 'granted') {
+    // Show browser notification if permission granted and not silent
+    if (!silent && Notification.permission === 'granted') {
       new Notification(notification.message, {
         icon: '/favicon.ico',
         badge: '/favicon.ico',
@@ -256,7 +266,7 @@ export const WebSocketProvider = ({ children }) => {
   // Setup keepalive ping
   useEffect(() => {
     if (isConnected) {
-      const pingInterval = setInterval(sendPing, 30000); // Ping every 30 seconds
+      const pingInterval = setInterval(sendPing, 60000); // Ping every 60 seconds to reduce connection noise
       return () => clearInterval(pingInterval);
     }
   }, [isConnected, sendPing]);
