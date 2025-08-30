@@ -4,7 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useOrganization } from '../contexts/OrganizationContext';
 import { useWebSocket } from '../contexts/WebSocketContext';
 import { NotificationBell, NotificationCenter } from './NotificationComponents';
-import { UserAvatar } from './UserAvatar';
+import UserAvatar from './UserAvatar';
 import OrganizationSwitcher from './OrganizationSwitcher';
 import { getApiUrl } from '../utils/apiUrl';
 
