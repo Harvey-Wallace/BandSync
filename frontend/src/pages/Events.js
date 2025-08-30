@@ -1068,7 +1068,7 @@ function Events() {
                     )}
                   </div>
                 )}
-                <a href="/analytics" className="btn btn-outline-primary w-100 w-md-auto">
+                <a href="/analytics" className="btn btn-outline-primary">
                   <i className="fas fa-chart-line me-2"></i>
                   <span className="d-none d-sm-inline">Analytics Dashboard</span>
                   <span className="d-inline d-sm-none">Analytics</span>
