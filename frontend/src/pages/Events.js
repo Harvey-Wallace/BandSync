@@ -16,6 +16,7 @@ import {
 } from '../components/ResponsiveComponents';
 import UserAvatar from '../components/UserAvatar';
 import { useTheme } from '../contexts/ThemeContext';
+import { useWebSocket } from '../contexts/WebSocketContext';
 import { getGoogleMapsApiKey } from '../config/constants';
 import { getApiUrl } from '../utils/apiUrl';
 import axios from 'axios';
@@ -70,6 +71,7 @@ function Events() {
   const [currentRsvpEvent, setCurrentRsvpEvent] = useState(null);
   
   const { orgThemeColor } = useTheme();
+  const { registerRSVPHandler, registerEventCreatedHandler } = useWebSocket();
   const role = localStorage.getItem('role');
 
   // Enhanced notification functions
@@ -221,6 +223,59 @@ function Events() {
 
     fetchData();
   }, [role]);
+
+  // WebSocket handlers for real-time updates
+  useEffect(() => {
+    const handleRSVPUpdate = (data) => {
+      console.log('Real-time RSVP update received:', data);
+      
+      if (data.event_id && data.user_id) {
+        // Update the RSVP state
+        setRsvps(prev => ({
+          ...prev,
+          [data.event_id]: data.rsvp_status
+        }));
+
+        // Update RSVP details if available
+        if (data.rsvp_details) {
+          setRsvpDetails(prev => ({
+            ...prev,
+            [data.event_id]: data.rsvp_details
+          }));
+        }
+
+        // Update all RSVPs for this event
+        if (data.all_rsvps) {
+          setAllRsvps(prev => ({
+            ...prev,
+            [data.event_id]: data.all_rsvps
+          }));
+        }
+
+        // Show success message
+        showInfoMessage(data.message || 'RSVP updated in real-time');
+      }
+    };
+
+    const handleEventCreated = (data) => {
+      console.log('Real-time event created notification:', data);
+      
+      if (data.event) {
+        // Add the new event to the list
+        setEvents(prev => [data.event, ...prev]);
+        showSuccessMessage(data.message || 'New event created');
+      }
+    };
+
+    // Register WebSocket handlers
+    registerRSVPHandler(handleRSVPUpdate);
+    registerEventCreatedHandler(handleEventCreated);
+
+    return () => {
+      // Cleanup - handlers will be overridden by next registration
+      console.log('Events page WebSocket handlers cleanup');
+    };
+  }, [registerRSVPHandler, registerEventCreatedHandler, showInfoMessage, showSuccessMessage]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

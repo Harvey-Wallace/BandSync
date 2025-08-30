@@ -427,6 +427,14 @@ def create_event():
     
     db.session.commit()
     
+    # Send real-time notification for new event
+    try:
+        from websocket_manager import notify_event_created
+        notify_event_created(event.id, event.title, user_id, org_id)
+    except Exception as e:
+        # Don't fail event creation if notification fails
+        print(f"Error sending event creation notification: {str(e)}")
+    
     # Create recurring events if specified
     if event.is_recurring and not event.is_template:
         create_recurring_events(event)
@@ -713,6 +721,17 @@ def rsvp_event(event_id):
         db.session.add(rsvp)
     
     db.session.commit()
+    
+    # Send real-time notification for RSVP update
+    try:
+        from websocket_manager import notify_rsvp_update
+        from models import Event
+        event = Event.query.get(event_id)
+        if event:
+            notify_rsvp_update(event_id, user_id, status, event.title)
+    except Exception as e:
+        # Don't fail the RSVP if notification fails
+        print(f"Error sending RSVP notification: {str(e)}")
     
     # Track RSVP change for admin notifications
     try:

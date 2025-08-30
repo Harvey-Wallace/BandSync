@@ -1,9 +1,11 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
-import UserAvatar from './UserAvatar';
-import OrganizationSwitcher from './OrganizationSwitcher';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useTheme } from '../contexts/ThemeContext';
 import { useOrganization } from '../contexts/OrganizationContext';
+import { useWebSocket } from '../contexts/WebSocketContext';
+import { NotificationBell, NotificationCenter } from './NotificationComponents';
+import { UserAvatar } from './UserAvatar';
+import OrganizationSwitcher from './OrganizationSwitcher';
 import { getApiUrl } from '../utils/apiUrl';
 
 function Navbar() {
@@ -14,6 +16,7 @@ function Navbar() {
   const { currentOrganization } = useOrganization();
   const [orgLogo, setOrgLogo] = useState('');
   const [showProfile, setShowProfile] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
@@ -150,9 +153,15 @@ function Navbar() {
 
   const toggleProfile = () => {
     setShowProfile(!showProfile);
+    if (showNotifications) setShowNotifications(false); // Close notifications when opening profile
     if (!showProfile) {
       loadProfileData(); // Refresh profile data when opening
     }
+  };
+
+  const toggleNotifications = () => {
+    setShowNotifications(!showNotifications);
+    if (showProfile) setShowProfile(false); // Close profile when opening notifications
   };
 
   // Add window click listener to close profile bubble
@@ -271,6 +280,9 @@ function Navbar() {
           </ul>
           
           <div className="d-flex align-items-center gap-2">
+            {/* Notification Bell */}
+            <NotificationBell onClick={toggleNotifications} />
+            
             {/* User Avatar and Menu */}
             <div className="position-relative">
               <button 
@@ -366,6 +378,12 @@ function Navbar() {
           </div>
         </div>
       )}
+
+      {/* Notification Center */}
+      <NotificationCenter 
+        isOpen={showNotifications} 
+        onClose={() => setShowNotifications(false)} 
+      />
     </nav>
   );
 }

@@ -9,6 +9,9 @@ load_dotenv()
 # Import models and db
 from models import db, User, Event, RSVP, Organization
 
+# Import WebSocket manager
+from websocket_manager import init_websocket
+
 # Auto-migration for Railway
 def auto_migrate_password_reset():
     """Automatically add password reset fields on app startup"""
@@ -213,6 +216,9 @@ app.url_map.strict_slashes = False
 CORS(app)
 db.init_app(app)
 jwt = JWTManager(app)
+
+# Initialize WebSocket support
+socketio = init_websocket(app)
 
 # Initialize scheduled tasks
 from services.scheduled_tasks import task_service
@@ -464,4 +470,4 @@ auto_migrate_time_fields()
 if __name__ == '__main__':
     # Railway sets the PORT environment variable
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)

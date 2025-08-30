@@ -2,11 +2,12 @@ import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { OrganizationProvider } from './contexts/OrganizationContext';
+import { WebSocketProvider } from './contexts/WebSocketContext';
+import { NotificationToastContainer } from './components/NotificationComponents';
 import SessionTimeout from './components/SessionTimeout';
 import IOSDebugger from './components/IOSDebugger';
 import IOSErrorBoundary from './components/IOSErrorBoundary';
 import ErrorBoundary from './components/ErrorBoundary';
-import { realTimeNotifications } from './utils/realTimeNotifications';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import PasswordResetPage from './pages/PasswordResetPage';
@@ -33,33 +34,9 @@ console.log('🎯 App.js loading...');
 function App() {
   console.log('🎯 App component rendering...');
   
-  // Initialize real-time notifications
+  // Initialize WebSocket notifications
   useEffect(() => {
-    console.log('🔔 Initializing real-time notifications...');
-    
-    // Only initialize if user is logged in
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Real-time notifications will auto-connect
-      console.log('✅ Real-time notifications initialized');
-      
-      // Test notification for development
-      if (window.showInfo) {
-        setTimeout(() => {
-          window.showInfo('🎵 Real-time notifications are active!', 3000, {
-            title: 'System Ready',
-            category: 'system'
-          });
-        }, 2000);
-      }
-    }
-    
-    return () => {
-      // Cleanup on unmount
-      if (realTimeNotifications) {
-        realTimeNotifications.disconnect();
-      }
-    };
+    console.log('🔔 WebSocket notification system initialized');
   }, []);
   
   // Precise iOS detection - only actual iOS devices, not macOS Safari
@@ -86,8 +63,10 @@ function App() {
             <div style={{ marginTop: '20px' }}>
               <ThemeProvider>
                 <OrganizationProvider>
-                  <Router>
-                    <Routes>
+                  <WebSocketProvider>
+                    <Router>
+                      <NotificationToastContainer />
+                      <Routes>
                       <Route path="/login" element={<LoginPage />} />
                       <Route path="/register" element={<RegisterPage />} />
                       <Route path="/reset-password" element={<PasswordResetPage />} />
@@ -110,8 +89,9 @@ function App() {
                       <Route path="*" element={<LoginPage />} />
                     </Routes>
                   </Router>
-                </OrganizationProvider>
-              </ThemeProvider>
+                </WebSocketProvider>
+              </OrganizationProvider>
+            </ThemeProvider>
             </div>
           </div>
         </IOSErrorBoundary>
@@ -124,10 +104,12 @@ function App() {
       <IOSErrorBoundary>
         <ThemeProvider>
           <OrganizationProvider>
-            <IOSDebugger />
-            <Router>
-              <SessionTimeout />
-              <Routes>
+            <WebSocketProvider>
+              <IOSDebugger />
+              <Router>
+                <NotificationToastContainer />
+                <SessionTimeout />
+                <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/reset-password" element={<PasswordResetPage />} />
@@ -150,10 +132,11 @@ function App() {
                 <Route path="*" element={<LoginPage />} />
               </Routes>
             </Router>
-          </OrganizationProvider>
-        </ThemeProvider>
-      </IOSErrorBoundary>
-    </ErrorBoundary>
+          </WebSocketProvider>
+        </OrganizationProvider>
+      </ThemeProvider>
+    </IOSErrorBoundary>
+  </ErrorBoundary>
   );
 }
 
