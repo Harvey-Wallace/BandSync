@@ -176,6 +176,9 @@ def init_websocket(app):
         """Handle ping for keepalive"""
         emit('pong', {'timestamp': datetime.utcnow().isoformat()})
     
+    # Attach notification manager to socketio object for easy access
+    socketio.notification_manager = notification_manager
+    
     return socketio
 
 def get_notification_manager():
