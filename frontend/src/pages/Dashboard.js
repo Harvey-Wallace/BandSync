@@ -152,20 +152,20 @@ const Dashboard = () => {
                             </Alert>
                         )}
 
-                        <Row>
-                            <Col md={6}>
-                                <Card className="mb-4">
+                        <Row className="g-3">
+                            <Col lg={6}>
+                                <Card className="mb-4 h-100">
                                     <Card.Header>
                                         <Card.Title className="mb-0">👋 Welcome</Card.Title>
                                     </Card.Header>
                                     <Card.Body>
                                         {user ? (
                                             <>
-                                                <p><strong>Name:</strong> {user.name || 'Not set'}</p>
-                                                <p><strong>Email:</strong> {user.email || 'Not set'}</p>
-                                                <p><strong>Role:</strong> {user.role || 'Member'}</p>
+                                                <p className="mb-2"><strong>Name:</strong> {user.name || 'Not set'}</p>
+                                                <p className="mb-2"><strong>Email:</strong> {user.email || 'Not set'}</p>
+                                                <p className="mb-2"><strong>Role:</strong> {user.role || 'Member'}</p>
                                                 {user.organization && (
-                                                    <p><strong>Organization:</strong> {user.organization}</p>
+                                                    <p className="mb-0"><strong>Organization:</strong> {user.organization}</p>
                                                 )}
                                             </>
                                         ) : (
@@ -175,8 +175,8 @@ const Dashboard = () => {
                                 </Card>
                             </Col>
 
-                            <Col md={6}>
-                                <Card className="mb-4">
+                            <Col lg={6}>
+                                <Card className="mb-4 h-100">
                                     <Card.Header>
                                         <Card.Title className="mb-0">📅 Upcoming Events</Card.Title>
                                     </Card.Header>
@@ -225,9 +225,10 @@ const Dashboard = () => {
                                         <Card.Title className="mb-0">🚀 Quick Actions</Card.Title>
                                     </Card.Header>
                                     <Card.Body>
-                                        <div className="d-flex gap-2 flex-wrap">
+                                        <div className="d-grid gap-2 d-md-flex">
                                             <Button 
                                                 variant="primary"
+                                                className="w-100 w-md-auto"
                                                 onClick={() => window.location.href = '/events'}
                                             >
                                                 📅 View Events
@@ -235,6 +236,7 @@ const Dashboard = () => {
                                             {user?.role === 'Admin' && (
                                                 <Button 
                                                     variant="success"
+                                                    className="w-100 w-md-auto"
                                                     onClick={() => setShowTemplatesModal(true)}
                                                 >
                                                     📝 Event Templates
@@ -242,6 +244,7 @@ const Dashboard = () => {
                                             )}
                                             <Button 
                                                 variant="outline-primary"
+                                                className="w-100 w-md-auto"
                                                 onClick={() => window.location.href = '/profile'}
                                             >
                                                 👤 Edit Profile
@@ -249,6 +252,7 @@ const Dashboard = () => {
                                             {user?.role === 'Admin' && (
                                                 <Button 
                                                     variant="outline-secondary"
+                                                    className="w-100 w-md-auto"
                                                     onClick={() => window.location.href = '/admin'}
                                                 >
                                                     ⚙️ Admin Panel

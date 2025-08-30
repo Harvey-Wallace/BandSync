@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Navbar from '../components/Navbar';
 import NotificationSystem from '../components/NotificationSystem';
 import EventForm from '../components/EventForm';
@@ -426,26 +426,56 @@ function Events() {
     }
   };
 
-  const isEventPast = (eventDateTime) => {
+  const isEventPast = useCallback((eventDateTime) => {
     if (!eventDateTime) return false; // TBD events are not past
     const eventDate = new Date(eventDateTime);
     const now = new Date();
     return eventDate < now;
-  };
+  }, []);
 
-  const isEventUpcoming = (eventDateTime) => {
+  const isEventUpcoming = useCallback((eventDateTime) => {
     if (!eventDateTime) return true; // TBD events are considered upcoming
     const eventDate = new Date(eventDateTime);
     const now = new Date();
     return eventDate >= now;
-  };
+  }, []);
 
-  const getFilteredEvents = () => {
+  const filteredEvents = useMemo(() => {
     if (filter === 'all') return events;
     if (filter === 'past') return events.filter(event => isEventPast(event.date));
     if (filter === 'upcoming') return events.filter(event => isEventUpcoming(event.date));
     return events;
-  };
+  }, [events, filter, isEventPast, isEventUpcoming]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      // Only handle keyboard shortcuts when not focused on an input
+      if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') return;
+      
+      if (event.key === '1' && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        setFilter('upcoming');
+      } else if (event.key === '2' && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        setFilter('all');
+      } else if (event.key === '3' && (event.ctrlKey || event.metaKey)) {
+        event.preventDefault();
+        setFilter('past');
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, []);
+
+  const eventCounts = useMemo(() => ({
+    total: events.length,
+    upcoming: events.filter(event => isEventUpcoming(event.date)).length,
+    past: events.filter(event => isEventPast(event.date)).length
+  }), [events, isEventPast, isEventUpcoming]);
+
+  const getFilteredEvents = () => filteredEvents;
 
   const getRSVPCounts = (eventId) => {
     const eventRsvps = allRsvps[eventId] || {};
@@ -962,19 +992,19 @@ function Events() {
         `}
       </style>
 
-      <div className="container-fluid mt-4">
+      <main className="container-fluid mt-4" role="main" aria-label="Events management">
         {/* Page Header */}
-        <div className="row mb-4">
+        <header className="row mb-4">
           <div className="col-12">
-            <div className="d-flex justify-content-between align-items-center">
+            <div className="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
               <div>
                 <h1 className="h2 mb-1 text-dark fw-bold">
-                  <i className="fas fa-calendar-alt me-2 text-primary"></i>
+                  <i className="fas fa-calendar-alt me-2 text-primary" aria-hidden="true"></i>
                   Events
                 </h1>
                 <p className="text-muted mb-0">View and manage your event schedule</p>
               </div>
-              <div className="d-flex align-items-center gap-3">
+              <div className="d-flex flex-column flex-md-row align-items-stretch align-items-md-center gap-2 w-100 w-md-auto">
                 {/* Create Event Button with Dropdown - Admin Only */}
                 {(role === 'Admin' || role === 'admin' || role === 'super_admin') && (
                   <div className="btn-group" style={{ position: 'relative' }}>
@@ -1038,54 +1068,97 @@ function Events() {
                     )}
                   </div>
                 )}
-                <a href="/analytics" className="btn btn-outline-primary">
+                <a href="/analytics" className="btn btn-outline-primary w-100 w-md-auto">
                   <i className="fas fa-chart-line me-2"></i>
-                  Analytics Dashboard
+                  <span className="d-none d-sm-inline">Analytics Dashboard</span>
+                  <span className="d-inline d-sm-none">Analytics</span>
                 </a>
               </div>
             </div>
           </div>
-        </div>
+        </header>
 
         {/* Filter Tabs */}
-        <div className="row mb-3">
+        <nav className="row mb-3" aria-label="Event filter navigation">
           <div className="col-12">
             <div className="card border-0 shadow-sm">
               <div className="card-body py-2">
                 <div className="d-flex justify-content-center">
-                  <div className="btn-group" role="group">
+                  <div className="btn-group btn-group-sm d-md-none w-100" role="group" aria-label="Event filter buttons">
+                    <button
+                      type="button"
+                      className={`btn ${filter === 'upcoming' ? 'btn-primary' : 'btn-outline-primary'} flex-fill`}
+                      onClick={() => setFilter('upcoming')}
+                      aria-pressed={filter === 'upcoming'}
+                      aria-label={`Filter to upcoming events (${eventCounts.upcoming} events)`}
+                    >
+                      <i className="fas fa-calendar-plus me-1" aria-hidden="true"></i>
+                      <span className="d-none d-sm-inline">Upcoming </span>
+                      ({eventCounts.upcoming})
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-outline-primary'} flex-fill`}
+                      onClick={() => setFilter('all')}
+                      aria-pressed={filter === 'all'}
+                      aria-label={`Show all events (${eventCounts.total} events)`}
+                    >
+                      <i className="fas fa-calendar me-1" aria-hidden="true"></i>
+                      <span className="d-none d-sm-inline">All </span>
+                      ({eventCounts.total})
+                    </button>
+                    <button
+                      type="button"
+                      className={`btn ${filter === 'past' ? 'btn-primary' : 'btn-outline-primary'} flex-fill`}
+                      onClick={() => setFilter('past')}
+                      aria-pressed={filter === 'past'}
+                      aria-label={`Filter to past events (${eventCounts.past} events)`}
+                    >
+                      <i className="fas fa-calendar-check me-1" aria-hidden="true"></i>
+                      <span className="d-none d-sm-inline">Past </span>
+                      ({eventCounts.past})
+                    </button>
+                  </div>
+                  <div className="btn-group d-none d-md-flex" role="group" aria-label="Event filter buttons">
                     <button
                       type="button"
                       className={`btn ${filter === 'upcoming' ? 'btn-primary' : 'btn-outline-primary'}`}
                       onClick={() => setFilter('upcoming')}
+                      aria-pressed={filter === 'upcoming'}
+                      aria-label={`Filter to upcoming events (${eventCounts.upcoming} events)`}
                     >
-                      <i className="fas fa-calendar-plus me-1"></i>
-                      Upcoming ({events.filter(e => isEventUpcoming(e.date)).length})
+                      <i className="fas fa-calendar-plus me-1" aria-hidden="true"></i>
+                      Upcoming ({eventCounts.upcoming})
                     </button>
                     <button
                       type="button"
                       className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-outline-primary'}`}
                       onClick={() => setFilter('all')}
+                      aria-pressed={filter === 'all'}
+                      aria-label={`Show all events (${eventCounts.total} events)`}
                     >
-                      <i className="fas fa-calendar me-1"></i>
-                      All Events ({events.length})
+                      <i className="fas fa-calendar me-1" aria-hidden="true"></i>
+                      All Events ({eventCounts.total})
                     </button>
                     <button
                       type="button"
                       className={`btn ${filter === 'past' ? 'btn-primary' : 'btn-outline-primary'}`}
                       onClick={() => setFilter('past')}
+                      aria-pressed={filter === 'past'}
+                      aria-label={`Filter to past events (${eventCounts.past} events)`}
                     >
-                      <i className="fas fa-calendar-check me-1"></i>
-                      Past ({events.filter(e => isEventPast(e.date)).length})
+                      <i className="fas fa-calendar-check me-1" aria-hidden="true"></i>
+                      Past ({eventCounts.past})
                     </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
+        </nav>
 
         {/* Events List */}
+        <section className="events-list" aria-label="Events list">
         {getFilteredEvents().length === 0 ? (
           <EmptyState 
             title="No Events Found"
@@ -1494,6 +1567,7 @@ function Events() {
             })}
           </div>
         )}
+        </section>
         
         {/* Create Event Modal */}
         {showCreateForm && (
@@ -1968,7 +2042,7 @@ function Events() {
           </div>
         )}
         {showCreateTemplateForm && <div className="modal-backdrop fade show"></div>}
-      </div>
+      </main>
     </div>
   );
 }
