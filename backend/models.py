@@ -1025,3 +1025,198 @@ class SecurityPolicy(db.Model):
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
+
+# ===================================
+# SUBSCRIPTION AND PAYMENT MODELS
+# ===================================
+
+from enum import Enum
+
+class SubscriptionTier(Enum):
+    FREE = "free"
+    PRO = "pro"
+
+class SubscriptionStatus(Enum):
+    ACTIVE = "active"
+    PAST_DUE = "past_due"
+    CANCELED = "canceled"
+    INCOMPLETE = "incomplete"
+    INCOMPLETE_EXPIRED = "incomplete_expired"
+    TRIALING = "trialing"
+    UNPAID = "unpaid"
+
+class Subscription(db.Model):
+    __tablename__ = 'subscriptions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organization.id'), nullable=False, unique=True)
+    
+    # Subscription details
+    tier = db.Column(db.Enum(SubscriptionTier), nullable=False, default=SubscriptionTier.FREE)
+    status = db.Column(db.Enum(SubscriptionStatus), nullable=False, default=SubscriptionStatus.ACTIVE)
+    
+    # Stripe integration
+    stripe_customer_id = db.Column(db.String(255), nullable=True)
+    stripe_subscription_id = db.Column(db.String(255), nullable=True)
+    stripe_product_id = db.Column(db.String(255), nullable=True)
+    stripe_price_id = db.Column(db.String(255), nullable=True)
+    
+    # Billing details
+    current_period_start = db.Column(db.DateTime, nullable=True)
+    current_period_end = db.Column(db.DateTime, nullable=True)
+    trial_start = db.Column(db.DateTime, nullable=True)
+    trial_end = db.Column(db.DateTime, nullable=True)
+    canceled_at = db.Column(db.DateTime, nullable=True)
+    
+    # Pricing
+    amount = db.Column(db.Integer, nullable=True)  # Amount in cents
+    currency = db.Column(db.String(3), nullable=False, default='USD')
+    interval = db.Column(db.String(20), nullable=True, default='month')  # month, year
+    
+    # Limits and usage
+    user_limit = db.Column(db.Integer, nullable=False, default=5)  # Free tier: 5 users, Pro: -1 (unlimited)
+    current_user_count = db.Column(db.Integer, nullable=False, default=0)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    organization = db.relationship('Organization', backref=db.backref('subscription', uselist=False))
+    payment_history = db.relationship('PaymentHistory', backref='subscription', lazy=True, cascade='all, delete-orphan')
+    
+    def __init__(self, organization_id, tier=SubscriptionTier.FREE):
+        self.organization_id = organization_id
+        self.tier = tier
+        self.status = SubscriptionStatus.ACTIVE
+        
+        if tier == SubscriptionTier.FREE:
+            self.user_limit = 5
+            self.amount = 0
+        elif tier == SubscriptionTier.PRO:
+            self.user_limit = -1  # Unlimited
+            self.amount = 2999  # $29.99/month in cents
+    
+    @property
+    def is_active(self):
+        """Check if subscription is active"""
+        return self.status == SubscriptionStatus.ACTIVE
+    
+    @property
+    def is_unlimited(self):
+        """Check if subscription has unlimited users"""
+        return self.user_limit == -1
+    
+    @property
+    def can_add_user(self):
+        """Check if organization can add more users"""
+        if self.is_unlimited:
+            return True
+        return self.current_user_count < self.user_limit
+    
+    @property
+    def users_remaining(self):
+        """Get number of users that can still be added"""
+        if self.is_unlimited:
+            return float('inf')
+        return max(0, self.user_limit - self.current_user_count)
+    
+    @property
+    def is_over_limit(self):
+        """Check if organization is over user limit"""
+        if self.is_unlimited:
+            return False
+        return self.current_user_count > self.user_limit
+    
+    def update_user_count(self):
+        """Update current user count from organization"""
+        self.current_user_count = User.query.filter_by(organization_id=self.organization_id).count()
+        db.session.commit()
+    
+    def upgrade_to_pro(self, stripe_subscription_id=None, stripe_customer_id=None):
+        """Upgrade subscription to Pro tier"""
+        self.tier = SubscriptionTier.PRO
+        self.user_limit = -1
+        self.amount = 2999
+        self.interval = 'month'
+        
+        if stripe_subscription_id:
+            self.stripe_subscription_id = stripe_subscription_id
+        if stripe_customer_id:
+            self.stripe_customer_id = stripe_customer_id
+        
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def downgrade_to_free(self):
+        """Downgrade subscription to Free tier"""
+        self.tier = SubscriptionTier.FREE
+        self.user_limit = 5
+        self.amount = 0
+        self.stripe_subscription_id = None
+        self.current_period_start = None
+        self.current_period_end = None
+        self.canceled_at = datetime.utcnow()
+        
+        self.updated_at = datetime.utcnow()
+        db.session.commit()
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'organization_id': self.organization_id,
+            'tier': self.tier.value,
+            'status': self.status.value,
+            'user_limit': self.user_limit,
+            'current_user_count': self.current_user_count,
+            'users_remaining': self.users_remaining if self.users_remaining != float('inf') else None,
+            'is_unlimited': self.is_unlimited,
+            'can_add_user': self.can_add_user,
+            'is_over_limit': self.is_over_limit,
+            'amount': self.amount,
+            'currency': self.currency,
+            'interval': self.interval,
+            'current_period_start': self.current_period_start.isoformat() if self.current_period_start else None,
+            'current_period_end': self.current_period_end.isoformat() if self.current_period_end else None,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
+class PaymentHistory(db.Model):
+    __tablename__ = 'payment_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    subscription_id = db.Column(db.Integer, db.ForeignKey('subscriptions.id'), nullable=False)
+    
+    # Stripe details
+    stripe_payment_intent_id = db.Column(db.String(255), nullable=True)
+    stripe_invoice_id = db.Column(db.String(255), nullable=True)
+    stripe_charge_id = db.Column(db.String(255), nullable=True)
+    
+    # Payment details
+    amount = db.Column(db.Integer, nullable=False)  # Amount in cents
+    currency = db.Column(db.String(3), nullable=False, default='USD')
+    status = db.Column(db.String(50), nullable=False)  # succeeded, failed, pending, etc.
+    description = db.Column(db.String(500), nullable=True)
+    
+    # Billing period
+    period_start = db.Column(db.DateTime, nullable=True)
+    period_end = db.Column(db.DateTime, nullable=True)
+    
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    paid_at = db.Column(db.DateTime, nullable=True)
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'subscription_id': self.subscription_id,
+            'amount': self.amount,
+            'currency': self.currency,
+            'status': self.status,
+            'description': self.description,
+            'period_start': self.period_start.isoformat() if self.period_start else None,
+            'period_end': self.period_end.isoformat() if self.period_end else None,
+            'created_at': self.created_at.isoformat(),
+            'paid_at': self.paid_at.isoformat() if self.paid_at else None
+        }

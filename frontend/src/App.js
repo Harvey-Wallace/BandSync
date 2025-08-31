@@ -27,6 +27,8 @@ import BulkOperationsPage from './pages/BulkOperationsPage';
 import QuickPollsPage from './pages/QuickPollsPage';
 import AdminOversightPage from './pages/AdminOversightPage';
 import MultipleDatesDemo from './pages/MultipleDatesDemo';
+import SubscriptionPage from './pages/Subscription';
+import SubscriptionSuccess from './pages/SubscriptionSuccess';
 import './styles/custom.css';
 
 console.log('🎯 App.js loading...');
@@ -86,6 +88,8 @@ function App() {
                       <Route path="/polls" element={<QuickPollsPage />} />
                       <Route path="/admin-oversight" element={<AdminOversightPage />} />
                       <Route path="/multiple-dates-demo" element={<MultipleDatesDemo />} />
+                      <Route path="/subscription" element={<SubscriptionPage />} />
+                      <Route path="/subscription/success" element={<SubscriptionSuccess />} />
                       <Route path="*" element={<LoginPage />} />
                     </Routes>
                   </Router>
@@ -129,6 +133,8 @@ function App() {
                 <Route path="/polls" element={<QuickPollsPage />} />
                 <Route path="/admin-oversight" element={<AdminOversightPage />} />
                 <Route path="/multiple-dates-demo" element={<MultipleDatesDemo />} />
+                <Route path="/subscription" element={<SubscriptionPage />} />
+                <Route path="/subscription/success" element={<SubscriptionSuccess />} />
                 <Route path="*" element={<LoginPage />} />
               </Routes>
             </Router>

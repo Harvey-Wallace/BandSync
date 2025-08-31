@@ -249,6 +249,7 @@ from routes.analytics import analytics_bp
 from routes.debug import debug_bp
 from routes.admin_oversight import admin_oversight
 from routes.multiple_dates import multiple_dates_bp
+from routes.subscription import subscription_bp
 
 app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(events_bp, url_prefix='/api/events')
@@ -273,6 +274,7 @@ app.register_blueprint(quick_polls_bp, url_prefix='/api/quick-polls')
 app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 app.register_blueprint(admin_oversight, url_prefix='/api')
 app.register_blueprint(debug_bp, url_prefix='/api/debug')
+app.register_blueprint(subscription_bp, url_prefix='/api/subscription')
 
 # JWT error handlers
 @jwt.unauthorized_loader

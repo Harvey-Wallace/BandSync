@@ -92,6 +92,32 @@ def register():
             db.session.flush()  # Flush to get the ID
             org_created = True
         
+        # Check subscription limits before adding user to existing organization
+        if not org_created:
+            from models import Subscription
+            subscription = Subscription.query.filter_by(organization_id=org.id).first()
+            if not subscription:
+                # Create subscription if it doesn't exist
+                subscription = Subscription(organization_id=org.id)
+                subscription.update_user_count()
+                db.session.add(subscription)
+                db.session.flush()
+            else:
+                subscription.update_user_count()
+            
+            # Check if organization can add more users
+            if not subscription.can_add_user:
+                return jsonify({
+                    'msg': f'Cannot add user: Organization has reached the user limit of {subscription.user_limit} for the {subscription.tier.value} tier',
+                    'error_type': 'subscription_limit',
+                    'subscription': {
+                        'tier': subscription.tier.value,
+                        'user_limit': subscription.user_limit,
+                        'current_user_count': subscription.current_user_count,
+                        'users_remaining': 0
+                    }
+                }), 403
+        
         # If org was just created, first user is Admin
         if org_created:
             user_role = 'Admin'
@@ -119,6 +145,18 @@ def register():
             role=user_role
         )
         db.session.add(user_org)
+        
+        # Create subscription for new organization or update user count
+        from models import Subscription
+        subscription = Subscription.query.filter_by(organization_id=org.id).first()
+        if not subscription:
+            # Create free subscription for new organization
+            subscription = Subscription(organization_id=org.id)
+            db.session.add(subscription)
+        
+        # Update user count
+        subscription.update_user_count()
+        
         db.session.commit()
         
         return jsonify({

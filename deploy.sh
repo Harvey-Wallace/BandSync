@@ -28,7 +28,7 @@ print_error() {
 }
 
 # Check if we're in the right directory
-if [[ ! -f "package.json" ]] || [[ ! -f "backend/app.py" ]]; then
+if [[ ! -f "frontend/package.json" ]] || [[ ! -f "backend/app.py" ]]; then
     print_error "Please run this script from the BandSync root directory"
     exit 1
 fi
