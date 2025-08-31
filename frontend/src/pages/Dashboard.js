@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import NotificationSystem from '../components/NotificationSystem';
 import { ActivityFeed, CompactActivityFeed } from '../components/ActivityFeed';
 import { getApiUrl } from '../utils/apiUrl';
+import { isEventUpcoming } from '../utils/eventTimeUtils';
 import axios from 'axios';
 
 const Dashboard = () => {
@@ -50,15 +51,10 @@ const Dashboard = () => {
             
             // Filter events to show only upcoming events for dashboard
             const allEvents = Array.isArray(eventsResponse.data) ? eventsResponse.data : [];
-            const now = new Date();
             
             // Filter upcoming events and sort by date
             const upcomingEvents = allEvents
-                .filter(event => {
-                    if (!event.date) return false;
-                    const eventDate = new Date(event.date);
-                    return eventDate >= now;
-                })
+                .filter(event => isEventUpcoming(event))
                 .sort((a, b) => new Date(a.date) - new Date(b.date))
                 .slice(0, 5); // Show next 5 upcoming events
             

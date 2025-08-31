@@ -6,6 +6,7 @@ import EnhancedEventForm from '../components/EnhancedEventForm';
 import EventDateVoting from '../components/EventDateVoting';
 import EnhancedRSVPModal from '../components/EnhancedRSVPModal';
 import { CompactActivityFeed } from '../components/ActivityFeed';
+import { isEventPast, isEventUpcoming, getEventStartDateTime } from '../utils/eventTimeUtils';
 import { 
   DataLoadingState, 
   ErrorState, 
@@ -482,26 +483,14 @@ function Events() {
     }
   };
 
-  const isEventPast = useCallback((eventDateTime) => {
-    if (!eventDateTime) return false; // TBD events are not past
-    const eventDate = new Date(eventDateTime);
-    const now = new Date();
-    return eventDate < now;
-  }, []);
-
-  const isEventUpcoming = useCallback((eventDateTime) => {
-    if (!eventDateTime) return true; // TBD events are considered upcoming
-    const eventDate = new Date(eventDateTime);
-    const now = new Date();
-    return eventDate >= now;
-  }, []);
+  // Event timing utilities are now imported from utils/eventTimeUtils.js
 
   const filteredEvents = useMemo(() => {
     if (filter === 'all') return events;
-    if (filter === 'past') return events.filter(event => isEventPast(event.date));
-    if (filter === 'upcoming') return events.filter(event => isEventUpcoming(event.date));
+    if (filter === 'past') return events.filter(event => isEventPast(event));
+    if (filter === 'upcoming') return events.filter(event => isEventUpcoming(event));
     return events;
-  }, [events, filter, isEventPast, isEventUpcoming]);
+  }, [events, filter]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -527,9 +516,9 @@ function Events() {
 
   const eventCounts = useMemo(() => ({
     total: events.length,
-    upcoming: events.filter(event => isEventUpcoming(event.date)).length,
-    past: events.filter(event => isEventPast(event.date)).length
-  }), [events, isEventPast, isEventUpcoming]);
+    upcoming: events.filter(event => isEventUpcoming(event)).length,
+    past: events.filter(event => isEventPast(event)).length
+  }), [events]);
 
   const getFilteredEvents = () => filteredEvents;
 
@@ -1234,7 +1223,7 @@ function Events() {
             {getFilteredEvents().map(event => {
               const isExpanded = expandedEvents[event.id];
               const rsvpCounts = getRSVPCounts(event.id);
-              const isPastEvent = isEventPast(event.dateTime);
+              const isPastEvent = isEventPast(event);
               
               return (
                 <div key={event.id} className="col-12 mb-2">
