@@ -261,6 +261,12 @@ function Navbar() {
                 <span>Analytics</span>
               </Link>
             </li>
+            <li className="nav-item">
+              <Link className="nav-link text-white px-2" to="/subscription">
+                <i className="bi bi-credit-card me-1"></i>
+                <span>Subscription</span>
+              </Link>
+            </li>
             {role === 'Admin' && (
               <li className="nav-item">
                 <Link className="nav-link text-white px-2" to="/admin">
